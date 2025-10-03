@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "holymoderation",
+  "version": "${version}",
+  "name": "HolyModeration",
+  "description": "",
+  "authors": [],
+  "contact": {},
+  "license": "unlicense",
+  "icon": "assets/holymoderation/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "me.yuugao.holymoderation.client.HolyModerationClient"
+    ],
+    "main": [
+      "me.yuugao.holymoderation.HolyModeration"
+    ]
+  },
+  "mixins": [
+    "holymoderation.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
