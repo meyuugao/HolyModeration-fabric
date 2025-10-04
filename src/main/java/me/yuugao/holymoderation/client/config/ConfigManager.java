@@ -1,14 +1,17 @@
 package me.yuugao.holymoderation.client.config;
 
-import static me.yuugao.holymoderation.ChatManager.printException;
+import static me.yuugao.holymoderation.client.manager.ChatManager.printException;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class ConfigManager {
     private static final String CONFIG_DIRECTORY = "C:\\HolyModeration\\Config";

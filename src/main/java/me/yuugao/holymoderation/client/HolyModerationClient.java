@@ -11,6 +11,8 @@ public class HolyModerationClient implements ClientModInitializer {
     public static final State STATE = new State();
     public static final Session SESSION = new Session();
 
+    //public String LATEST_VERSION = StringUtils.EMPTY; //tip: переместить в initmanager или чёто такое
+
     @Override
     public void onInitializeClient() {
     }

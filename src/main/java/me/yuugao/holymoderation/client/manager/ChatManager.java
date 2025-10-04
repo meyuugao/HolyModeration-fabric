@@ -1,17 +1,21 @@
 package me.yuugao.holymoderation.client.manager;
 
+import static me.yuugao.holymoderation.client.manager.SoundManager.playSound;
 import static me.yuugao.holymoderation.client.util.Colors.*;
-import static me.yuugao.holymoderation.client.manager.ChatManager.*;
-import static me.yuugao.holymoderation.client.manager.ChatManager.*;
 import static me.yuugao.holymoderation.client.util.Constants.MC;
 
 
 import me.yuugao.holymoderation.client.HolyModerationClient;
 
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+
 import java.util.Arrays;
 
 public class ChatManager {
-    public static final StringTextComponent HMTextComponent = new StringTextComponent(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
+    public static final Text HMTextComponent = Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
     public static final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
 
     public static void printException(String message) {
@@ -40,7 +44,9 @@ public class ChatManager {
     }
 
     public static void clientMessage(String message) {
-        MC.player.sendMessage(new StringTextComponent(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), Minecraft.getInstance().player.getUniqueID());
+        if (MC.player != null) {
+            MC.player.sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
+        }
     }
 
     public static String formatReceivedText(String text) {
@@ -104,53 +110,50 @@ public class ChatManager {
         }
     }
 
-    public static StringTextComponent suggestTextComponent(String componentText) {
-        StringTextComponent suggestComponent = new StringTextComponent(componentText);
-
-        suggestComponent.setStyle(suggestComponent.getStyle().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent("Нажмите, чтобы подставить команду."))));
-        suggestComponent.setStyle(suggestComponent.getStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, componentText.replace("§f", "").replace("§6", "").replace("§a", "").replace("§c", "").replace("§e", "").replace("§l", "").replace("§3", ""))));
-
-        return suggestComponent;
+    public static MutableText suggestTextComponent(String componentText) {
+        Text suggestComponent = Text.of((componentText));
+        return suggestComponent.copy().setStyle(
+                suggestComponent.getStyle()
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                Text.of("Нажмите, чтобы подставить команду.")))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
+                                componentText.replaceAll("§[0-9a-zA-Z]", ""))));
     }
 
-    public static StringTextComponent suggestTextComponent(String componentText, String hint, String toSuggestText) {
-        StringTextComponent suggestComponent = new StringTextComponent(componentText);
-
-        suggestComponent.setStyle(suggestComponent.getStyle().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(hint))));
-        suggestComponent.setStyle(suggestComponent.getStyle().setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, toSuggestText)));
-
-        return suggestComponent;
+    public static MutableText suggestTextComponent(String componentText, String hint, String toSuggestText) {
+        Text suggestComponent = Text.of(componentText);
+        return suggestComponent.copy().setStyle(
+                suggestComponent.getStyle().
+                        withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint)))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, toSuggestText)));
     }
 
-    public static StringTextComponent hoverTextComponent(String componentText, String hint) {
-        StringTextComponent hoverComponent = new StringTextComponent(componentText);
-
-        hoverComponent.setStyle(hoverComponent.getStyle().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(hint))));
-
-        return hoverComponent;
+    public static MutableText hoverTextComponent(String componentText, String hint) {
+        Text hoverComponent = Text.of(componentText);
+        return hoverComponent.copy().setStyle(
+                hoverComponent.getStyle()
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint))));
     }
 
-    public static StringTextComponent copyTextComponent(String componentText, String hint, String toCopyText) {
-        StringTextComponent copyComponent = new StringTextComponent(componentText);
-
-        copyComponent.setStyle(copyComponent.getStyle().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(hint))));
-        copyComponent.setStyle(copyComponent.getStyle().setClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, toCopyText)));
-
-        return copyComponent;
+    public static MutableText copyTextComponent(String componentText, String hint, String toCopyText) {
+        Text copyComponent = Text.of(componentText);
+        return copyComponent.copy().setStyle(
+                copyComponent.getStyle()
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint)))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, toCopyText)));
     }
 
-    public static StringTextComponent openURLTextComponent(String componentText, String hint, String url) {
-        StringTextComponent openURLComponent = new StringTextComponent(componentText);
-
-        openURLComponent.setStyle(openURLComponent.getStyle().setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new StringTextComponent(hint))));
-        openURLComponent.setStyle(openURLComponent.getStyle().setClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
-
-        return openURLComponent;
+    public static MutableText openURLTextComponent(String componentText, String hint, String url) {
+        Text openURLComponent = Text.of(componentText);
+        return openURLComponent.copy().setStyle(
+                openURLComponent.getStyle()
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint)))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
     }
 
-    public static StringTextComponent generateComponent(ITextComponent... Components) {
-        StringTextComponent newComponent = new StringTextComponent("");
-        Arrays.asList(Components).forEach(newComponent::append);
+    public static MutableText generateComponent(Text... components) {
+        MutableText newComponent = Text.empty();
+        Arrays.asList(components).forEach(newComponent::append);
         return newComponent;
     }
 }
