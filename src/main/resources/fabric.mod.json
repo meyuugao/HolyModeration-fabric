@@ -1,12 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "holymoderation",
-  "version": "${version}",
+  "version": "3.0",
   "name": "HolyModeration",
-  "description": "",
-  "authors": [],
-  "contact": {},
-  "license": "unlicense",
+  "description": "An auxiliary mod for moderation on HolyWorld | Bugs? @meyuugao",
+  "authors": ["MeYuugao"],
+  "contact": {"tg": "t.me/meyuugao", "vk": "vk.com/meyuugao"},
   "icon": "assets/holymoderation/icon.png",
   "environment": "client",
   "entrypoints": {

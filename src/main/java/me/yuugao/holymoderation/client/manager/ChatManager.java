@@ -2,11 +2,13 @@ package me.yuugao.holymoderation.client.manager;
 
 import static me.yuugao.holymoderation.client.manager.SoundManager.playSound;
 import static me.yuugao.holymoderation.client.util.Colors.*;
-import static me.yuugao.holymoderation.client.util.Constants.MC;
 
 
 import me.yuugao.holymoderation.client.HolyModerationClient;
+import me.yuugao.holymoderation.client.util.MinecraftService;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
@@ -34,18 +36,19 @@ public class ChatManager {
     }
 
     public static void chatMessage(String message) {
-        if (MC.getNetworkHandler() != null) {
+        ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
+        if (networkHandler != null) {
             if (message.startsWith("/")) {
-                MC.getNetworkHandler().sendCommand(message.substring(1));
+                networkHandler.sendCommand(message.substring(1));
             } else {
-                MC.getNetworkHandler().sendChatMessage(message);
+                networkHandler.sendChatMessage(message);
             }
         }
     }
 
     public static void clientMessage(String message) {
-        if (MC.player != null) {
-            MC.player.sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
+        if (MinecraftService.getPlayer() != null) {
+            MinecraftService.getPlayer().sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
         }
     }
 

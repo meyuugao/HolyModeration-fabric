@@ -1,12 +1,12 @@
 package me.yuugao.holymoderation.client.manager;
 
-import static me.yuugao.holymoderation.client.util.Colors.*;
-import static me.yuugao.holymoderation.client.manager.ChatManager.*;
 import static me.yuugao.holymoderation.client.HolyModerationClient.CONFIG;
+import static me.yuugao.holymoderation.client.manager.ChatManager.*;
+import static me.yuugao.holymoderation.client.util.Colors.BOLD;
+import static me.yuugao.holymoderation.client.util.Colors.RED;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -16,12 +16,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
+
 public class NetManager {
     private final static String journalApiPath = "https://journal.holyworld.me/srv/api/v1/";
+    private final static Gson gson = new Gson();
 
     public static void downloadSound(String sound) {
         String targetDirectory = "C:\\HolyModeration\\Sounds";
@@ -47,39 +53,41 @@ public class NetManager {
     }
 
     public static Map<String, Object> getJournalProfile() {
-        HttpsURLConnection connection = openHttpsConnection(journalApiPath + "me", "GET", null);
-        connection.setRequestProperty("x-token", CONFIG.apiToken);
-        connection.setRequestProperty("Content-Type", "application/json");
-        return parseJsonResponse(getResponse(connection));
+        return executeGetRequest("me");
     }
 
     public static Map<String, Object> getJournalStats() {
-        HttpsURLConnection connection = openHttpsConnection(journalApiPath + "stats", "GET", null);
-        connection.setRequestProperty("x-token", CONFIG.apiToken);
-        connection.setRequestProperty("Content-Type", "application/json");
-        return parseJsonResponse(getResponse(connection));
+        return executeGetRequest("stats");
     }
 
     public static void startCheckout(String name, String reason, String mode, int number, boolean pvp) {
         try {
-            if (currectCheckout()) {
+            if (hasActiveCheckout()) {
                 printError("У вас уже есть активная проверка.");
                 return;
             }
+
             HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/start", "POST", null);
-            connection.setRequestProperty("x-token", CONFIG.apiToken);
-            connection.setRequestProperty("Content-Type", "application/json");
-            JsonObject jsonBody = new JsonObject();
-            jsonBody.addProperty("username", name);
-            jsonBody.addProperty("reason", reason);
-            jsonBody.addProperty("mode", mode);
-            jsonBody.addProperty("anarchyNumber", number);
-            jsonBody.addProperty("isPvpAnarchy", pvp);
-            writeJson(connection, jsonBody);
-            if (connection.getResponseMessage().equals("Created")) {
-                printSuccess("Вы успешно внесли проверку.");
-            } else {
-                throw new Exception("Ошибка при внесении проверки. Message: " + connection.getResponseMessage());
+            if (connection == null) throw new IOException("connection is null");
+
+            try {
+                setAuthHeaders(connection);
+                JsonObject jsonBody = new JsonObject();
+                jsonBody.addProperty("username", name);
+                jsonBody.addProperty("reason", reason);
+                jsonBody.addProperty("mode", mode);
+                jsonBody.addProperty("anarchyNumber", number);
+                jsonBody.addProperty("isPvpAnarchy", pvp);
+
+                if (writeJson(connection, jsonBody)) {
+                    if (connection.getResponseCode() == 201) {
+                        printSuccess("Вы успешно внесли проверку.");
+                    } else {
+                        printError("Ошибка при внесении проверки. Код: " + connection.getResponseCode());
+                    }
+                }
+            } finally {
+                connection.disconnect();
             }
         } catch (Exception e) {
             printException("Исключение в NetManager/startCheckout: " + e);
@@ -88,36 +96,84 @@ public class NetManager {
 
     public static void endCheckout(String result, String reason, boolean destroyStash) {
         try {
-            if (!currectCheckout()) {
+            if (!hasActiveCheckout()) {
                 printError("У вас нет активной проверки.");
                 return;
             }
+
             HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/end", "POST", null);
-            connection.setRequestProperty("x-token", CONFIG.apiToken);
-            connection.setRequestProperty("Content-Type", "application/json");
-            JsonObject jsonBody = new JsonObject();
-            jsonBody.addProperty("result", result);
-            jsonBody.addProperty("banReason", reason);
-            jsonBody.addProperty("destroyStash", destroyStash);
-            writeJson(connection, jsonBody);
-            if (connection.getResponseCode() == 201) {
-                printSuccess("Вы успешно закончили проверку.");
-            } else {
-                throw new Exception("Ошибка при завершении проверки. Message: " + connection.getResponseMessage());
+            if (connection == null) throw new IOException("connection is null");
+
+            try {
+                setAuthHeaders(connection);
+                JsonObject jsonBody = new JsonObject();
+                jsonBody.addProperty("result", result);
+                jsonBody.addProperty("banReason", reason);
+                jsonBody.addProperty("destroyStash", destroyStash);
+
+                if (writeJson(connection, jsonBody)) {
+                    if (connection.getResponseCode() == 201) {
+                        printSuccess("Вы успешно закончили проверку.");
+                    } else {
+                        printError("Ошибка при завершении проверки. Код: " + connection.getResponseCode());
+                    }
+                }
+            } finally {
+                connection.disconnect();
             }
         } catch (Exception e) {
             printException("Исключение в NetManager/endCheckout: " + e);
         }
     }
 
-    private static boolean currectCheckout() {
-        HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/status", "GET", null);
-        connection.setRequestProperty("x-token", CONFIG.apiToken);
-        connection.setRequestProperty("Content-Type", "application/json");
-        return (boolean) parseJsonResponse(getResponse(connection)).get("status");
+    private static boolean hasActiveCheckout() {
+        try {
+            HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/status", "GET", null);
+            if (connection == null) throw new IOException("connection is null");
+
+            try {
+                setAuthHeaders(connection);
+                StringBuilder response = getResponse(connection);
+                if (response == null) throw new IOException("response is null");
+
+                Map<String, Object> jsonResponse = parseJsonResponse(response);
+                Object status = jsonResponse.get("status");
+                return status instanceof Boolean && (Boolean) status;
+            } finally {
+                connection.disconnect();
+            }
+        } catch (Exception e) {
+            printException("Исключение в NetManager/hasActiveCheckout: " + e.getMessage());
+            return false;
+        }
     }
 
-    private static void writeJson(HttpsURLConnection connection, JsonObject jsonBody) {
+    private static Map<String, Object> executeGetRequest(String endpoint) {
+        try {
+            HttpsURLConnection connection = openHttpsConnection(journalApiPath + endpoint, "GET", null);
+            if (connection == null) throw new IOException("connection is null");
+
+            try {
+                setAuthHeaders(connection);
+                StringBuilder response = getResponse(connection);
+                if (response == null) throw new IOException("response is null");
+
+                return parseJsonResponse(response);
+            } finally {
+                connection.disconnect();
+            }
+        } catch (Exception e) {
+            printException("Исключение в NetManager/executeGetRequest: " + e);
+            return Collections.emptyMap();
+        }
+    }
+
+    private static void setAuthHeaders(@NotNull HttpsURLConnection connection) {
+        connection.setRequestProperty("x-token", CONFIG.apiToken);
+        connection.setRequestProperty("Content-Type", "application/json");
+    }
+
+    private static boolean writeJson(@NotNull HttpsURLConnection connection, @NotNull JsonObject jsonBody) {
         try {
             connection.setDoOutput(true);
             try (OutputStreamWriter out = new OutputStreamWriter(
@@ -125,12 +181,15 @@ public class NetManager {
                 out.write(jsonBody.toString());
                 out.flush();
             }
+
+            return true;
         } catch (Exception e) {
             printException("Исключение в NetManager/writeJson: " + e);
+            return false;
         }
     }
 
-    public static StringBuilder getResponse(HttpsURLConnection connection) {
+    public static StringBuilder getResponse(@NotNull HttpsURLConnection connection) {
         try {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
@@ -139,18 +198,24 @@ public class NetManager {
                 response.append(line);
             }
             bufferedReader.close();
+
             return response;
         } catch (Exception e) {
             printException("Исключение в NetManager/getResponse: " + e);
+            return null;
         }
-        return null;
     }
 
-    private static Map<String, Object> parseJsonResponse(StringBuilder response) {
-        Gson gson = new Gson();
-        Type type = new TypeToken<Map<String, Object>>() {
-        }.getType();
-        return gson.fromJson(response.toString(), type);
+    private static Map<String, Object> parseJsonResponse(@NotNull StringBuilder response) {
+        try {
+            Type type = new TypeToken<Map<String, Object>>() {
+            }.getType();
+
+            return gson.fromJson(response.toString(), type);
+        } catch (Exception e) {
+            printException("Исключение в NetManager/parseJsonResponse: " + e);
+            return Collections.emptyMap();
+        }
     }
 
     public static HttpsURLConnection openHttpsConnection(String url, String method, String cookie) {
@@ -167,7 +232,7 @@ public class NetManager {
             return connection;
         } catch (Exception e) {
             printException("Исключение в NetManager/openHttpsConnection: " + e);
+            return null;
         }
-        return null;
     }
 }

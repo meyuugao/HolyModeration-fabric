@@ -5,7 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.google.gson.annotations.Expose;
 
 public class Config {
-    public final String CURRENT_VERSION = "3.0";
+    public final String CURRENT_VERSION = "2.9fabric";
 
     @Expose
     public String apiToken = StringUtils.EMPTY;
