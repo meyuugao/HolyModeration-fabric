@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.trash;
 
-import static me.yuugao.holymoderation.client.util.Colors.*;
+import static me.yuugao.holymoderation.client.util.ColorsService.*;
 
 
 import java.util.HashMap;

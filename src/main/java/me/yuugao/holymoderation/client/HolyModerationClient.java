@@ -2,8 +2,7 @@ package me.yuugao.holymoderation.client;
 
 import me.yuugao.holymoderation.client.config.Config;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.manager.SoundManager;
-import me.yuugao.holymoderation.client.util.State;
+import me.yuugao.holymoderation.client.util.StateService;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -22,7 +21,7 @@ import java.util.concurrent.Executor;
 
 public class HolyModerationClient implements ClientModInitializer {
     public static final Config CONFIG = new Config();
-    public static final State STATE = new State();
+    public static final StateService STATE_SERVICE = new StateService();
     public static final EventBus EVENT_BUS = new EventBus();
 
     private static final Logger LOGGER = LoggerFactory.getLogger("HolyModeration/Client");
@@ -61,6 +60,6 @@ public class HolyModerationClient implements ClientModInitializer {
     }
 
     private void registerEventListeners() {
-        EVENT_BUS.register(new SoundManager());
+        //EVENT_BUS.register(this);
     }
 }

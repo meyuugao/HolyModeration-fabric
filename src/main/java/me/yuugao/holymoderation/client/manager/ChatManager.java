@@ -1,7 +1,7 @@
 package me.yuugao.holymoderation.client.manager;
 
 import static me.yuugao.holymoderation.client.manager.SoundManager.playSound;
-import static me.yuugao.holymoderation.client.util.Colors.*;
+import static me.yuugao.holymoderation.client.util.ColorsService.*;
 
 
 import me.yuugao.holymoderation.client.HolyModerationClient;

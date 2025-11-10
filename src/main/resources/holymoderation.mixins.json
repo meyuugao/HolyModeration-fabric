@@ -7,6 +7,7 @@
     "ClientPlayNetworkHandlerMixin"
   ],
   "client": [
+    "MinecraftClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

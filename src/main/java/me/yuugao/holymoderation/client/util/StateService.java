@@ -2,8 +2,9 @@ package me.yuugao.holymoderation.client.util;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class State {
+public class StateService {
     public boolean enabled = true;
+    public boolean connected = false;
     public boolean isOnHW = false;
     public boolean gameInitCompleted = false;
     public boolean apiInitCompleted = false;

@@ -2,8 +2,8 @@ package me.yuugao.holymoderation.client.manager;
 
 import static me.yuugao.holymoderation.client.HolyModerationClient.CONFIG;
 import static me.yuugao.holymoderation.client.manager.ChatManager.*;
-import static me.yuugao.holymoderation.client.util.Colors.BOLD;
-import static me.yuugao.holymoderation.client.util.Colors.RED;
+import static me.yuugao.holymoderation.client.util.ColorsService.BOLD;
+import static me.yuugao.holymoderation.client.util.ColorsService.RED;
 
 
 import org.jetbrains.annotations.NotNull;

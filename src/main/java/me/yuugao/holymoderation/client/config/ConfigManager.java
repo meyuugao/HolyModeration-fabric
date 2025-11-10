@@ -12,12 +12,14 @@ import java.nio.file.Paths;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import lombok.Getter;
 
 public class ConfigManager {
     private static final String CONFIG_DIRECTORY = "C:\\HolyModeration\\Config";
     private static final String CONFIG_FILE_PATH = CONFIG_DIRECTORY + "\\config_labymod3.json";
 
     private final Gson gson;
+    @Getter
     private Config config;
 
     public ConfigManager() {
@@ -54,9 +56,5 @@ public class ConfigManager {
         } catch (Exception e) {
             printException("Исключение в ConfigManager/saveCfg: " + e);
         }
-    }
-
-    public Config getConfig() {
-        return this.config;
     }
 }
