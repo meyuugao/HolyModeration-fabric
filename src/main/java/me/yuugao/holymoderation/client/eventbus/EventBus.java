@@ -3,13 +3,13 @@ package me.yuugao.holymoderation.client.eventbus;
 import me.yuugao.holymoderation.client.eventbus.event.Event;
 
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus {
-    private final Map<Class<?>, Set<Subscriber>> subscribers = new ConcurrentHashMap<>();
+    private final Map<Class<?>, List<Subscriber>> subscribers = new ConcurrentHashMap<>();
 
     public void register(Object object) {
         Method[] methods = object.getClass().getDeclaredMethods();
@@ -18,36 +18,33 @@ public class EventBus {
                 Class<?>[] parameterTypes = method.getParameterTypes();
                 if (parameterTypes.length == 1 && Event.class.isAssignableFrom(parameterTypes[0])) {
                     Class<?> eventType = parameterTypes[0];
-                    Subscriber subscriber = new Subscriber(object, method);
-                    subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArraySet<>()).add(subscriber);
+                    Subscribe annotation = method.getAnnotation(Subscribe.class);
+                    int priority = annotation.priority();
+                    Subscriber subscriber = new Subscriber(object, method, priority);
+
+                    subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(subscriber);
+                    subscribers.get(eventType).sort((s1, s2) -> Integer.compare(s2.priority(), s1.priority()));
                 }
             }
         }
     }
 
-    public void unregister(Object object) {
-        for (Set<Subscriber> subscriberSet : subscribers.values()) {
-            subscriberSet.removeIf(subscriber -> subscriber.target().equals(object));
-        }
-    }
-
     public void invokeEvent(Event event) {
-        Set<Subscriber> eventSubscribers = subscribers.get(event.getClass());
+        List<Subscriber> eventSubscribers = subscribers.get(event.getClass());
         if (eventSubscribers != null) {
-            for (Subscriber subscriber : eventSubscribers) {
-                subscriber.invoke(event);
+            synchronized (this) {
+                for (Subscriber subscriber : eventSubscribers) {
+                    subscriber.invoke(event);
+                }
             }
         }
     }
 
-    public void clear() {
-        subscribers.clear();
-    }
-
-    private record Subscriber(Object target, Method method) {
-        private Subscriber(Object target, Method method) {
+    private record Subscriber(Object target, Method method, int priority) {
+        private Subscriber(Object target, Method method, int priority) {
             this.target = target;
             this.method = method;
+            this.priority = priority;
             this.method.setAccessible(true);
         }
 
