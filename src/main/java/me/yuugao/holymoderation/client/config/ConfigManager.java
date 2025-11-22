@@ -16,7 +16,7 @@ import lombok.Getter;
 
 public class ConfigManager {
     private static final String CONFIG_DIRECTORY = "C:\\HolyModeration\\Config";
-    private static final String CONFIG_FILE_PATH = CONFIG_DIRECTORY + "\\config_labymod3.json";
+    private static final String CONFIG_FILE_PATH = CONFIG_DIRECTORY + "\\config.json";
 
     private final Gson gson;
     @Getter

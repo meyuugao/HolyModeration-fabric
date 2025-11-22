@@ -1,10 +1,11 @@
 package me.yuugao.holymoderation.client.manager;
 
-import static me.yuugao.holymoderation.client.HolyModerationClient.CONFIG;
 import static me.yuugao.holymoderation.client.manager.ChatManager.*;
-import static me.yuugao.holymoderation.client.util.ColorsService.BOLD;
-import static me.yuugao.holymoderation.client.util.ColorsService.RED;
+import static me.yuugao.holymoderation.client.util.Colors.BOLD;
+import static me.yuugao.holymoderation.client.util.Colors.RED;
 
+
+import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -169,7 +170,7 @@ public class NetManager {
     }
 
     private static void setAuthHeaders(@NotNull HttpsURLConnection connection) {
-        connection.setRequestProperty("x-token", CONFIG.apiToken);
+        connection.setRequestProperty("x-token", ServiceLocator.getConfigManager().getConfig().apiToken);
         connection.setRequestProperty("Content-Type", "application/json");
     }
 

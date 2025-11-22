@@ -1,14 +1,14 @@
 package me.yuugao.holymoderation.client.manager;
 
 import static me.yuugao.holymoderation.client.manager.SoundManager.playSound;
-import static me.yuugao.holymoderation.client.util.ColorsService.*;
+import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.HolyModerationClient;
-import me.yuugao.holymoderation.client.util.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
@@ -47,8 +47,9 @@ public class ChatManager {
     }
 
     public static void clientMessage(String message) {
-        if (MinecraftService.getPlayer() != null) {
-            MinecraftService.getPlayer().sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
+        ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
+        if (player != null) {
+            player.sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
         }
     }
 
@@ -59,7 +60,7 @@ public class ChatManager {
                 return null;
             }
         }
-        text = text.replace(HolyModerationClient.CONFIG.copyButtonText.replaceAll("§[0-9a-zA-Z]", ""), "");
+        text = text.replace(ServiceLocator.getConfigManager().getConfig().copyButtonText.replaceAll("§[0-9a-zA-Z]", ""), "");
         return text;
     }
 

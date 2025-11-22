@@ -1,10 +1,11 @@
 package me.yuugao.holymoderation.client.manager;
 
-import static me.yuugao.holymoderation.client.HolyModerationClient.CONFIG;
 import static me.yuugao.holymoderation.client.manager.ChatManager.clientMessage;
-import static me.yuugao.holymoderation.client.util.ColorsService.BOLD;
-import static me.yuugao.holymoderation.client.util.ColorsService.RED;
+import static me.yuugao.holymoderation.client.util.Colors.BOLD;
+import static me.yuugao.holymoderation.client.util.Colors.RED;
 
+
+import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
@@ -18,7 +19,7 @@ import javax.sound.sampled.LineEvent;
 
 public class SoundManager {
     public static void playSound(String soundName, int volume) {
-        if (CONFIG.soundsEnabled) {
+        if (ServiceLocator.getConfigManager().getConfig().soundsEnabled) {
             try {
                 Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
                 byte[] audioData = Files.readAllBytes(soundPath);

@@ -1,8 +1,12 @@
 package me.yuugao.holymoderation.client;
 
-import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.util.StateService;
+import me.yuugao.holymoderation.client.modules.StateModule;
+import me.yuugao.holymoderation.client.util.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.SchedulerService;
+import me.yuugao.holymoderation.client.util.service.ServiceLocator;
+import me.yuugao.holymoderation.client.util.service.StateService;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
@@ -20,15 +24,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 public class HolyModerationClient implements ClientModInitializer {
-    public static final Config CONFIG = new Config();
-    public static final StateService STATE_SERVICE = new StateService();
-    public static final EventBus EVENT_BUS = new EventBus();
-
-    private static final Logger LOGGER = LoggerFactory.getLogger("HolyModeration/Client");
-
     @Override
     public void onInitializeClient() {
-        LOGGER.info("Registering resource reload listener for shader initialization.");
+        Logger logger = LoggerFactory.getLogger("HolyModeration/Client");
+        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new MinecraftService(), new SchedulerService(), new StateService(), logger);
+
+        logger.info("Registering resource reload listener for shader initialization.");
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new IdentifiableResourceReloadListener() {
             private final Identifier id = new Identifier("holymoderation", "shader_loader");
 
@@ -39,7 +40,7 @@ public class HolyModerationClient implements ClientModInitializer {
 
             @Override
             public CompletableFuture<Void> reload(Synchronizer synchronizer, ResourceManager manager, Profiler prepareProfiler, Profiler applyProfiler, Executor prepareExecutor, Executor applyExecutor) {
-                LOGGER.info("Starting shader reload prepare phase.");
+                logger.info("Starting shader reload prepare phase.");
                 return CompletableFuture.completedFuture(null)
                         .thenCompose(synchronizer::whenPrepared)
                         .thenRunAsync(() -> {
@@ -60,6 +61,7 @@ public class HolyModerationClient implements ClientModInitializer {
     }
 
     private void registerEventListeners() {
-        //EVENT_BUS.register(this);
+        EventBus eventBus = ServiceLocator.getEventBus();
+        eventBus.register(new StateModule());
     }
 }

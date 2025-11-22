@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.util;
 
-public class ColorsService {
+public class Colors {
     public static final String RED = "§c";
     public static final String LIGHT_PURPLE = "§d";
     public static final String DARK_GREEN = "§2";

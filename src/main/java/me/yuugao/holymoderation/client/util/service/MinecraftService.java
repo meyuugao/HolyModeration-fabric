@@ -1,19 +1,23 @@
-package me.yuugao.holymoderation.client.util;
+package me.yuugao.holymoderation.client.util.service;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
 
+import org.jetbrains.annotations.Nullable;
+
 public class MinecraftService {
-    public static MinecraftClient getInstance() {
+    public MinecraftClient getClient() {
         return MinecraftClient.getInstance();
     }
 
-    public static ClientPlayerEntity getPlayer() {
+    @Nullable
+    public ClientPlayerEntity getPlayer() {
         return MinecraftClient.getInstance().player;
     }
 
-    public static ClientWorld getWorld() {
+    @Nullable
+    public ClientWorld getWorld() {
         return MinecraftClient.getInstance().world;
     }
 }
