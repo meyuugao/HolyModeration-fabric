@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import lombok.Getter;
 
 public class ServiceLocator {
+    //tip: сделать так чтобы можно было ребутнуть любой сервис
     @Getter
     private static ConfigManager configManager;
     @Getter
@@ -37,6 +38,7 @@ public class ServiceLocator {
         ServiceLocator.chatService = chatService;
         ServiceLocator.netService = netService;
         ServiceLocator.soundService = soundService;
+        logger.info("Base services has been initialized");
         initializeLoggerService(logger);
     }
 
@@ -48,5 +50,8 @@ public class ServiceLocator {
         chatService.setLogger(loggerService);
         netService.setLogger(loggerService);
         soundService.setLogger(loggerService);
+        loggerService.getLogger().info("Logger service has been initialized");
     }
+
+
 }

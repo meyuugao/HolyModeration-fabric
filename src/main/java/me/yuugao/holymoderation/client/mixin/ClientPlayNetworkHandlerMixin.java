@@ -1,7 +1,6 @@
 package me.yuugao.holymoderation.client.mixin;
 
 
-import me.yuugao.holymoderation.client.eventbus.event.MessageModifyEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
@@ -33,21 +32,26 @@ public class ClientPlayNetworkHandlerMixin {
 
     @Inject(method = "onGameMessage", at = @At("HEAD"), cancellable = true)
     private void onGameMessageModify(GameMessageS2CPacket packet, CallbackInfo ci) {
-        MessageModifyEvent event = new MessageModifyEvent(packet.content(), packet.overlay());
+        if (packet.overlay()) return;
+
+        MessageReceiveEvent event = new MessageReceiveEvent(packet.content());
 
         ServiceLocator.getEventBus().invokeEvent(event);
 
         ci.cancel();
-        ServiceLocator.getMinecraftService().getClient().inGameHud.getChatHud().addMessage(event.getMessage());
+        if (!event.isCancelled()) {
+            ServiceLocator.getMinecraftService().getClient().inGameHud.getChatHud().addMessage(event.getMessage());
+        }
     }
 
-    @Inject(method = "onGameMessage", at = @At("TAIL"))
-    private void onGameMessageReceive(GameMessageS2CPacket packet, CallbackInfo ci) {
-        ServiceLocator.getEventBus().invokeEvent(new MessageReceiveEvent(packet.content()));
-    }
-
-    @Inject(method = "sendChatMessage", at = @At("TAIL"))
+    @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
     private void sendChatMessage(String content, CallbackInfo ci) {
-        ServiceLocator.getEventBus().invokeEvent(new MessageSendEvent(content));
+        MessageSendEvent event = new MessageSendEvent(content);
+
+        ServiceLocator.getEventBus().invokeEvent(event);
+
+        if (event.isCancelled()) {
+            ci.cancel();
+        }
     }
 }

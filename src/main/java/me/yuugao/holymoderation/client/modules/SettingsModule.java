@@ -1,4 +1,4 @@
-package me.yuugao.holymoderation.trash;
+package me.yuugao.holymoderation.client.modules;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
@@ -6,7 +6,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Ranks {
+public class SettingsModule extends Module {
     public static final Map<Integer, String> RANKS = new HashMap<>() {
         {
             put(1, AQUA + BOLD + "Стажёр");

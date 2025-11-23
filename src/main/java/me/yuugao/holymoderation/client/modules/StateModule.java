@@ -14,7 +14,7 @@ public class StateModule extends Module {
     @Subscribe
     public void onServerDisconnect(ServerDisconnectEvent event) {
         if (stateService.isConnected()) {
-            stateService.setConnected(false);
+            stateService.reset();
         }
     }
 }
