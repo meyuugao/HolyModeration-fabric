@@ -2,6 +2,7 @@ package me.yuugao.holymoderation.client.util.service;
 
 import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
+import me.yuugao.holymoderation.client.util.logger.HolyLogger;
 
 import org.slf4j.Logger;
 
@@ -19,14 +20,33 @@ public class ServiceLocator {
     @Getter
     private static StateService stateService;
     @Getter
-    private static Logger logger;
+    private static ChatService chatService;
+    @Getter
+    private static NetService netService;
+    @Getter
+    private static SoundService soundService;
+    @Getter
+    private static HolyLogger loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, MinecraftService minecraftService, SchedulerService schedulerService, StateService stateService, Logger logger) {
+    public static void initialize(ConfigManager configManager, EventBus eventBus, MinecraftService minecraftService, SchedulerService schedulerService, StateService stateService, ChatService chatService, NetService netService, SoundService soundService, org.slf4j.Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.minecraftService = minecraftService;
         ServiceLocator.schedulerService = schedulerService;
         ServiceLocator.stateService = stateService;
-        ServiceLocator.logger = logger;
+        ServiceLocator.chatService = chatService;
+        ServiceLocator.netService = netService;
+        ServiceLocator.soundService = soundService;
+        initializeLoggerService(logger);
+    }
+
+    private static void initializeLoggerService(Logger logger) {
+        loggerService = new HolyLogger(logger, chatService, soundService);
+        minecraftService.setLogger(loggerService);
+        schedulerService.setLogger(loggerService);
+        stateService.setLogger(loggerService);
+        chatService.setLogger(loggerService);
+        netService.setLogger(loggerService);
+        soundService.setLogger(loggerService);
     }
 }

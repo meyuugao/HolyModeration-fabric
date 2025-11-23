@@ -6,8 +6,7 @@ import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.SchedulerService;
 import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 import me.yuugao.holymoderation.client.util.service.StateService;
-
-import org.slf4j.Logger;
+import me.yuugao.holymoderation.client.util.logger.HolyLogger;
 
 public abstract class Module {
     protected final ConfigManager configManager;
@@ -15,7 +14,7 @@ public abstract class Module {
     protected final MinecraftService minecraftService;
     protected final SchedulerService schedulerService;
     protected final StateService stateService;
-    protected final Logger logger;
+    protected HolyLogger holyLogger;
 
     protected Module() {
         this.configManager = ServiceLocator.getConfigManager();
@@ -23,6 +22,11 @@ public abstract class Module {
         this.minecraftService = ServiceLocator.getMinecraftService();
         this.schedulerService = ServiceLocator.getSchedulerService();
         this.stateService = ServiceLocator.getStateService();
-        this.logger = ServiceLocator.getLogger();
+    }
+
+    public void setLogger(HolyLogger holyLogger) {
+        if (this.holyLogger == null) {
+            this.holyLogger = holyLogger;
+        }
     }
 }

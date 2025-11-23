@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class StateService {
+public class StateService extends Service {
     private boolean enabled = true;
     private boolean connected = false;
     private boolean isOnHW = false;

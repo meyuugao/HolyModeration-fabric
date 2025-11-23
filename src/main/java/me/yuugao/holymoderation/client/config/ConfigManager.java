@@ -1,7 +1,6 @@
 package me.yuugao.holymoderation.client.config;
 
-import static me.yuugao.holymoderation.client.manager.ChatManager.printException;
-
+import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import java.io.File;
 import java.io.InputStreamReader;
@@ -42,7 +41,7 @@ public class ConfigManager {
             try (InputStreamReader reader = new InputStreamReader(Files.newInputStream(configFile.toPath()), StandardCharsets.UTF_8)) {
                 config = gson.fromJson(reader, Config.class);
             } catch (Exception e) {
-                printException("Исключение в ConfigManager/loadConfig: " + e);
+                ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/loadConfig: " + e);
             }
         } else {
             saveCfg(config);
@@ -54,7 +53,7 @@ public class ConfigManager {
         try (OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(Paths.get(CONFIG_FILE_PATH)), StandardCharsets.UTF_8)) {
             gson.toJson(this.config, writer);
         } catch (Exception e) {
-            printException("Исключение в ConfigManager/saveCfg: " + e);
+            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/saveCfg: " + e);
         }
     }
 }

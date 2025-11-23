@@ -1,11 +1,8 @@
-package me.yuugao.holymoderation.client.manager;
+package me.yuugao.holymoderation.client.util.service;
 
-import static me.yuugao.holymoderation.client.manager.ChatManager.clientMessage;
 import static me.yuugao.holymoderation.client.util.Colors.BOLD;
 import static me.yuugao.holymoderation.client.util.Colors.RED;
 
-
-import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;
@@ -17,8 +14,8 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 
-public class SoundManager {
-    public static void playSound(String soundName, int volume) {
+public class SoundService extends Service {
+    public void playSound(String soundName, int volume) {
         if (ServiceLocator.getConfigManager().getConfig().soundsEnabled) {
             try {
                 Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
@@ -42,7 +39,7 @@ public class SoundManager {
                     }
                 });
             } catch (Exception e) {
-                clientMessage(RED + BOLD + "Исключение в HolyModeration/playSound: " + e);
+                ServiceLocator.getChatService().clientMessage(RED + BOLD + "Исключение в SoundService/playSound: " + e);
             }
         }
     }

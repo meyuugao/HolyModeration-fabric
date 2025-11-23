@@ -3,7 +3,7 @@ package me.yuugao.holymoderation.client.util.service;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-public class SchedulerService {
+public class SchedulerService extends Service {
     private ScheduledExecutorService instance;
 
     public ScheduledExecutorService getInstance() {

@@ -1,11 +1,8 @@
-package me.yuugao.holymoderation.client.manager;
+package me.yuugao.holymoderation.client.util.service;
 
-import static me.yuugao.holymoderation.client.manager.ChatManager.*;
 import static me.yuugao.holymoderation.client.util.Colors.BOLD;
 import static me.yuugao.holymoderation.client.util.Colors.RED;
 
-
-import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -26,11 +23,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 
-public class NetManager {
-    private final static String journalApiPath = "https://journal.holyworld.me/srv/api/v1/";
-    private final static Gson gson = new Gson();
+public class NetService extends Service {
+    private final String journalApiPath = "https://journal.holyworld.me/srv/api/v1/";
+    private final Gson gson = new Gson();
 
-    public static void downloadSound(String sound) {
+    public void downloadSound(String sound) {
         String targetDirectory = "C:\\HolyModeration\\Sounds";
         try {
             String fileUrl = "https://raw.githubusercontent.com/meyuugao/HolyModeration-Releases/main/Sounds/" + sound;
@@ -49,22 +46,22 @@ public class NetManager {
                 Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (Exception e) {
-            clientMessage(RED + BOLD + "Исключение в NetManager/downloadSound: " + e);
+            logger.printException(RED + BOLD + "Исключение в NetService/downloadSound: " + e);
         }
     }
 
-    public static Map<String, Object> getJournalProfile() {
+    public Map<String, Object> getJournalProfile() {
         return executeGetRequest("me");
     }
 
-    public static Map<String, Object> getJournalStats() {
+    public Map<String, Object> getJournalStats() {
         return executeGetRequest("stats");
     }
 
-    public static void startCheckout(String name, String reason, String mode, int number, boolean pvp) {
+    public void startCheckout(String name, String reason, String mode, int number, boolean pvp) {
         try {
             if (hasActiveCheckout()) {
-                printError("У вас уже есть активная проверка.");
+                logger.printError("У вас уже есть активная проверка.");
                 return;
             }
 
@@ -82,23 +79,23 @@ public class NetManager {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201) {
-                        printSuccess("Вы успешно внесли проверку.");
+                        logger.printSuccess("Вы успешно внесли проверку.");
                     } else {
-                        printError("Ошибка при внесении проверки. Код: " + connection.getResponseCode());
+                        logger.printError("Ошибка при внесении проверки. Код: " + connection.getResponseCode());
                     }
                 }
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            printException("Исключение в NetManager/startCheckout: " + e);
+            logger.printException("Исключение в NetService/startCheckout: " + e);
         }
     }
 
-    public static void endCheckout(String result, String reason, boolean destroyStash) {
+    public void endCheckout(String result, String reason, boolean destroyStash) {
         try {
             if (!hasActiveCheckout()) {
-                printError("У вас нет активной проверки.");
+                logger.printError("У вас нет активной проверки.");
                 return;
             }
 
@@ -114,20 +111,20 @@ public class NetManager {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201) {
-                        printSuccess("Вы успешно закончили проверку.");
+                        logger.printSuccess("Вы успешно закончили проверку.");
                     } else {
-                        printError("Ошибка при завершении проверки. Код: " + connection.getResponseCode());
+                        logger.printError("Ошибка при завершении проверки. Код: " + connection.getResponseCode());
                     }
                 }
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            printException("Исключение в NetManager/endCheckout: " + e);
+            logger.printException("Исключение в NetService/endCheckout: " + e);
         }
     }
 
-    private static boolean hasActiveCheckout() {
+    private boolean hasActiveCheckout() {
         try {
             HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/status", "GET", null);
             if (connection == null) throw new IOException("connection is null");
@@ -144,12 +141,12 @@ public class NetManager {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            printException("Исключение в NetManager/hasActiveCheckout: " + e.getMessage());
+            logger.printException("Исключение в NetService/hasActiveCheckout: " + e.getMessage());
             return false;
         }
     }
 
-    private static Map<String, Object> executeGetRequest(String endpoint) {
+    private Map<String, Object> executeGetRequest(String endpoint) {
         try {
             HttpsURLConnection connection = openHttpsConnection(journalApiPath + endpoint, "GET", null);
             if (connection == null) throw new IOException("connection is null");
@@ -164,17 +161,17 @@ public class NetManager {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            printException("Исключение в NetManager/executeGetRequest: " + e);
+            logger.printException("Исключение в NetService/executeGetRequest: " + e);
             return Collections.emptyMap();
         }
     }
 
-    private static void setAuthHeaders(@NotNull HttpsURLConnection connection) {
+    private void setAuthHeaders(@NotNull HttpsURLConnection connection) {
         connection.setRequestProperty("x-token", ServiceLocator.getConfigManager().getConfig().apiToken);
         connection.setRequestProperty("Content-Type", "application/json");
     }
 
-    private static boolean writeJson(@NotNull HttpsURLConnection connection, @NotNull JsonObject jsonBody) {
+    private boolean writeJson(@NotNull HttpsURLConnection connection, @NotNull JsonObject jsonBody) {
         try {
             connection.setDoOutput(true);
             try (OutputStreamWriter out = new OutputStreamWriter(
@@ -185,12 +182,12 @@ public class NetManager {
 
             return true;
         } catch (Exception e) {
-            printException("Исключение в NetManager/writeJson: " + e);
+            logger.printException("Исключение в NetService/writeJson: " + e);
             return false;
         }
     }
 
-    public static StringBuilder getResponse(@NotNull HttpsURLConnection connection) {
+    public StringBuilder getResponse(@NotNull HttpsURLConnection connection) {
         try {
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
@@ -202,24 +199,24 @@ public class NetManager {
 
             return response;
         } catch (Exception e) {
-            printException("Исключение в NetManager/getResponse: " + e);
+            logger.printException("Исключение в NetService/getResponse: " + e);
             return null;
         }
     }
 
-    private static Map<String, Object> parseJsonResponse(@NotNull StringBuilder response) {
+    private Map<String, Object> parseJsonResponse(@NotNull StringBuilder response) {
         try {
             Type type = new TypeToken<Map<String, Object>>() {
             }.getType();
 
             return gson.fromJson(response.toString(), type);
         } catch (Exception e) {
-            printException("Исключение в NetManager/parseJsonResponse: " + e);
+            logger.printException("Исключение в NetService/parseJsonResponse: " + e);
             return Collections.emptyMap();
         }
     }
 
-    public static HttpsURLConnection openHttpsConnection(String url, String method, String cookie) {
+    public HttpsURLConnection openHttpsConnection(String url, String method, String cookie) {
         try {
             HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
 
@@ -232,7 +229,7 @@ public class NetManager {
 
             return connection;
         } catch (Exception e) {
-            printException("Исключение в NetManager/openHttpsConnection: " + e);
+            logger.printException("Исключение в NetService/openHttpsConnection: " + e);
             return null;
         }
     }

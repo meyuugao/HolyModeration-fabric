@@ -1,10 +1,7 @@
-package me.yuugao.holymoderation.client.manager;
+package me.yuugao.holymoderation.client.util.service;
 
-import static me.yuugao.holymoderation.client.manager.SoundManager.playSound;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
-
-import me.yuugao.holymoderation.client.util.service.ServiceLocator;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -16,26 +13,11 @@ import net.minecraft.text.Text;
 
 import java.util.Arrays;
 
-public class ChatManager {
-    public static final Text HMTextComponent = Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
-    public static final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
+public class ChatService extends Service {
+    public final Text HMTextComponent = Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
+    public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
 
-    public static void printException(String message) {
-        clientMessage(RED + BOLD + message);
-        playSound("exception.wav", 70);
-    }
-
-    public static void printError(String message) {
-        clientMessage(RED + BOLD + message);
-        playSound("error.wav", 70);
-    }
-
-    public static void printSuccess(String message) {
-        clientMessage(AQUA + BOLD + message);
-        playSound("success.wav", 70);
-    }
-
-    public static void chatMessage(String message) {
+    public void chatMessage(String message) {
         ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
         if (networkHandler != null) {
             if (message.startsWith("/")) {
@@ -46,14 +28,14 @@ public class ChatManager {
         }
     }
 
-    public static void clientMessage(String message) {
+    public void clientMessage(String message) {
         ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
         if (player != null) {
             player.sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
         }
     }
 
-    public static String formatReceivedText(String text) {
+    public String formatReceivedText(String text) {
         text = text.replaceAll("§[0-9a-zA-Z]", "");
         for (String ignoredString : new String[]{"[ALL] ʟ", "[Тихий] ❖", "SC |", "HW >", " ▬▬▬", "▬▬▬", "[PMS]:", "◀", "[HM]", "[HAC]", "[я"}) {
             if (text.startsWith(ignoredString)) {
@@ -64,7 +46,7 @@ public class ChatManager {
         return text;
     }
 
-    public static String formatLocation(String location) {
+    public String formatLocation(String location) {
         return location.equals("l2anarchy") ? "lite120-1"
                 : location.equals("lanarchy") ? "lite-1"
                 : location.equals("anarchy") ? "classic-1"
@@ -74,11 +56,11 @@ public class ChatManager {
                 : "classic-" + location.split("anarchy")[1];
     }
 
-    public static boolean isArrayContains(String[] array, String value) {
+    public boolean isArrayContains(String[] array, String value) {
         return Arrays.asList(array).contains(value);
     }
 
-    public static boolean checkCorrectInt(String value) {
+    public boolean checkCorrectInt(String value) {
         try {
             Integer.parseInt(value);
             return true;
@@ -87,7 +69,7 @@ public class ChatManager {
         }
     }
 
-    public static boolean checkCorrectLong(String value) {
+    public boolean checkCorrectLong(String value) {
         try {
             Long.parseLong(value);
             return true;
@@ -96,7 +78,7 @@ public class ChatManager {
         }
     }
 
-    public static void copyToClipboard(String text) {
+    public void copyToClipboard(String text) {
         try {
             String osName = System.getProperty("os.name").toLowerCase();
 
@@ -110,11 +92,11 @@ public class ChatManager {
                 throw new Exception("Неизвестная OS.");
             }
         } catch (Exception e) {
-            printException("Исключение в ChatManager/copyToClipboard: " + e);
+            logger.printException("Исключение в ChatService/copyToClipboard: " + e);
         }
     }
 
-    public static MutableText suggestTextComponent(String componentText) {
+    public MutableText suggestTextComponent(String componentText) {
         Text suggestComponent = Text.of((componentText));
         return suggestComponent.copy().setStyle(
                 suggestComponent.getStyle()
@@ -124,7 +106,7 @@ public class ChatManager {
                                 componentText.replaceAll("§[0-9a-zA-Z]", ""))));
     }
 
-    public static MutableText suggestTextComponent(String componentText, String hint, String toSuggestText) {
+    public MutableText suggestTextComponent(String componentText, String hint, String toSuggestText) {
         Text suggestComponent = Text.of(componentText);
         return suggestComponent.copy().setStyle(
                 suggestComponent.getStyle().
@@ -132,14 +114,14 @@ public class ChatManager {
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, toSuggestText)));
     }
 
-    public static MutableText hoverTextComponent(String componentText, String hint) {
+    public MutableText hoverTextComponent(String componentText, String hint) {
         Text hoverComponent = Text.of(componentText);
         return hoverComponent.copy().setStyle(
                 hoverComponent.getStyle()
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint))));
     }
 
-    public static MutableText copyTextComponent(String componentText, String hint, String toCopyText) {
+    public MutableText copyTextComponent(String componentText, String hint, String toCopyText) {
         Text copyComponent = Text.of(componentText);
         return copyComponent.copy().setStyle(
                 copyComponent.getStyle()
@@ -147,7 +129,7 @@ public class ChatManager {
                         .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, toCopyText)));
     }
 
-    public static MutableText openURLTextComponent(String componentText, String hint, String url) {
+    public MutableText openURLTextComponent(String componentText, String hint, String url) {
         Text openURLComponent = Text.of(componentText);
         return openURLComponent.copy().setStyle(
                 openURLComponent.getStyle()
@@ -155,7 +137,7 @@ public class ChatManager {
                         .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
     }
 
-    public static MutableText generateComponent(Text... components) {
+    public MutableText generateComponent(Text... components) {
         MutableText newComponent = Text.empty();
         Arrays.asList(components).forEach(newComponent::append);
         return newComponent;

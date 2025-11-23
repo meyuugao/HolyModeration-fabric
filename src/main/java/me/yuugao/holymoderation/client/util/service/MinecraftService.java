@@ -6,7 +6,7 @@ import net.minecraft.client.world.ClientWorld;
 
 import org.jetbrains.annotations.Nullable;
 
-public class MinecraftService {
+public class MinecraftService extends Service {
     public MinecraftClient getClient() {
         return MinecraftClient.getInstance();
     }
