@@ -1,8 +1,5 @@
 package me.yuugao.holymoderation.client.util.service;
 
-import static me.yuugao.holymoderation.client.util.Colors.BOLD;
-import static me.yuugao.holymoderation.client.util.Colors.RED;
-
 
 import org.jetbrains.annotations.NotNull;
 
@@ -25,6 +22,13 @@ import com.google.gson.reflect.TypeToken;
 public class NetService extends Service {
     private final String journalApiPath = "https://journal.holyworld.me/srv/api/v1/";
     private final Gson gson = new Gson();
+
+    public AbstractMap.SimpleEntry<String, String> getLastUpdates() {
+        HttpsURLConnection connection = openHttpsConnection("https://raw.githubusercontent.com/Gr0wMan/HolyModeration-Releases/main/LATEST.txt", "GET", null);
+        String response = getResponse(connection).toString();
+
+        return new AbstractMap.SimpleEntry<>(response.split("%%%")[0], response.split("%%%")[1]);
+    }
 
     public List<String> getSoundsList() {
         List<String> soundFiles = new ArrayList<>();
@@ -67,7 +71,10 @@ public class NetService extends Service {
             } else {
                 try (var stream = Files.walk(soundsDir)) {
                     stream.sorted(Comparator.reverseOrder()).forEach(p -> {
-                        try { Files.delete(p); } catch (IOException ignored) {}
+                        try {
+                            Files.delete(p);
+                        } catch (IOException ignored) {
+                        }
                     });
                 }
             }

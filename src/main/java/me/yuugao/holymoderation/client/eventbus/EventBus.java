@@ -36,11 +36,25 @@ public class EventBus {
         }
     }
 
+    public void unregister(Object object) {
+        if (object instanceof Module module) {
+            for (List<Subscriber> subscriberList : subscribers.values()) {
+                subscriberList.removeIf(subscriber -> subscriber.target.equals(module));
+            }
+            holyLogger.getLogger().debug("Eventbus: Unregistered module - {}", module);
+        }
+    }
+
+    public void clear() {
+        subscribers.clear();
+        holyLogger.getLogger().debug("Eventbus: All subscribers cleared");
+    }
+
     public void invokeEvent(Event event) {
         List<Subscriber> eventSubscribers = subscribers.get(event.getClass());
         if (eventSubscribers != null) {
-            synchronized (this) {
-                for (Subscriber subscriber : eventSubscribers) {
+            for (Subscriber subscriber : eventSubscribers) {
+                if (subscribers.getOrDefault(event.getClass(), List.of()).contains(subscriber)) {
                     subscriber.invoke(event);
                     holyLogger.getLogger().debug("Eventbus: Invoked event - {} for subscriber - {}", event, subscriber);
                 }

@@ -8,7 +8,7 @@ public class Config {
     public Config() {
     }
 
-    public final String CURRENT_VERSION = "2.9fabric";
+    public final String currentVersion = "2.9alphafix";
 
     @Expose
     public String apiToken = StringUtils.EMPTY;

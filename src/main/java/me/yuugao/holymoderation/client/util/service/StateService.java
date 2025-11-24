@@ -11,7 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class StateService extends Service {
-    private boolean enabled = true;
     private boolean connected = false;
     private boolean isOnHW = false;
     private boolean gameInitCompleted = false;
@@ -34,7 +33,6 @@ public class StateService extends Service {
     private Map<String, Object> journalStats = new HashMap<>();
 
     public void reset() {
-        this.enabled = true;
         this.connected = false;
         this.isOnHW = false;
         this.gameInitCompleted = false;

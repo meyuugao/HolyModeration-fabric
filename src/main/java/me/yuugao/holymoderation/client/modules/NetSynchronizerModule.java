@@ -1,20 +1,14 @@
 package me.yuugao.holymoderation.client.modules;
 
-import static me.yuugao.holymoderation.client.util.Colors.BOLD;
-import static me.yuugao.holymoderation.client.util.Colors.RED;
-
-
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class NetSynchronizerModule extends Module {
+
     @Subscribe
     public void onServerConnect(ServerConnectEvent event) {
         if (!event.isSwitch()) refresh();
@@ -43,7 +37,7 @@ public class NetSynchronizerModule extends Module {
             stateService.setVkUrl("vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()));
             stateService.setApiInitCompleted(true);
 
-            holyLogger.printSuccess("Статистика из журнала и звуки успешно обновлены!");
+            holyLogger.printSuccess("Синхронизация завершена!");
         });
     }
 }
