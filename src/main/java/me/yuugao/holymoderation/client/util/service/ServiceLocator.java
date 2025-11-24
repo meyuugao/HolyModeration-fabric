@@ -52,6 +52,4 @@ public class ServiceLocator {
         soundService.setLogger(loggerService);
         loggerService.getLogger().info("Logger service has been initialized");
     }
-
-
 }

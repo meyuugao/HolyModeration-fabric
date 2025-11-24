@@ -25,25 +25,15 @@ public class NetSynchronizerModule extends Module {
         if (event.getContent().equals(".net")) {
             event.setCancelled(true);
             refresh();
-            holyLogger.printSuccess("Статистика из журнала успешно обновлена!");
         }
     }
 
     private void refresh() {
         CompletableFuture.runAsync(() -> {
             try {
-                Path soundsDir = Paths.get("C:\\HolyModeration\\Sounds");
-                if (!Files.exists(soundsDir)) {
-                    Files.createDirectory(soundsDir);
-                }
-                //tip: качать те что указаны в файле, а не заранее определены
-                netService.downloadSound("success.wav");
-                netService.downloadSound("error.wav");
-                netService.downloadSound("exception.wav");
-                netService.downloadSound("twinksDone.wav");
-                netService.downloadSound("update.wav");
+                netService.downloadSounds();
             } catch (Exception e) {
-                holyLogger.printException(RED + BOLD + "Исключение в NetSynchronizerModule/onServerConnect: " + e);
+                holyLogger.printException("Исключение в NetSynchronizerModule/onServerConnect: " + e);
             }
 
             Map<String, Object> profile = netService.getJournalProfile();
@@ -52,6 +42,8 @@ public class NetSynchronizerModule extends Module {
             stateService.setRank((int) Double.parseDouble(profile.get("rank").toString()));
             stateService.setVkUrl("vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()));
             stateService.setApiInitCompleted(true);
+
+            holyLogger.printSuccess("Статистика из журнала и звуки успешно обновлены!");
         });
     }
 }

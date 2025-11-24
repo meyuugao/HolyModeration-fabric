@@ -14,8 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -27,26 +26,71 @@ public class NetService extends Service {
     private final String journalApiPath = "https://journal.holyworld.me/srv/api/v1/";
     private final Gson gson = new Gson();
 
-    public void downloadSound(String sound) {
-        String targetDirectory = "C:\\HolyModeration\\Sounds";
+    public List<String> getSoundsList() {
+        List<String> soundFiles = new ArrayList<>();
+
         try {
-            String fileUrl = "https://raw.githubusercontent.com/meyuugao/HolyModeration-Releases/main/Sounds/" + sound;
-            Path filePath = Paths.get(targetDirectory + File.separator + sound);
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
+            String url = "https://github.com/meyuugao/HolyModeration-Releases/tree/main/Sounds";
+            HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
+
+            StringBuilder response = getResponse(connection);
+
+            String html = response.toString();
+            int index = 0;
+
+            while ((index = html.indexOf("Sounds/", index)) != -1) {
+                int start = index + 7;
+                int end = html.indexOf("\"", start);
+                if (end == -1) break;
+
+                String fileName = html.substring(start, end);
+                if (fileName.endsWith(".wav")) {
+                    soundFiles.add(fileName);
+                }
+
+                index = end + 1;
             }
 
-            Path directoryPath = Paths.get(targetDirectory);
-            if (!Files.exists(directoryPath)) {
-                Files.createDirectories(directoryPath);
+            connection.disconnect();
+        } catch (Exception e) {
+            logger.printException("Исключение в NetService/getSoundsList: " + e);
+        }
+
+        return soundFiles;
+    }
+
+    public void downloadSounds() {
+        try {
+            Path soundsDir = Paths.get("C:\\HolyModeration\\Sounds");
+            if (!Files.exists(soundsDir)) {
+                Files.createDirectory(soundsDir);
+            } else {
+                try (var stream = Files.walk(soundsDir)) {
+                    stream.sorted(Comparator.reverseOrder()).forEach(p -> {
+                        try { Files.delete(p); } catch (IOException ignored) {}
+                    });
+                }
             }
 
-            URL url = new URL(fileUrl);
-            try (InputStream in = url.openStream()) {
-                Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
+            for (String sound : getSoundsList()) {
+                String fileUrl = "https://raw.githubusercontent.com/meyuugao/HolyModeration-Releases/main/Sounds/" + sound;
+                Path filePath = Paths.get(soundsDir + File.separator + sound);
+                if (Files.exists(filePath)) {
+                    Files.delete(filePath);
+                }
+
+                Path directoryPath = Paths.get(soundsDir.toUri());
+                if (!Files.exists(directoryPath)) {
+                    Files.createDirectories(directoryPath);
+                }
+
+                URL url = new URL(fileUrl);
+                try (InputStream in = url.openStream()) {
+                    Files.copy(in, filePath, StandardCopyOption.REPLACE_EXISTING);
+                }
             }
         } catch (Exception e) {
-            logger.printException(RED + BOLD + "Исключение в NetService/downloadSound: " + e);
+            logger.printException("Исключение в NetService/downloadSounds: " + e);
         }
     }
 
