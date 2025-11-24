@@ -16,7 +16,7 @@ import javax.sound.sampled.LineEvent;
 
 public class SoundService extends Service {
     public void playSound(String soundName, int volume) {
-        if (ServiceLocator.getConfigManager().getConfig().soundsEnabled) {
+        if (ServiceLocator.getConfigManager().getConfig().isSoundsEnabled()) {
             try {
                 Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
                 byte[] audioData = Files.readAllBytes(soundPath);

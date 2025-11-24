@@ -3,46 +3,50 @@ package me.yuugao.holymoderation.client.config;
 import org.apache.commons.lang3.StringUtils;
 
 import com.google.gson.annotations.Expose;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class Config {
     public Config() {
     }
 
-    public final String currentVersion = "2.9alphafix";
+    private final String currentVersion = "2.9alphafix";
 
     @Expose
-    public String apiToken = StringUtils.EMPTY;
+    private String apiToken = StringUtils.EMPTY;
     @Expose
-    public boolean soundsEnabled = true;
+    private boolean soundsEnabled = true;
     @Expose
-    public int spyDelay = 1;
+    private int spyDelay = 1;
     @Expose
-    public boolean copyButtonEnabled = false;
+    private boolean copyButtonEnabled = false;
     @Expose
-    public String copyButtonText = "§f§l[§a§lcopy§f§l]";
+    private String copyButtonText = "§f§l[§a§lcopy§f§l]";
     @Expose
-    public String playerMarker = "§d§l[CHECK]";
+    private String playerMarker = "§d§l[CHECK]";
 
     @Expose
-    public String texts = StringUtils.EMPTY;
+    private String texts = StringUtils.EMPTY;
 
     @Expose
-    public boolean autoVanishEnabled = false;
+    private boolean autoVanishEnabled = false;
     @Expose
-    public boolean autoFlyEnabled = false;
+    private boolean autoFlyEnabled = false;
     @Expose
-    public boolean autoGm3Enabled = false;
+    private boolean autoGm3Enabled = false;
     @Expose
-    public boolean autoHacAlertsEnabled = false;
+    private boolean autoHacAlertsEnabled = false;
     @Expose
-    public boolean autoGodEnabled = false;
+    private boolean autoGodEnabled = false;
 
     @Expose
-    public boolean dupeIpEnabled = false;
+    private boolean dupeIpEnabled = false;
     @Expose
-    public boolean autoAnyDeskEnabled = true;
+    private boolean autoAnyDeskEnabled = true;
     @Expose
-    public boolean autoTpEnabled = true;
+    private boolean autoTpEnabled = true;
     @Expose
-    public boolean autoBanEnabled = true;
+    private boolean autoBanEnabled = true;
 }

@@ -1,5 +1,8 @@
 package me.yuugao.holymoderation.client.modules;
 
+import static me.yuugao.holymoderation.client.util.Colors.*;
+
+
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
@@ -23,6 +26,11 @@ public class NetSynchronizerModule extends Module {
     }
 
     private void refresh() {
+        if (configManager.getConfig().getApiToken().isEmpty()) {
+            holyLogger.printError("У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (" + GOLD + GOLD + BOLD + ".setapitoken " + GREEN + BOLD + "apitoken" + WHITE + RED + BOLD + ") и перезайти на сервер.");
+            return;
+        }
+
         CompletableFuture.runAsync(() -> {
             try {
                 netService.downloadSounds();

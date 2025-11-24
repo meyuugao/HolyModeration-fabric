@@ -42,7 +42,7 @@ public class ChatService extends Service {
                 return null;
             }
         }
-        text = text.replace(ServiceLocator.getConfigManager().getConfig().copyButtonText.replaceAll("§[0-9a-zA-Z]", ""), "");
+        text = text.replace(ServiceLocator.getConfigManager().getConfig().getCopyButtonText().replaceAll("§[0-9a-zA-Z]", ""), "");
         return text;
     }
 

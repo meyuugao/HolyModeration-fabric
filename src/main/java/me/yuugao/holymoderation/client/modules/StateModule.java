@@ -10,6 +10,7 @@ import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerDisconnectEvent;
 
+import net.minecraft.text.Text;
 import net.minecraft.world.GameMode;
 
 import org.apache.commons.lang3.StringUtils;
@@ -62,22 +63,52 @@ public class StateModule extends Module {
 
     @Subscribe(priority = 100)
     public void onMessageSend(MessageSendEvent event) {
+        if (!isOnHW) return;
+
         if (!stateService.isGameInitCompleted()) {
             event.setCancelled(true);
             holyLogger.printError("Не спеши, инициализация игры ещё не завершилась!");
             return;
         }
 
-        if (event.getContent().startsWith(".enable")) {
-            event.setCancelled(true);
-            enabled = true;
-            unblock();
-            holyLogger.printSuccess("Мод включен!");
-        } else if (event.getContent().startsWith(".disable")) {
-            event.setCancelled(true);
-            enabled = false;
-            block();
-            holyLogger.printSuccess(RED + BOLD + "Мод выключен!");
+        String[] messageSplit = event.getContent().split(" ", 2);
+        switch (messageSplit[0]) {
+            case (".setapitoken"): {
+                event.setCancelled(true);
+                if (messageSplit.length == 1) {
+                    holyLogger.printError("Вы не ввели токен.");
+                    return;
+                }
+                String apiToken = messageSplit[1];
+                if (apiToken.contains(" ")) {
+                    holyLogger.printError("В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
+                    return;
+                }
+                configManager.getConfig().setApiToken(apiToken);
+                configManager.saveCfg(configManager.getConfig());
+                soundService.playSound("success.wav", 70);
+
+                if (minecraftService.getClient().getNetworkHandler() != null) {
+                    minecraftService.getClient().getNetworkHandler().getConnection().disconnect(Text.of(AQUA + BOLD + "Вы успешно установили API токен. Пожалуйста, перезайдите на сервер."));
+                }
+                break;
+            }
+
+            case (".enable"): {
+                event.setCancelled(true);
+                enabled = true;
+                unblock();
+                holyLogger.printSuccess("Мод включен!");
+                break;
+            }
+
+            case (".disable"): {
+                event.setCancelled(true);
+                enabled = false;
+                block();
+                holyLogger.printSuccess(RED + BOLD + "Мод выключен!");
+                break;
+            }
         }
     }
 
@@ -97,7 +128,7 @@ public class StateModule extends Module {
         if (stateService.getModerLocation().isEmpty()) {
             if (receivedText.startsWith("Игрок " + stateService.getModerNickname())) {
                 event.setCancelled(true);
-                stateService.setModerLocation(chatService.formatLocation(receivedText.split("сервере ")[1]));
+                stateService.setModerLocation(chatService.formatLocation(receivedText.split("сервере ")[1])); //tip: определяет но всё равно в чат пишет
             }
         }
     }
@@ -110,8 +141,8 @@ public class StateModule extends Module {
         String lastVersion = netService.getLastUpdates().getKey();
         String description = netService.getLastUpdates().getValue();
 
-        if (!configManager.getConfig().currentVersion.equals(lastVersion)) {
-            chatService.clientMessage(RED + BOLD + "Ваша версия HolyModeration устарела. Новейшая версия: " + DARK_GREEN + BOLD + lastVersion + RED + BOLD + ", ваша: " + DARK_GREEN + BOLD + configManager.getConfig().currentVersion);
+        if (!configManager.getConfig().getCurrentVersion().equals(lastVersion)) {
+            chatService.clientMessage(RED + BOLD + "Ваша версия HolyModeration устарела. Новейшая версия: " + DARK_GREEN + BOLD + lastVersion + RED + BOLD + ", ваша: " + DARK_GREEN + BOLD + configManager.getConfig().getCurrentVersion());
             chatService.clientMessage(AQUA + BOLD + "Описание обновления: " + LIGHT_PURPLE + BOLD + description.replace("\\n", "\n"));
             chatService.clientMessage("ссылканаобновление");
             soundService.playSound("update.wav", 70);

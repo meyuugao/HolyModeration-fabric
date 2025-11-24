@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import lombok.Getter;
 
 public class ServiceLocator {
-    //tip: сделать так чтобы можно было ребутнуть любой сервис
     @Getter
     private static ConfigManager configManager;
     @Getter

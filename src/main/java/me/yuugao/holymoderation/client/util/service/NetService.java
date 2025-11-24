@@ -218,7 +218,7 @@ public class NetService extends Service {
     }
 
     private void setAuthHeaders(@NotNull HttpsURLConnection connection) {
-        connection.setRequestProperty("x-token", ServiceLocator.getConfigManager().getConfig().apiToken);
+        connection.setRequestProperty("x-token", ServiceLocator.getConfigManager().getConfig().getApiToken());
         connection.setRequestProperty("Content-Type", "application/json");
     }
 
