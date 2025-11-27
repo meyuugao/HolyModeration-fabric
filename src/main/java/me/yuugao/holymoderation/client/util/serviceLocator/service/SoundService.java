@@ -1,8 +1,10 @@
-package me.yuugao.holymoderation.client.util.service;
+package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import static me.yuugao.holymoderation.client.util.Colors.BOLD;
 import static me.yuugao.holymoderation.client.util.Colors.RED;
 
+
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import java.io.ByteArrayInputStream;
 import java.nio.file.Files;

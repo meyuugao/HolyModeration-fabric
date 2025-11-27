@@ -49,9 +49,9 @@ public class SettingsModule extends Module {
             if (chatService.isArrayContains(settingsWithoutArguments, command)) {
                 switch (command) {
                     case (".textslist"): {
-                        holyLogger.printSuccess("Список ваших текстов:");
+                        loggerService.printSuccess("Список ваших текстов:");
                         if (configManager.getConfig().getTexts().isEmpty()) {
-                            holyLogger.printError("У вас нет настроенных текстов.");
+                            loggerService.printError("У вас нет настроенных текстов.");
                         } else {
                             for (int i = 0; i < textsArray.length; i++) {
                                 chatService.clientMessage(AQUA + BOLD + (i + 1) + WHITE + BOLD + ". " + textsArray[i]);
@@ -61,59 +61,59 @@ public class SettingsModule extends Module {
                     }
                     case (".textsclear"): {
                         configManager.getConfig().setTexts(StringUtils.EMPTY);
-                        holyLogger.printSuccess("Вы успешно очистили все тексты.");
+                        loggerService.printSuccess("Вы успешно очистили все тексты.");
                         break;
                     }
                     case (".dupeip"): {
                         configManager.getConfig().setDupeIpEnabled(!configManager.getConfig().isDupeIpEnabled());
-                        holyLogger.printSuccess("Автоматический /dupeip " + (configManager.getConfig().isDupeIpEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоматический /dupeip " + (configManager.getConfig().isDupeIpEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".autocopy"): {
                         configManager.getConfig().setAutoAnyDeskEnabled(!configManager.getConfig().isAutoAnyDeskEnabled());
-                        holyLogger.printSuccess("Автоматическое копирование айди AnyDesk " + (configManager.getConfig().isAutoAnyDeskEnabled() ? "включено" : "выключено") + ".");
+                        loggerService.printSuccess("Автоматическое копирование айди AnyDesk " + (configManager.getConfig().isAutoAnyDeskEnabled() ? "включено" : "выключено") + ".");
                         break;
                     }
                     case (".autotp"): {
                         configManager.getConfig().setAutoTpEnabled(!configManager.getConfig().isAutoTpEnabled());
-                        holyLogger.printSuccess("Атоматический телепорт на /warp logo " + (configManager.getConfig().isAutoTpEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Атоматический телепорт на /warp logo " + (configManager.getConfig().isAutoTpEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".autoban"): {
                         configManager.getConfig().setAutoBanEnabled(!configManager.getConfig().isAutoBanEnabled());
-                        holyLogger.printSuccess("Автоманический бан игрока при ливе с проверки " + (configManager.getConfig().isAutoBanEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоманический бан игрока при ливе с проверки " + (configManager.getConfig().isAutoBanEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".vanish"): {
                         configManager.getConfig().setAutoVanishEnabled(!configManager.getConfig().isAutoVanishEnabled());
-                        holyLogger.printSuccess("Автоматический ваниш " + (configManager.getConfig().isAutoVanishEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоматический ваниш " + (configManager.getConfig().isAutoVanishEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".fly"): {
                         configManager.getConfig().setAutoFlyEnabled(!configManager.getConfig().isAutoFlyEnabled());
-                        holyLogger.printSuccess("Автоматический флай " + (configManager.getConfig().isAutoFlyEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоматический флай " + (configManager.getConfig().isAutoFlyEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".gm3"): {
                         configManager.getConfig().setAutoGm3Enabled(!configManager.getConfig().isAutoGm3Enabled());
-                        holyLogger.printSuccess("Автоматический гм3 " + (configManager.getConfig().isAutoGm3Enabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоматический гм3 " + (configManager.getConfig().isAutoGm3Enabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".hacalerts"): {
                         configManager.getConfig().setAutoHacAlertsEnabled(!configManager.getConfig().isAutoHacAlertsEnabled());
-                        holyLogger.printSuccess("Автоматический hac alerts " + (configManager.getConfig().isAutoHacAlertsEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоматический hac alerts " + (configManager.getConfig().isAutoHacAlertsEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".god"): {
                         configManager.getConfig().setAutoGodEnabled(!configManager.getConfig().isAutoGodEnabled());
-                        holyLogger.printSuccess("Автоматический god " + (configManager.getConfig().isAutoGodEnabled() ? "включён" : "выключен") + ".");
+                        loggerService.printSuccess("Автоматический god " + (configManager.getConfig().isAutoGodEnabled() ? "включён" : "выключен") + ".");
                         break;
                     }
                     case (".me"): {
                         CompletableFuture.runAsync(() -> {
                             try {
                                 Map<String, Object> profile = stateService.getJournalProfile();
-                                holyLogger.printSuccess("ИНФОРМАЦИЯ О МОДЕРАТОРЕ");
+                                loggerService.printSuccess("ИНФОРМАЦИЯ О МОДЕРАТОРЕ");
                                 chatService.clientMessage(WHITE + BOLD + "Ваш никнейм: " + AQUA + BOLD + profile.get("nickname").toString());
                                 chatService.clientMessage(WHITE + BOLD + "Ваша должность: " + RANKS.get((int) Double.parseDouble(profile.get("rank").toString())));
                                 chatService.clientMessage("вк " + profile.get("fullname").toString() + " id" + (long) Double.parseDouble(profile.get("idVk").toString()));
@@ -122,7 +122,7 @@ public class SettingsModule extends Module {
                                 chatService.clientMessage(WHITE + BOLD + "Количество предупреждений: " + GOLD + BOLD + (int) Double.parseDouble(profile.get("warns").toString()));
                                 chatService.clientMessage(WHITE + BOLD + "Режим: " + YELLOW + BOLD + profile.get("anarchyMode"));
                             } catch (Exception e) {
-                                holyLogger.printException("Исключение в SettingsManager/onMessageSend: " + e);
+                                loggerService.printException("Исключение в SettingsManager/onMessageSend: " + e);
                             }
                         });
                         break;
@@ -130,7 +130,7 @@ public class SettingsModule extends Module {
                     case (".stats"): {
                         try {
                             Map<String, Object> stats = stateService.getJournalStats();
-                            holyLogger.printSuccess("СТАТИСТИКА МОДЕРАТОРА");
+                            loggerService.printSuccess("СТАТИСТИКА МОДЕРАТОРА");
                             Map<String, Object> revisesAll = (Map<String, Object>) stats.get("revisesAll");
                             Map<String, Object> revisesMonth = (Map<String, Object>) stats.get("revisesMonth");
                             Map<String, Object> revisesWeek = (Map<String, Object>) stats.get("revisesWeek");
@@ -163,18 +163,18 @@ public class SettingsModule extends Module {
                             chatService.clientMessage(WHITE + BOLD + "Гарантов за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("gaurantsMonth").toString()));
                             chatService.clientMessage(WHITE + BOLD + "Гарантов за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("gaurantsToday").toString()));
                         } catch (Exception e) {
-                            holyLogger.printException("Исключение в SettingsManager/onMessageSend: " + e);
+                            loggerService.printException("Исключение в SettingsManager/onMessageSend: " + e);
                         }
                         break;
                     }
                     case (".copy"): {
                         configManager.getConfig().setCopyButtonEnabled(!configManager.getConfig().isCopyButtonEnabled());
-                        holyLogger.printSuccess("Кнопка копирования " + (configManager.getConfig().isCopyButtonEnabled() ? "включена" : "выключена") + ".");
+                        loggerService.printSuccess("Кнопка копирования " + (configManager.getConfig().isCopyButtonEnabled() ? "включена" : "выключена") + ".");
                         break;
                     }
                     case (".sounds"): {
                         configManager.getConfig().setSoundsEnabled(!configManager.getConfig().isSoundsEnabled());
-                        holyLogger.printSuccess("Звуки мода " + (configManager.getConfig().isSoundsEnabled() ? "включены" : "выключены") + ".");
+                        loggerService.printSuccess("Звуки мода " + (configManager.getConfig().isSoundsEnabled() ? "включены" : "выключены") + ".");
                         break;
                     }
                 }
@@ -183,35 +183,35 @@ public class SettingsModule extends Module {
                 switch (command) {
                     case (".textadd"): {
                         if (messageSplit.length == 1) {
-                            holyLogger.printError("Вы не указали текст.");
+                            loggerService.printError("Вы не указали текст.");
                             return;
                         }
                         String text = messageSplit[1].replace("&", "§");
                         if (text.contains("%%")) {
-                            holyLogger.printError("Текст не должен содержать '%%'.");
+                            loggerService.printError("Текст не должен содержать '%%'.");
                             return;
                         }
                         configManager.getConfig().setTexts(configManager.getConfig().getTexts().isEmpty() ? text : configManager.getConfig().getTexts() + "%%" + text);
-                        holyLogger.printSuccess("Вы добавили новый текст.");
+                        loggerService.printSuccess("Вы добавили новый текст.");
                         break;
                     }
                     case (".textremove"): {
                         if (configManager.getConfig().getTexts().isEmpty()) {
-                            holyLogger.printError("У вас нет настроенных текстов.");
+                            loggerService.printError("У вас нет настроенных текстов.");
                             return;
                         }
                         if (messageSplit.length == 1) {
-                            holyLogger.printError("Вы не указали номер текста.");
+                            loggerService.printError("Вы не указали номер текста.");
                             return;
                         }
                         String indexText = messageSplit[1];
                         if (!chatService.checkCorrectInt(indexText)) {
-                            holyLogger.printError("Некорректный номер текста.");
+                            loggerService.printError("Некорректный номер текста.");
                             return;
                         }
                         int intIndex = Integer.parseInt(indexText) - 1;
                         if (intIndex >= textsArray.length || intIndex < 0) {
-                            holyLogger.printError("Элемента с таким номером в списке ваших текстов не существует.");
+                            loggerService.printError("Элемента с таким номером в списке ваших текстов не существует.");
                             return;
                         }
                         ArrayList<String> textsArrayList = new ArrayList<>(Arrays.asList(textsArray));
@@ -220,42 +220,42 @@ public class SettingsModule extends Module {
                         for (String s : textsArrayList) {
                             configManager.getConfig().setTexts(configManager.getConfig().getTexts().isEmpty() ? s : configManager.getConfig().getTexts() + "%%" + s);
                         }
-                        holyLogger.printSuccess("Вы удалили текст номер " + messageSplit[1] + AQUA + BOLD + ".");
+                        loggerService.printSuccess("Вы удалили текст номер " + messageSplit[1] + AQUA + BOLD + ".");
                         break;
                     }
                     case (".setcopy"): {
                         if (messageSplit.length == 1) {
                             configManager.getConfig().setCopyButtonText("§f§l[§a§lcopy§f§l]");
-                            holyLogger.printSuccess("Текст кнопки был сброшен.");
+                            loggerService.printSuccess("Текст кнопки был сброшен.");
                             return;
                         }
                         configManager.getConfig().setCopyButtonText(messageSplit[1].replace("&", "§"));
-                        holyLogger.printSuccess("Вы установили новый текст кнопки копирования.");
+                        loggerService.printSuccess("Вы установили новый текст кнопки копирования.");
                         break;
                     }
                     case (".setmarker"): {
                         if (messageSplit.length == 1) {
                             configManager.getConfig().setPlayerMarker("§d§l[CHECK]");
-                            holyLogger.printSuccess("Текст метки был сброшен.");
+                            loggerService.printSuccess("Текст метки был сброшен.");
                             return;
                         }
                         configManager.getConfig().setPlayerMarker(messageSplit[1].replace("&", "§"));
-                        holyLogger.printSuccess("Вы установили новый текст маркера.");
+                        loggerService.printSuccess("Вы установили новый текст маркера.");
                         break;
                     }
                     case (".setspydelay"): {
                         if (messageSplit.length == 1) {
-                            holyLogger.printError("Вы не указали число.");
+                            loggerService.printError("Вы не указали число.");
                             return;
                         }
 
                         String valueText = messageSplit[1];
                         if (!chatService.checkCorrectInt(valueText)) {
-                            holyLogger.printError("Некорректное число.");
+                            loggerService.printError("Некорректное число.");
                             return;
                         }
                         configManager.getConfig().setSpyDelay(Integer.parseInt(valueText));
-                        holyLogger.printSuccess("Вы установили новую задержку в .spy: " + configManager.getConfig().getSpyDelay() + ".");
+                        loggerService.printSuccess("Вы установили новую задержку в .spy: " + configManager.getConfig().getSpyDelay() + ".");
                         break;
                     }
                 }
@@ -264,30 +264,30 @@ public class SettingsModule extends Module {
                 switch (command) {
                     case (".textedit"): {
                         if (configManager.getConfig().getTexts().isEmpty()) {
-                            holyLogger.printError("У вас нет настроенных текстов.");
+                            loggerService.printError("У вас нет настроенных текстов.");
                             return;
                         }
                         if (messageSplit.length == 1) {
-                            holyLogger.printError("Вы не указали номер текста и новый текст.");
+                            loggerService.printError("Вы не указали номер текста и новый текст.");
                             return;
                         }
                         String indexText = messageSplit[1];
                         if (!chatService.checkCorrectInt(indexText)) {
-                            holyLogger.printError("Некорректный номер текста.");
+                            loggerService.printError("Некорректный номер текста.");
                             return;
                         }
                         int index = Integer.parseInt(indexText) - 1;
                         if (messageSplit.length == 2) {
-                            holyLogger.printError("Вы не указали новый текст.");
+                            loggerService.printError("Вы не указали новый текст.");
                             return;
                         }
                         if (index >= textsArray.length || index < 0) {
-                            holyLogger.printError("Элемента с таким номером в списке ваших текстов не существует.");
+                            loggerService.printError("Элемента с таким номером в списке ваших текстов не существует.");
                             return;
                         }
                         String text = messageSplit[2].replace("&", "§");
                         if (text.contains("%%")) {
-                            holyLogger.printError("Текст не должен содержать '%%'.");
+                            loggerService.printError("Текст не должен содержать '%%'.");
                             return;
                         }
                         String[] textsList = configManager.getConfig().getTexts().split("%%");
@@ -296,7 +296,7 @@ public class SettingsModule extends Module {
                         for (String t : textsList) {
                             configManager.getConfig().setTexts(configManager.getConfig().getTexts().isEmpty() ? t : configManager.getConfig().getTexts() + "%%" + t);
                         }
-                        holyLogger.printSuccess("Вы изменили текст номер " + (index + 1) + ".");
+                        loggerService.printSuccess("Вы изменили текст номер " + (index + 1) + ".");
                         break;
                     }
                 }

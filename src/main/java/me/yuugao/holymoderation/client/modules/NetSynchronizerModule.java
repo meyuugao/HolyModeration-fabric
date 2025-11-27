@@ -27,7 +27,7 @@ public class NetSynchronizerModule extends Module {
 
     private void refresh() {
         if (configManager.getConfig().getApiToken().isEmpty()) {
-            holyLogger.printError("У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (" + GOLD + GOLD + BOLD + ".setapitoken " + GREEN + BOLD + "apitoken" + WHITE + RED + BOLD + ") и перезайти на сервер.");
+            loggerService.printError("У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (" + GOLD + GOLD + BOLD + ".setapitoken " + GREEN + BOLD + "apitoken" + WHITE + RED + BOLD + ") и перезайти на сервер.");
             return;
         }
 
@@ -35,7 +35,7 @@ public class NetSynchronizerModule extends Module {
             try {
                 netService.downloadSounds();
             } catch (Exception e) {
-                holyLogger.printException("Исключение в NetSynchronizerModule/onServerConnect: " + e);
+                loggerService.printException("Исключение в NetSynchronizerModule/onServerConnect: " + e);
             }
 
             Map<String, Object> profile = netService.getJournalProfile();
@@ -45,7 +45,7 @@ public class NetSynchronizerModule extends Module {
             stateService.setVkUrl("vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()));
             stateService.setApiInitCompleted(true);
 
-            holyLogger.printSuccess("Синхронизация завершена!");
+            loggerService.printSuccess("Синхронизация завершена!");
         });
     }
 }

@@ -67,7 +67,7 @@ public class StateModule extends Module {
 
         if (!stateService.isGameInitCompleted()) {
             event.setCancelled(true);
-            holyLogger.printError("Не спеши, инициализация игры ещё не завершилась!");
+            loggerService.printError("Не спеши, инициализация игры ещё не завершилась!");
             return;
         }
 
@@ -76,12 +76,12 @@ public class StateModule extends Module {
             case (".setapitoken"): {
                 event.setCancelled(true);
                 if (messageSplit.length == 1) {
-                    holyLogger.printError("Вы не ввели токен.");
+                    loggerService.printError("Вы не ввели токен.");
                     return;
                 }
                 String apiToken = messageSplit[1];
                 if (apiToken.contains(" ")) {
-                    holyLogger.printError("В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
+                    loggerService.printError("В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
                     return;
                 }
                 configManager.getConfig().setApiToken(apiToken);
@@ -98,7 +98,7 @@ public class StateModule extends Module {
                 event.setCancelled(true);
                 enabled = true;
                 unblock();
-                holyLogger.printSuccess("Мод включен!");
+                loggerService.printSuccess("Мод включен!");
                 break;
             }
 
@@ -106,7 +106,7 @@ public class StateModule extends Module {
                 event.setCancelled(true);
                 enabled = false;
                 block();
-                holyLogger.printSuccess(RED + BOLD + "Мод выключен!");
+                loggerService.printSuccess(RED + BOLD + "Мод выключен!");
                 break;
             }
         }

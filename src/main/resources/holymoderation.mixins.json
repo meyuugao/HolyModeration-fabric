@@ -4,9 +4,9 @@
   "package": "me.yuugao.holymoderation.client.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ClientPlayNetworkHandlerMixin"
   ],
   "client": [
+    "ClientPlayNetworkHandlerMixin",
     "MinecraftClientMixin"
   ],
   "injectors": {

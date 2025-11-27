@@ -2,7 +2,7 @@ package me.yuugao.holymoderation.client.eventbus;
 
 import me.yuugao.holymoderation.client.eventbus.event.Event;
 import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.util.logger.HolyLogger;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class EventBus {
     private final Map<Class<?>, List<Subscriber>> subscribers = new ConcurrentHashMap<>();
-    private HolyLogger holyLogger;
+    private LoggerService loggerService;
 
     public void register(Object object) {
         if (object instanceof Module module) {
@@ -28,8 +28,8 @@ public class EventBus {
 
                         subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(subscriber);
                         subscribers.get(eventType).sort((s1, s2) -> Integer.compare(s2.priority(), s1.priority()));
-                        subscriber.target.setLogger(holyLogger);
-                        holyLogger.getLogger().debug("Eventbus: Registered new subscriber - {}", subscriber);
+                        subscriber.target.setLogger(loggerService);
+                        loggerService.getLogger().debug("Eventbus: Registered new subscriber - {}", subscriber);
                     }
                 }
             }
@@ -41,13 +41,13 @@ public class EventBus {
             for (List<Subscriber> subscriberList : subscribers.values()) {
                 subscriberList.removeIf(subscriber -> subscriber.target.equals(module));
             }
-            holyLogger.getLogger().debug("Eventbus: Unregistered module - {}", module);
+            loggerService.getLogger().debug("Eventbus: Unregistered module - {}", module);
         }
     }
 
     public void clear() {
         subscribers.clear();
-        holyLogger.getLogger().debug("Eventbus: All subscribers cleared");
+        loggerService.getLogger().debug("Eventbus: All subscribers cleared");
     }
 
     public void invokeEvent(Event event) {
@@ -56,14 +56,14 @@ public class EventBus {
             for (Subscriber subscriber : eventSubscribers) {
                 if (subscribers.getOrDefault(event.getClass(), List.of()).contains(subscriber)) {
                     subscriber.invoke(event);
-                    holyLogger.getLogger().debug("Eventbus: Invoked event - {} for subscriber - {}", event, subscriber);
+                    loggerService.getLogger().debug("Eventbus: Invoked event - {} for subscriber - {}", event, subscriber);
                 }
             }
         }
     }
 
-    public void setLogger(HolyLogger holyLogger) {
-        this.holyLogger = holyLogger;
+    public void setLogger(LoggerService loggerService) {
+        this.loggerService = loggerService;
     }
 
     private record Subscriber(Module target, Method method, int priority) {

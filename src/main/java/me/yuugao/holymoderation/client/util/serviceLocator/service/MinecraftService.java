@@ -1,4 +1,4 @@
-package me.yuugao.holymoderation.client.util.service;
+package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;

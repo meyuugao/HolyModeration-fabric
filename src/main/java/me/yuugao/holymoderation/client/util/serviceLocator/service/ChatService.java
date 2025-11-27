@@ -1,7 +1,9 @@
-package me.yuugao.holymoderation.client.util.service;
+package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
+
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;

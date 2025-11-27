@@ -1,5 +1,7 @@
-package me.yuugao.holymoderation.client.util.service;
+package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
+
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.jetbrains.annotations.NotNull;
 

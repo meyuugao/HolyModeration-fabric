@@ -1,23 +1,20 @@
-package me.yuugao.holymoderation.client.util.logger;
+package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
-
-import me.yuugao.holymoderation.client.util.service.ChatService;
-import me.yuugao.holymoderation.client.util.service.SoundService;
 
 import org.slf4j.Logger;
 
 import lombok.Getter;
 
-public class HolyLogger {
+public class LoggerService {
     @Getter
     private final Logger logger;
 
     private final ChatService chatService;
     private final SoundService soundService;
 
-    public HolyLogger(Logger logger, ChatService chatService, SoundService soundService) {
+    public LoggerService(Logger logger, ChatService chatService, SoundService soundService) {
         this.logger = logger;
         this.chatService = chatService;
         this.soundService = soundService;

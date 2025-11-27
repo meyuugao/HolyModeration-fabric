@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.config;
 
-import me.yuugao.holymoderation.client.util.service.ServiceLocator;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import java.io.File;
 import java.io.InputStreamReader;

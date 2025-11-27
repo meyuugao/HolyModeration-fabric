@@ -1,4 +1,4 @@
-package me.yuugao.holymoderation.client.util.service;
+package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import org.apache.commons.lang3.StringUtils;
 
