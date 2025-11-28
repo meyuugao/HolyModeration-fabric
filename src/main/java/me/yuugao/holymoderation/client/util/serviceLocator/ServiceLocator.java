@@ -16,6 +16,8 @@ public class ServiceLocator {
     @Getter
     private static ChatService chatService;
     @Getter
+    private static KeyBindingService keyBindingService;
+    @Getter
     private static MinecraftService minecraftService;
     @Getter
     private static NetService netService;
@@ -30,10 +32,11 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, MinecraftService minecraftService, NetService netService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
+    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, KeyBindingService keyBindingService, MinecraftService minecraftService, NetService netService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
+        ServiceLocator.keyBindingService = keyBindingService;
         ServiceLocator.minecraftService = minecraftService;
         ServiceLocator.netService = netService;
         ServiceLocator.render2DService = render2DService;
@@ -46,12 +49,15 @@ public class ServiceLocator {
 
     private static void initializeLoggerService(Logger logger) {
         loggerService = new LoggerService(logger, chatService, soundService);
-        minecraftService.setLogger(loggerService);
-        schedulerService.setLogger(loggerService);
-        stateService.setLogger(loggerService);
+        eventBus.setLogger(loggerService);
         chatService.setLogger(loggerService);
+        keyBindingService.setLogger(loggerService);
+        minecraftService.setLogger(loggerService);
         netService.setLogger(loggerService);
+        render2DService.setLogger(loggerService);
+        schedulerService.setLogger(loggerService);
         soundService.setLogger(loggerService);
+        stateService.setLogger(loggerService);
         loggerService.getLogger().info("Logger service has been initialized");
     }
 }

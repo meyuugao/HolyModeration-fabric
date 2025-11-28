@@ -9,6 +9,7 @@ public abstract class Module {
     protected final ConfigManager configManager;
     protected final EventBus eventBus;
     protected final ChatService chatService;
+    protected final KeyBindingService keyBindingService;
     protected final MinecraftService minecraftService;
     protected final NetService netService;
     protected final Render2DService render2DService;
@@ -21,6 +22,7 @@ public abstract class Module {
         this.configManager = ServiceLocator.getConfigManager();
         this.eventBus = ServiceLocator.getEventBus();
         this.chatService = ServiceLocator.getChatService();
+        this.keyBindingService = ServiceLocator.getKeyBindingService();
         this.minecraftService = ServiceLocator.getMinecraftService();
         this.netService = ServiceLocator.getNetService();
         this.render2DService = ServiceLocator.getRender2DService();
