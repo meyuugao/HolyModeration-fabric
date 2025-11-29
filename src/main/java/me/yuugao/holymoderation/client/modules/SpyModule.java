@@ -156,7 +156,7 @@ public class SpyModule extends Module {
         float windowWidth = maxTextWidth + 8;
         float blockHeight = (float) (textRenderer.fontHeight * 2 + (y2 - y1 - textRenderer.fontHeight));
         float windowHeight = (float) (blockHeight * 1.3);
-        render2DService.drawRoundedRect(matrixStack, (float) (Math.floor((float) drawContext.getScaledWindowWidth() / 2 - windowWidth / 2) - 0.5f), y1 - ((windowHeight - blockHeight) / 2), windowWidth, windowHeight, 5f, new Color(0x4666FFFF), 4);
+        render2DService.drawRoundedRect(matrixStack, (float) (Math.floor((float) drawContext.getScaledWindowWidth() / 2 - windowWidth / 2) - 0.5f), y1 - ((windowHeight - blockHeight) / 2), windowWidth, windowHeight, 5f, new Color(0x4666FFFF));
         render2DService.drawText(textRenderer, texts[0], textX, y1, 0xffffffff, false, drawContext);
         render2DService.drawText(textRenderer, texts[1], textX, y2, 0xffffffff, false, drawContext);
     }

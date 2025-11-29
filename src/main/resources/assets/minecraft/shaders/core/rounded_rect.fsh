@@ -1,21 +1,21 @@
 #version 150
 
-in vec2 texCoord;
-out vec4 FragColor;
+in vec2 uv;
 
-uniform vec2 Size;
-uniform float Radius;
-uniform vec4 Color;
+uniform float radius;
+uniform vec2 size;
+uniform vec4 color;
 
-float sdRoundedBox(vec2 p, vec2 b, float r) {
-    vec2 q = abs(p) - b + vec2(r);
-    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r;
+out vec4 fragColor;
+
+float sdRoundRect(vec2 p, vec2 b, float r){
+    vec2 q = abs(p) - b + r;
+    return length(max(q, 0.0)) - r;
 }
 
 void main() {
-    vec2 p = texCoord * Size - 0.5 * Size; // Центрируем координаты
-    float d = sdRoundedBox(p, 0.5 * Size, Radius);
-    float w = fwidth(d) * 2.0; // Увеличиваем сглаживание для большей чёткости
-    float a = 1.0 - smoothstep(-w, w, d);
-    FragColor = vec4(Color.rgb, Color.a * a);
+    vec2 p = uv - size * 0.5;
+    float d = sdRoundRect(p, size * 0.5, radius);
+    if (d > 0.0) discard;
+    fragColor = color;
 }

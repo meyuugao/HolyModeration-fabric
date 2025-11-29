@@ -50,14 +50,14 @@ public class ServiceLocator {
     private static void initializeLoggerService(Logger logger) {
         loggerService = new LoggerService(logger, chatService, soundService);
         eventBus.setLogger(loggerService);
-        chatService.setLogger(loggerService);
-        keyBindingService.setLogger(loggerService);
-        minecraftService.setLogger(loggerService);
-        netService.setLogger(loggerService);
-        render2DService.setLogger(loggerService);
-        schedulerService.setLogger(loggerService);
-        soundService.setLogger(loggerService);
-        stateService.setLogger(loggerService);
+        chatService.setLoggerService(loggerService);
+        keyBindingService.setLoggerService(loggerService);
+        minecraftService.setLoggerService(loggerService);
+        netService.setLoggerService(loggerService);
+        render2DService.setLoggerService(loggerService);
+        schedulerService.setLoggerService(loggerService);
+        soundService.setLoggerService(loggerService);
+        stateService.setLoggerService(loggerService);
         loggerService.getLogger().info("Logger service has been initialized");
     }
 }

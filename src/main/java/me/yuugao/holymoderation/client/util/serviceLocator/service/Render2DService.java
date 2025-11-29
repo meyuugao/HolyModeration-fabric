@@ -1,99 +1,111 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.*;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL40C;
 
 import java.awt.Color;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class Render2DService extends Service {
-    public void drawRect(MatrixStack matrices, float x, float y, float width, float height, Color c) {
-        setupRender();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+    private ShaderProgram RECT;
+    private ShaderProgram ROUNDED_RECT;
 
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
+    public void initializeShaders() {
+        try {
+            RECT = new ShaderProgram(
+                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
+                    "rect",
+                    VertexFormats.POSITION_COLOR
+            );
+            ROUNDED_RECT = new ShaderProgram(
+                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
+                    "rounded_rect",
+                    VertexFormats.POSITION_COLOR_TEXTURE
+            );
+        } catch (Exception e) {
+            loggerService.printException("Исключение в Render2DService/initializeShaders: " + e);
+        }
+    }
+
+    public void drawRect(MatrixStack matrices, float x, float y, float width, float height, Color color) {
+        setupRender();
+
+        RECT.getUniformOrDefault("color").set(
+                color.getRed() / 255f,
+                color.getGreen() / 255f,
+                color.getBlue() / 255f,
+                color.getAlpha() / 255f
+        );
+
+        RenderSystem.setShader(() -> RECT);
+
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
+
+        matrices.push();
+        matrices.translate(x, y, 0);
+
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+
         buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
 
-        buffer.vertex(matrix, x, y + height, 0.0F).color(c.getRGB()).next();
-        buffer.vertex(matrix, x + width, y + height, 0.0F).color(c.getRGB()).next();
-        buffer.vertex(matrix, x + width, y, 0.0F).color(c.getRGB()).next();
-        buffer.vertex(matrix, x, y, 0.0F).color(c.getRGB()).next();
+        buffer.vertex(matrix, 0, height, 0).color(1f, 1f, 1f, 1f).next();
+        buffer.vertex(matrix, width, height, 0).color(1f, 1f, 1f, 1f).next();
+        buffer.vertex(matrix, width, 0, 0).color(1f, 1f, 1f, 1f).next();
+        buffer.vertex(matrix, 0, 0, 0).color(1f, 1f, 1f, 1f).next();
+
         tessellator.draw();
+        matrices.pop();
 
         endRender();
     }
 
-    public void renderRoundedGradientRect(MatrixStack matrices, float x, float y, float width, float height, float radius, Color color1, Color color2, Color color3, Color color4) {
-        RenderSystem.colorMask(false, false, false, true);
-        RenderSystem.clearColor(0.0F, 0.0F, 0.0F, 0.0F);
-        RenderSystem.clear(GL40C.GL_COLOR_BUFFER_BIT, false);
-        RenderSystem.colorMask(true, true, true, true);
-
-        drawRoundedRect(matrices, x, y, width, height, radius, color1, 4);
-
+    public void drawRoundedRect(MatrixStack matrices, float x, float y, float width, float height, float radius, Color color) {
         setupRender();
-        RenderSystem.blendFunc(GL40C.GL_DST_ALPHA, GL40C.GL_ONE_MINUS_DST_ALPHA);
 
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder bufferBuilder = tessellator.getBuffer();
-        bufferBuilder.begin(VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR);
+        ROUNDED_RECT.getUniformOrDefault("radius").set(radius);
+        ROUNDED_RECT.getUniformOrDefault("size").set(width, height);
+        ROUNDED_RECT.getUniformOrDefault("color").set(
+                color.getRed() / 255f,
+                color.getGreen() / 255f,
+                color.getBlue() / 255f,
+                color.getAlpha() / 255f
+        );
 
-        bufferBuilder.vertex(matrix, x, y + height, 0.0F).color(color1.getRGB());
-        bufferBuilder.vertex(matrix, x + width, y + height, 0.0F).color(color2.getRGB());
-        bufferBuilder.vertex(matrix, x + width, y, 0.0F).color(color3.getRGB());
-        bufferBuilder.vertex(matrix, x, y, 0.0F).color(color4.getRGB());
-        tessellator.draw();
-
-        endRender();
-    }
-
-    public void drawRoundedRect(MatrixStack matrices, float x, float y, float width, float height, float radius, Color color, float samples) {
-        setupRender();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
-
-        float cr = color.getRed() / 255f;
-        float cg = color.getGreen() / 255f;
-        float cb = color.getBlue() / 255f;
-        float ca = color.getAlpha() / 255f;
+        RenderSystem.setShader(() -> ROUNDED_RECT);
 
         Tessellator tessellator = Tessellator.getInstance();
         BufferBuilder buffer = tessellator.getBuffer();
-        buffer.begin(VertexFormat.DrawMode.TRIANGLE_FAN, VertexFormats.POSITION_COLOR);
 
-        double[][] corners = new double[][]{
-                new double[]{x + width - radius, y + height - radius, radius},
-                new double[]{x + width - radius, y + radius, radius},
-                new double[]{x + radius, y + radius, radius},
-                new double[]{x + radius, y + height - radius, radius}
-        };
+        matrices.push();
+        matrices.translate(x, y, 0);
 
-        for (int i = 0; i < 4; i++) {
-            double[] corner = corners[i];
-            double rad = corner[2];
-            for (double r = i * 90d; r < (90 + i * 90d); r += (90 / samples)) {
-                float rad1 = (float) Math.toRadians(r);
-                float sin = (float) (Math.sin(rad1) * rad);
-                float cos = (float) (Math.cos(rad1) * rad);
-                buffer.vertex(matrices.peek().getPositionMatrix(), (float) corner[0] + sin, (float) corner[1] + cos, 0.0F).color(cr, cg, cb, ca).next();
-            }
-            float rad1 = (float) Math.toRadians(90 + i * 90d);
-            float sin = (float) (Math.sin(rad1) * rad);
-            float cos = (float) (Math.cos(rad1) * rad);
-            buffer.vertex(matrices.peek().getPositionMatrix(), (float) corner[0] + sin, (float) corner[1] + cos, 0.0F).color(cr, cg, cb, ca).next();
-        }
+        Matrix4f matrix = matrices.peek().getPositionMatrix();
+
+        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
+
+        buffer.vertex(matrix, 0, height, 0).color(1f, 1f, 1f, 1f).texture(0, height).next();
+        buffer.vertex(matrix, width, height, 0).color(1f, 1f, 1f, 1f).texture(width, height).next();
+        buffer.vertex(matrix, width, 0, 0).color(1f, 1f, 1f, 1f).texture(width, 0).next();
+        buffer.vertex(matrix, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0, 0).next();
+
         tessellator.draw();
+        matrices.pop();
 
         endRender();
     }
+
 
     public void drawText(TextRenderer textRenderer, String text, float x, float y, int color, boolean shadow, DrawContext drawContext) {
         textRenderer.draw(text, x, y, color, shadow, drawContext.getMatrices().peek().getPositionMatrix(), drawContext.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL, 0, 15728880, textRenderer.isRightToLeft());

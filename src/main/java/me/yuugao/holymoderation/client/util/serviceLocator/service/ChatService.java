@@ -94,7 +94,7 @@ public class ChatService extends Service {
                 throw new Exception("Неизвестная OS.");
             }
         } catch (Exception e) {
-            logger.printException("Исключение в ChatService/copyToClipboard: " + e);
+            loggerService.printException("Исключение в ChatService/copyToClipboard: " + e);
         }
     }
 

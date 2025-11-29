@@ -4,5 +4,5 @@ import lombok.Setter;
 
 @Setter
 public class Service {
-    protected LoggerService logger;
+    protected LoggerService loggerService;
 }

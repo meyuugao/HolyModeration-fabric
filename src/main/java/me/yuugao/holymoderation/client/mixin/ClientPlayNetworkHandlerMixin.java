@@ -9,7 +9,6 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ServerInfo;
-import net.minecraft.network.packet.s2c.play.GameJoinS2CPacket;
 import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "onGameJoin", at = @At("TAIL"))
-    private void onGameJoin(GameJoinS2CPacket packet, CallbackInfo ci) {
+    private void onGameJoin(CallbackInfo ci) {
         ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
         if (player != null) {
             ServerInfo serverInfo = player.networkHandler.getServerInfo();

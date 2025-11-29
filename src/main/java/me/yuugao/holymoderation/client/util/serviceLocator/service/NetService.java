@@ -59,7 +59,7 @@ public class NetService extends Service {
 
             connection.disconnect();
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/getSoundsList: " + e);
+            loggerService.printException("Исключение в NetService/getSoundsList: " + e);
         }
 
         return soundFiles;
@@ -99,7 +99,7 @@ public class NetService extends Service {
                 }
             }
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/downloadSounds: " + e);
+            loggerService.printException("Исключение в NetService/downloadSounds: " + e);
         }
     }
 
@@ -114,7 +114,7 @@ public class NetService extends Service {
     public void startCheckout(String name, String reason, String mode, int number, boolean pvp) {
         try {
             if (hasActiveCheckout()) {
-                logger.printError("У вас уже есть активная проверка.");
+                loggerService.printError("У вас уже есть активная проверка.");
                 return;
             }
 
@@ -132,23 +132,23 @@ public class NetService extends Service {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201) {
-                        logger.printSuccess("Вы успешно внесли проверку.");
+                        loggerService.printSuccess("Вы успешно внесли проверку.");
                     } else {
-                        logger.printError("Ошибка при внесении проверки. Код: " + connection.getResponseCode());
+                        loggerService.printError("Ошибка при внесении проверки. Код: " + connection.getResponseCode());
                     }
                 }
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/startCheckout: " + e);
+            loggerService.printException("Исключение в NetService/startCheckout: " + e);
         }
     }
 
     public void endCheckout(String result, String reason, boolean destroyStash) {
         try {
             if (!hasActiveCheckout()) {
-                logger.printError("У вас нет активной проверки.");
+                loggerService.printError("У вас нет активной проверки.");
                 return;
             }
 
@@ -164,16 +164,16 @@ public class NetService extends Service {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201) {
-                        logger.printSuccess("Вы успешно закончили проверку.");
+                        loggerService.printSuccess("Вы успешно закончили проверку.");
                     } else {
-                        logger.printError("Ошибка при завершении проверки. Код: " + connection.getResponseCode());
+                        loggerService.printError("Ошибка при завершении проверки. Код: " + connection.getResponseCode());
                     }
                 }
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/endCheckout: " + e);
+            loggerService.printException("Исключение в NetService/endCheckout: " + e);
         }
     }
 
@@ -194,7 +194,7 @@ public class NetService extends Service {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/hasActiveCheckout: " + e.getMessage());
+            loggerService.printException("Исключение в NetService/hasActiveCheckout: " + e.getMessage());
             return false;
         }
     }
@@ -214,7 +214,7 @@ public class NetService extends Service {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/executeGetRequest: " + e);
+            loggerService.printException("Исключение в NetService/executeGetRequest: " + e);
             return Collections.emptyMap();
         }
     }
@@ -235,7 +235,7 @@ public class NetService extends Service {
 
             return true;
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/writeJson: " + e);
+            loggerService.printException("Исключение в NetService/writeJson: " + e);
             return false;
         }
     }
@@ -252,7 +252,7 @@ public class NetService extends Service {
 
             return response;
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/getResponse: " + e);
+            loggerService.printException("Исключение в NetService/getResponse: " + e);
             return null;
         }
     }
@@ -264,7 +264,7 @@ public class NetService extends Service {
 
             return gson.fromJson(response.toString(), type);
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/parseJsonResponse: " + e);
+            loggerService.printException("Исключение в NetService/parseJsonResponse: " + e);
             return Collections.emptyMap();
         }
     }
@@ -282,7 +282,7 @@ public class NetService extends Service {
 
             return connection;
         } catch (Exception e) {
-            logger.printException("Исключение в NetService/openHttpsConnection: " + e);
+            loggerService.printException("Исключение в NetService/openHttpsConnection: " + e);
             return null;
         }
     }

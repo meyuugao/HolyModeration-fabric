@@ -17,7 +17,7 @@ public class MainGuiScreen extends Screen {
     public void render(DrawContext context, int mouseX, int mouseY, float tickDelta) {
         float mainGuiWidth = (float) context.getScaledWindowWidth() / 3;
         float mainGuiHeight = (float) context.getScaledWindowHeight() / 3;
-        ServiceLocator.getRender2DService().drawRoundedRect(context.getMatrices(), (float) context.getScaledWindowWidth() / 2 - mainGuiWidth / 2, (float) context.getScaledWindowHeight() / 2 - mainGuiHeight / 2, mainGuiWidth, mainGuiHeight, 10, new Color(0x193AC5), 4);
+        ServiceLocator.getRender2DService().drawRoundedRect(context.getMatrices(), (float) context.getScaledWindowWidth() / 2 - mainGuiWidth / 2, (float) context.getScaledWindowHeight() / 2 - mainGuiHeight / 2, mainGuiWidth, mainGuiHeight, 10, new Color(0x002AFF));
     }
 
     @Override
