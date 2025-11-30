@@ -4,8 +4,8 @@
     "srcrgb": "srcalpha",
     "dstrgb": "1-srcalpha"
   },
-  "vertex": "minecraft:rounded_rect",
-  "fragment": "minecraft:rounded_rect",
+  "vertex": "minecraft:rounded_rect_outline",
+  "fragment": "minecraft:rounded_rect_outline",
   "attributes": [
     "Position",
     "Color",
@@ -18,6 +18,8 @@
       "values":[1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] },
     { "name": "radius", "type": "float", "count": 1, "values":[0.0] },
     { "name": "size", "type": "float", "count": 2, "values":[0.0,0.0] },
-    { "name": "color", "type": "float", "count": 4, "values":[0,0,0,0] }
+    { "name": "color", "type": "float", "count": 4, "values":[0,0,0,0] },
+    { "name": "outlineColor", "type": "float", "count": 4, "values":[0,0,0,0] },
+    { "name": "outlineWidth", "type": "float", "count": 1, "values":[1.0] }
   ]
 }

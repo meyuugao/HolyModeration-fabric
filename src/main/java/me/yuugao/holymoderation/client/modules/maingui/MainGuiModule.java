@@ -13,7 +13,11 @@ public class MainGuiModule extends Module {
     public void onHudRender(HudRenderEvent event) {
         if (keyBindingService.wasKeyPressed("open_main_gui")) {
             Screen currentScreen = minecraftService.getClient().currentScreen;
-            minecraftService.getClient().setScreen(currentScreen != null && currentScreen.equals(mainGuiScreen) ? null : mainGuiScreen);
+            if (currentScreen == null) {
+                minecraftService.getClient().setScreen(mainGuiScreen);
+            } else if (currentScreen.equals(mainGuiScreen)) {
+                mainGuiScreen.close();
+            }
         }
     }
 }
