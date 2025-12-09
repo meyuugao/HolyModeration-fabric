@@ -23,6 +23,7 @@ public class Render2DService extends Service {
     private ShaderProgram SOFT_ROUNDED_RECT;
     private ShaderProgram ROUNDED_RECT_OUTLINE;
     private ShaderProgram SOFT_ROUNDED_RECT_OUTLINE;
+    private ShaderProgram RGB_PALETTE;
 
     public void initializeShaders() {
         try {
@@ -53,6 +54,12 @@ public class Render2DService extends Service {
             SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(
                     ServiceLocator.getMinecraftService().getClient().getResourceManager(),
                     "soft_rounded_rect_outline",
+                    VertexFormats.POSITION_COLOR_TEXTURE
+            );
+
+            RGB_PALETTE = new ShaderProgram(
+                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
+                    "rgb_palette",
                     VertexFormats.POSITION_COLOR_TEXTURE
             );
         } catch (Exception e) {
@@ -174,6 +181,30 @@ public class Render2DService extends Service {
         float totalWidth = w + 2 * blurWidth;
         float totalHeight = h + 2 * blurWidth;
         renderQuad(matrices, x - blurWidth, y - blurWidth, totalWidth, totalHeight);
+
+        endRender();
+    }
+
+    public void renderRGBPalette(MatrixStack matrices, float centerX, float centerY, float radius, Color outlineColor, float outlineWidth) {
+        setupRender();
+
+        float size = (radius + outlineWidth) * 2;
+        
+        RGB_PALETTE.getUniformOrDefault("Radius").set(radius);
+        RGB_PALETTE.getUniformOrDefault("OutlineColor").set(
+                outlineColor.getRed() / 255f,
+                outlineColor.getGreen() / 255f,
+                outlineColor.getBlue() / 255f,
+                outlineColor.getAlpha() / 255f
+        );
+        RGB_PALETTE.getUniformOrDefault("OutlineWidth").set(outlineWidth);
+        RGB_PALETTE.getUniformOrDefault("Size").set(size, size);
+
+        RenderSystem.setShader(() -> RGB_PALETTE);
+
+        float x = centerX - radius - outlineWidth;
+        float y = centerY - radius - outlineWidth;
+        renderQuad(matrices, x, y, size, size);
 
         endRender();
     }

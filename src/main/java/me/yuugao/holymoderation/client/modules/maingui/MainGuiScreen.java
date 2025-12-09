@@ -1,6 +1,8 @@
 package me.yuugao.holymoderation.client.modules.maingui;
 
+import me.yuugao.holymoderation.client.util.ColorPicker;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
@@ -16,6 +18,8 @@ public class MainGuiScreen extends Screen {
 
     private ScheduledFuture<?> task;
 
+    private Color outlineColor = Color.WHITE;
+
     public MainGuiScreen() {
         super(Text.of("HolyModeration Main Gui Screen"));
     }
@@ -26,7 +30,6 @@ public class MainGuiScreen extends Screen {
         animValue = 0f;
         opening = true;
 
-        ServiceLocator.getSoundService().playSound("farts-4.wav", 100);
         startAnimation();
     }
 
@@ -97,11 +100,17 @@ public class MainGuiScreen extends Screen {
                 x, y, Math.max(1, w), Math.max(1, h),
                 10f,
                 new Color(0x002AFF),
-                new Color(0xFFFFFF),
+                outlineColor,
                 scaledOutline, 3
         );
 
         super.render(context, mouseX, mouseY, tickDelta);
+
+        float radius = 25f;
+        ColorPicker picker = new ColorPicker(x + w / 2, y + h / 2, radius * animValue, new Color(0x000000), 3);
+        picker.render(context.getMatrices());
+        picker.updateColorFromMouse(mouseX, mouseY);
+        outlineColor = picker.getSelectedColor();
     }
 
     @Override
