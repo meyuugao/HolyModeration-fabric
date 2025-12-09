@@ -26,6 +26,7 @@ public class MainGuiScreen extends Screen {
         animValue = 0f;
         opening = true;
 
+        ServiceLocator.getSoundService().playSound("farts-4.wav", 100);
         startAnimation();
     }
 
@@ -91,15 +92,14 @@ public class MainGuiScreen extends Screen {
         float scaleFactor = Math.min(w, h) / 100f;
         float scaledOutline = baseOutline * scaleFactor;
 
-        ServiceLocator.getRender2DService().renderRoundedOutlinedRect(
+        ServiceLocator.getRender2DService().renderSoftRoundedRectOutline(
                 context.getMatrices(),
-                x, y, w, h,
-                10,
+                x, y, Math.max(1, w), Math.max(1, h),
+                10f,
                 new Color(0x002AFF),
                 new Color(0xFFFFFF),
-                scaledOutline
+                scaledOutline, 3
         );
-
 
         super.render(context, mouseX, mouseY, tickDelta);
     }
