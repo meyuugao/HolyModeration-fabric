@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.config;
 
+import me.yuugao.holymoderation.client.obfuscation.StringObfuscator;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -23,6 +24,14 @@ public class Config {
 
     @Expose
     private String apiToken = StringUtils.EMPTY;
+    
+    public String getApiToken() {
+        return StringObfuscator.decrypt(apiToken);
+    }
+    
+    public void setApiToken(String token) {
+        this.apiToken = StringObfuscator.encrypt(token);
+    }
     @Expose
     private boolean soundsEnabled = true;
     @Expose
