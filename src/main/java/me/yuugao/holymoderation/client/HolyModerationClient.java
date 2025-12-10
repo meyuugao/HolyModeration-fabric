@@ -4,15 +4,18 @@ import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.modules.*;
 import me.yuugao.holymoderation.client.modules.maingui.MainGuiModule;
+import me.yuugao.holymoderation.client.obfuscation.DontObf;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.obfuscate.DontObfuscate;
 
 import org.slf4j.LoggerFactory;
 
 public class HolyModerationClient implements ClientModInitializer {
     @Override
+    @DontObf
     public void onInitializeClient() {
         ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new KeyBindingService(), new MinecraftService(), new NetService(), new Render2DService(), new SchedulerService(), new SoundService(), new StateService(), LoggerFactory.getLogger("HolyModeration/Client"));
         eventBusInitialize();

@@ -36,33 +36,134 @@ task obfuscateJar {
         println "Входной файл: ${inputJar.name}"
         println "Выходной файл: ${outputJar.name}"
         
-        // Шаг 1: Генерируем маппинг классов
+        // Шаг 1: Генерируем маппинг классов и методов
         def classMapping = [:] // старый класс -> новый класс
+        def methodMapping = [:] // старое имя метода -> новое имя метода
+        def fieldMapping = [:] // старое имя поля -> новое имя поля
         def random = new Random(42) // фиксированный seed для воспроизводимости
         
         // Читаем все классы из JAR для генерации маппинга
         def originalJar = new JarFile(inputJar)
+        def allMethods = [] as Set<String> // собираем все уникальные имена методов
+        def excludedMethods = [] as Set<String> // методы, которые не нужно обфусцировать
+        def allFields = [] as Set<String> // собираем все уникальные имена полей
+        def excludedFields = [] as Set<String> // поля, которые не нужно обфусцировать
+        def excludedClasses = [] as Set<String> // классы, которые не нужно обфусцировать
+        
+        // Сначала собираем все имена методов и полей и определяем, какие исключить
+        originalJar.entries().each { entry ->
+            if (entry.name.endsWith('.class') && 
+                entry.name.startsWith('me/yuugao/holymoderation/')) {
+                
+                def is = originalJar.getInputStream(entry)
+                def bytes = is.bytes
+                is.close()
+                
+                try {
+                    def reader = new ClassReader(bytes)
+                    def node = new ClassNode()
+                    reader.accept(node, ClassReader.SKIP_FRAMES)
+                    
+                    // Проверяем, есть ли у класса аннотация @DontObf
+                    def classHasDontObf = node.visibleAnnotations?.any { 
+                        it.desc.equals('Lme/yuugao/holymoderation/client/obfuscation/DontObf;') 
+                    }
+                    
+                    if (classHasDontObf) {
+                        excludedClasses.add(entry.name.replace('.class', ''))
+                        println "ИСКЛЮЧЕН КЛАСС: ${entry.name.replace('.class', '')} (имеет аннотацию @DontObf)"
+                        return // пропускаем этот класс полностью
+                    }
+                    
+                    // Собираем все имена методов и проверяем аннотации
+                    node.methods.each { method ->
+                        if (method.name != '<init>' && method.name != '<clinit>') {
+                            // Проверяем, есть ли аннотация @DontObf
+                            def hasDontObf = method.visibleAnnotations?.any { 
+                                it.desc.equals('Lme/yuugao/holymoderation/client/obfuscation/DontObf;') 
+                            }
+                            
+                            if (hasDontObf) {
+                                excludedMethods.add(method.name)
+                                println "ИСКЛЮЧЕН МЕТОД: ${method.name} (имеет аннотацию @DontObf)"
+                            } else {
+                                allMethods.add(method.name)
+                            }
+                        }
+                    }
+                    
+                    // Собираем все имена полей и проверяем аннотации
+                    node.fields.each { field ->
+                        // Проверяем, есть ли аннотация @DontObf
+                        def hasDontObf = field.visibleAnnotations?.any { 
+                            it.desc.equals('Lme/yuugao/holymoderation/client/obfuscation/DontObf;') 
+                        }
+                        
+                        if (hasDontObf) {
+                            excludedFields.add(field.name)
+                            println "ИСКЛЮЧЕН ПОЛЕ: ${field.name} (имеет аннотацию @DontObf)"
+                        } else {
+                            allFields.add(field.name)
+                        }
+                    }
+                } catch (Exception e) {
+                    println "ОШИБКА при чтении из ${entry.name}: ${e.message}"
+                }
+            }
+        }
+        
+        // Генерируем маппинг для методов (только для тех, что не исключены)
+        allMethods.each { methodName ->
+            if (!excludedMethods.contains(methodName)) {
+                def obfName = generateRandomMethodName(random)
+                methodMapping[methodName] = obfName
+                println "МЕТОД: ${methodName} -> ${obfName}"
+            } else {
+                println "ПРОПУЩЕН МЕТОД: ${methodName} (исключен из обфускации)"
+            }
+        }
+        
+        // Генерируем маппинг для полей (только для тех, что не исключены)
+        allFields.each { fieldName ->
+            if (!excludedFields.contains(fieldName)) {
+                def obfName = generateRandomFieldName(random)
+                fieldMapping[fieldName] = obfName
+                println "ПОЛЕ: ${fieldName} -> ${obfName}"
+            } else {
+                println "ПРОПУЩЕН ПОЛЕ: ${fieldName} (исключено из обфускации)"
+            }
+        }
+        
+        // Генерируем маппинг для классов
         originalJar.entries().each { entry ->
             if (entry.name.endsWith('.class') && 
                 entry.name.startsWith('me/yuugao/holymoderation/') &&
                 !entry.name.contains('$')) { // исключаем внутренние классы
                 
-                def className = entry.name.replace('.class', '').replace('/', '.')
                 def internalName = entry.name.replace('.class', '')
                 
-                // Генерируем случайное имя класса
-                def packageName = internalName.substring(0, internalName.lastIndexOf('/'))
-                def simpleClassName = internalName.substring(internalName.lastIndexOf('/') + 1)
-                def randomName = generateRandomClassName(random)
-                def newInternalName = "${packageName}/${randomName}"
-                
-                classMapping[internalName] = newInternalName
-                println "КЛАСС: ${internalName} -> ${newInternalName}"
+                if (!excludedClasses.contains(internalName)) {
+                    // Генерируем случайное имя класса
+                    def packageName = internalName.substring(0, internalName.lastIndexOf('/'))
+                    def simpleClassName = internalName.substring(internalName.lastIndexOf('/') + 1)
+                    def randomName = generateRandomClassName(random)
+                    def newInternalName = "${packageName}/${randomName}"
+                    
+                    classMapping[internalName] = newInternalName
+                    println "КЛАСС: ${internalName} -> ${newInternalName}"
+                } else {
+                    println "ПРОПУЩЕН КЛАСС: ${internalName} (исключен из обфускации)"
+                }
             }
         }
         originalJar.close()
         
-        println "Сгенерировано маппингов: ${classMapping.size()}"
+        println "Сгенерировано маппингов классов: ${classMapping.size()}"
+        println "Сгенерировано маппингов методов: ${methodMapping.size()}"
+        println "Сгенерировано маппингов полей: ${fieldMapping.size()}"
+        println "Исключено классов из обфускации: ${excludedClasses.size()}"
+        println "Исключено методов из обфускации: ${excludedMethods.size()}"
+        println "Исключено полей из обфускации: ${excludedFields.size()}"
         
         // Шаг 2: Создаем remapper для ASM
         def remapper = new Remapper() {
@@ -73,13 +174,19 @@ task obfuscateJar {
             
             @Override
             String mapMethodName(String owner, String name, String descriptor) {
-                // Не трогаем имена методов, только классы
+                // Обфусцируем методы из нашего пакета, только если они не исключены
+                if (owner.startsWith('me/yuugao/holymoderation/') && methodMapping.containsKey(name)) {
+                    return methodMapping.get(name)
+                }
                 return name
             }
             
             @Override
             String mapFieldName(String owner, String name, String descriptor) {
-                // Не трогаем имена полей, только классы
+                // Обфусцируем поля из нашего пакета, только если они не исключены
+                if (owner.startsWith('me/yuugao/holymoderation/') && fieldMapping.containsKey(name)) {
+                    return fieldMapping.get(name)
+                }
                 return name
             }
         }
@@ -102,27 +209,31 @@ task obfuscateJar {
                 
                 def internalName = entry.name.replace('.class', '')
                 
-                try {
-                    def reader = new ClassReader(bytes)
-                    def node = new ClassNode()
-                    reader.accept(node, ClassReader.EXPAND_FRAMES)
-                    
-                    // Применяем remapper
-                    def writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
-                    def classRemapper = new ClassRemapper(writer, remapper)
-                    node.accept(classRemapper)
-                    
-                    entryBytes = writer.toByteArray()
-                    
-                    // Обновляем имя файла
-                    def newInternalName = classMapping.getOrDefault(internalName, internalName)
-                    newEntryName = newInternalName + '.class'
-                    
-                    println "ОБФУСКАЦИЯ: ${entry.name} -> ${newEntryName}"
-                    
-                } catch (Exception e) {
-                    println "ОШИБКА при обработке ${entry.name}: ${e.message}"
-                    // Если ошибка, оставляем как есть
+                if (!excludedClasses.contains(internalName)) {
+                    try {
+                        def reader = new ClassReader(bytes)
+                        def node = new ClassNode()
+                        reader.accept(node, ClassReader.EXPAND_FRAMES)
+                        
+                        // Применяем remapper
+                        def writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
+                        def classRemapper = new ClassRemapper(writer, remapper)
+                        node.accept(classRemapper)
+                        
+                        entryBytes = writer.toByteArray()
+                        
+                        // Обновляем имя файла
+                        def newInternalName = classMapping.getOrDefault(internalName, internalName)
+                        newEntryName = newInternalName + '.class'
+                        
+                        println "ОБФУСКАЦИЯ: ${entry.name} -> ${newEntryName}"
+                        
+                    } catch (Exception e) {
+                        println "ОШИБКА при обработке ${entry.name}: ${e.message}"
+                        // Если ошибка, оставляем как есть
+                    }
+                } else {
+                    println "ПРОПУЩЕН КЛАСС: ${entry.name} (исключен из обфускации)"
                 }
             }
             
@@ -174,16 +285,41 @@ task obfuscateJar {
         tempJar.close()
         
         // Шаг 4: Сохраняем маппинг в файл
-        def mappingFile = new File(inputJar.parent, "class-mapping.txt")
+        def mappingFile = new File(inputJar.parent, "obfuscation-mapping.txt")
         mappingFile.text = "=== МАППИНГ КЛАССОВ ===\n"
         classMapping.each { oldClass, newClass ->
             mappingFile.append("${oldClass} -> ${newClass}\n")
+        }
+        mappingFile.append("\n=== МАППИНГ МЕТОДОВ ===\n")
+        methodMapping.each { oldMethod, newMethod ->
+            mappingFile.append("${oldMethod} -> ${newMethod}\n")
+        }
+        mappingFile.append("\n=== МАППИНГ ПОЛЕЙ ===\n")
+        fieldMapping.each { oldField, newField ->
+            mappingFile.append("${oldField} -> ${newField}\n")
+        }
+        mappingFile.append("\n=== ИСКЛЮЧЕННЫЕ КЛАССЫ ===\n")
+        excludedClasses.each { className ->
+            mappingFile.append("${className} (исключен из обфускации)\n")
+        }
+        mappingFile.append("\n=== ИСКЛЮЧЕННЫЕ МЕТОДЫ ===\n")
+        excludedMethods.each { methodName ->
+            mappingFile.append("${methodName} (исключен из обфускации)\n")
+        }
+        mappingFile.append("\n=== ИСКЛЮЧЕННЫЕ ПОЛЯ ===\n")
+        excludedFields.each { fieldName ->
+            mappingFile.append("${fieldName} (исключено из обфускации)\n")
         }
         
         println "=== ОБФУСКАЦИЯ ЗАВЕРШЕНА ==="
         println "Обфусцированный JAR: ${outputJar.name}"
         println "Маппинг сохранен в: ${mappingFile.name}"
         println "Обработано классов: ${classMapping.size()}"
+        println "Обработано методов: ${methodMapping.size()}"
+        println "Обработано полей: ${fieldMapping.size()}"
+        println "Исключено классов: ${excludedClasses.size()}"
+        println "Исключено методов: ${excludedMethods.size()}"
+        println "Исключено полей: ${excludedFields.size()}"
     }
 }
 
@@ -191,6 +327,32 @@ task obfuscateJar {
 def generateRandomClassName(Random random) {
     def chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     def length = 16 + random.nextInt(16)
+    def name = ""
+    
+    for (int i = 0; i < length; i++) {
+        name += chars.charAt(random.nextInt(chars.length()))
+    }
+    
+    return name
+}
+
+// Вспомогательная функция для генерации случайных имен методов
+def generateRandomMethodName(Random random) {
+    def chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    def length = 8 + random.nextInt(8)
+    def name = ""
+    
+    for (int i = 0; i < length; i++) {
+        name += chars.charAt(random.nextInt(chars.length()))
+    }
+    
+    return name
+}
+
+// Вспомогательная функция для генерации случайных имен полей
+def generateRandomFieldName(Random random) {
+    def chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    def length = 6 + random.nextInt(6)
     def name = ""
     
     for (int i = 0; i < length; i++) {
