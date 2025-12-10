@@ -101,12 +101,10 @@ public class Config {
         @Expose
         private Set<Integer> modifierKeys = new HashSet<>();
         @Expose
-        private KeyBindType type = KeyBindType.SINGLE_PRESS;
-
-        public KeyBindConfig() {
-        }
+        private KeyBindType type;
 
         public KeyBindConfig(KeyBindType type, int mainKey, int... modifiers) {
+            this.type = type;
             this.mainKey = mainKey;
             for (int mod : modifiers) {
                 this.modifierKeys.add(mod);

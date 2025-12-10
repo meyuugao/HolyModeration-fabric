@@ -10,17 +10,16 @@ buildscript {
     }
 }
 
-import org.objectweb.asm.*
+
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.commons.Remapper
-import org.objectweb.asm.tree.*
+import org.objectweb.asm.tree.ClassNode
+
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
-import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.google.gson.JsonArray
-import com.google.gson.JsonElement
 
 // Задача для обфускации JAR файла
 task obfuscateJar {
@@ -31,114 +30,114 @@ task obfuscateJar {
     doLast {
         def inputJar = remapJar.archiveFile.get().asFile
         def outputJar = new File(inputJar.parent, "${inputJar.name.replace('.jar', '')}-obfuscated.jar")
-        
+
         println "=== НАЧАЛО ОБФУСКАЦИИ ==="
         println "Входной файл: ${inputJar.name}"
         println "Выходной файл: ${outputJar.name}"
-        
+
         // Шаг 1: Генерируем маппинг классов
         def classMapping = [:] // старый класс -> новый класс
         def random = new Random(42) // фиксированный seed для воспроизводимости
-        
+
         // Читаем все классы из JAR для генерации маппинга
         def originalJar = new JarFile(inputJar)
         originalJar.entries().each { entry ->
-            if (entry.name.endsWith('.class') && 
-                entry.name.startsWith('me/yuugao/holymoderation/') &&
-                !entry.name.contains('$')) { // исключаем внутренние классы
-                
+            if (entry.name.endsWith('.class') &&
+                    entry.name.startsWith('me/yuugao/holymoderation/') &&
+                    !entry.name.contains('$')) { // исключаем внутренние классы
+
                 def className = entry.name.replace('.class', '').replace('/', '.')
                 def internalName = entry.name.replace('.class', '')
-                
+
                 // Генерируем случайное имя класса
                 def packageName = internalName.substring(0, internalName.lastIndexOf('/'))
                 def simpleClassName = internalName.substring(internalName.lastIndexOf('/') + 1)
                 def randomName = generateRandomClassName(random)
                 def newInternalName = "${packageName}/${randomName}"
-                
+
                 classMapping[internalName] = newInternalName
                 println "КЛАСС: ${internalName} -> ${newInternalName}"
             }
         }
         originalJar.close()
-        
+
         println "Сгенерировано маппингов: ${classMapping.size()}"
-        
+
         // Шаг 2: Создаем remapper для ASM
         def remapper = new Remapper() {
             @Override
             String map(String internalName) {
                 return classMapping.getOrDefault(internalName, internalName)
             }
-            
+
             @Override
             String mapMethodName(String owner, String name, String descriptor) {
                 // Не трогаем имена методов, только классы
                 return name
             }
-            
+
             @Override
             String mapFieldName(String owner, String name, String descriptor) {
                 // Не трогаем имена полей, только классы
                 return name
             }
         }
-        
+
         // Шаг 3: Обрабатываем классы и создаем новую JAR
         def tempJar = new JarOutputStream(new FileOutputStream(outputJar))
         def jarFile = new JarFile(inputJar)
-        
+
         jarFile.entries().each { entry ->
             def is = jarFile.getInputStream(entry)
             def bytes = is.bytes
             is.close()
-            
+
             def newEntryName = entry.name
             def entryBytes = bytes
-            
+
             // Если это класс из нашего пакета - обфусцируем его
-            if (entry.name.endsWith('.class') && 
-                entry.name.startsWith('me/yuugao/holymoderation/')) {
-                
+            if (entry.name.endsWith('.class') &&
+                    entry.name.startsWith('me/yuugao/holymoderation/')) {
+
                 def internalName = entry.name.replace('.class', '')
-                
+
                 try {
                     def reader = new ClassReader(bytes)
                     def node = new ClassNode()
                     reader.accept(node, ClassReader.EXPAND_FRAMES)
-                    
+
                     // Применяем remapper
                     def writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
                     def classRemapper = new ClassRemapper(writer, remapper)
                     node.accept(classRemapper)
-                    
+
                     entryBytes = writer.toByteArray()
-                    
+
                     // Обновляем имя файла
                     def newInternalName = classMapping.getOrDefault(internalName, internalName)
                     newEntryName = newInternalName + '.class'
-                    
+
                     println "ОБФУСКАЦИЯ: ${entry.name} -> ${newEntryName}"
-                    
+
                 } catch (Exception e) {
                     println "ОШИБКА при обработке ${entry.name}: ${e.message}"
                     // Если ошибка, оставляем как есть
                 }
             }
-            
+
             // Если это JSON файл - обновляем ссылки на классы
             if (entry.name in ['fabric.mod.json', 'holymoderation.mixins.json', 'HolyModeration-refmap.json']) {
                 try {
                     def content = new String(bytes, 'UTF-8')
                     def updatedContent = content
-                    
+
                     // Заменяем все старые имена классов на новые через regex
                     classMapping.each { oldClass, newClass ->
                         def oldClassName = oldClass.replace('/', '.')
                         def newClassName = newClass.replace('/', '.')
                         def oldSimpleName = oldClass.substring(oldClass.lastIndexOf('/') + 1)
                         def newSimpleName = newClass.substring(newClass.lastIndexOf('/') + 1)
-                        
+
                         // Для refmap.json используем слэши, для остальных - точки
                         if (entry.name == 'HolyModeration-refmap.json') {
                             // В refmap используем форматы со слэшами
@@ -147,21 +146,21 @@ task obfuscateJar {
                             // В остальных JSON используем точки
                             updatedContent = updatedContent.replaceAll(oldClassName, newClassName)
                         }
-                        
+
                         // Для mixins.json заменяем только простые имена
                         if (entry.name == 'holymoderation.mixins.json') {
                             updatedContent = updatedContent.replaceAll("\"${oldSimpleName}\"", "\"${newSimpleName}\"")
                         }
                     }
-                    
+
                     entryBytes = updatedContent.getBytes('UTF-8')
                     println "ОБНОВЛЕН JSON: ${entry.name}"
-                    
+
                 } catch (Exception e) {
                     println "ОШИБКА при обновлении ${entry.name}: ${e.message}"
                 }
             }
-            
+
             // Записываем entry в новую JAR
             def newEntry = new ZipEntry(newEntryName)
             newEntry.setTime(entry.time)
@@ -169,17 +168,17 @@ task obfuscateJar {
             tempJar.write(entryBytes)
             tempJar.closeEntry()
         }
-        
+
         jarFile.close()
         tempJar.close()
-        
+
         // Шаг 4: Сохраняем маппинг в файл
         def mappingFile = new File(inputJar.parent, "class-mapping.txt")
         mappingFile.text = "=== МАППИНГ КЛАССОВ ===\n"
         classMapping.each { oldClass, newClass ->
             mappingFile.append("${oldClass} -> ${newClass}\n")
         }
-        
+
         println "=== ОБФУСКАЦИЯ ЗАВЕРШЕНА ==="
         println "Обфусцированный JAR: ${outputJar.name}"
         println "Маппинг сохранен в: ${mappingFile.name}"
@@ -192,11 +191,11 @@ def generateRandomClassName(Random random) {
     def chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     def length = 16 + random.nextInt(16)
     def name = ""
-    
+
     for (int i = 0; i < length; i++) {
         name += chars.charAt(random.nextInt(chars.length()))
     }
-    
+
     return name
 }
 
@@ -204,10 +203,10 @@ def generateRandomClassName(Random random) {
 task buildObfuscated {
     group = 'build'
     description = 'Собирает обычную и обфусцированную версии мода'
-    
+
     dependsOn build
     finalizedBy obfuscateJar
-    
+
     doLast {
         println "=== СБОРКА ЗАВЕРШЕНА ==="
         println "Обычный JAR: ${remapJar.archiveFile.get().asFile.name}"
