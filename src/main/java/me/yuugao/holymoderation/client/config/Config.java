@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.config;
 
+import me.yuugao.holymoderation.client.obfuscation.DontObf;
 import me.yuugao.holymoderation.client.obfuscation.StringObfuscator;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
@@ -15,6 +16,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@DontObf
 public class Config {
     public Config() {
         keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
