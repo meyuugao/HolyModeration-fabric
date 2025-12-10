@@ -31,7 +31,7 @@ public class KeyBindingService extends Service {
             Config.KeyBindConfig keyBind = entry.getValue();
 
             boolean mainKeyPressed = pressedKeys.contains(keyBind.getMainKey());
-            boolean modifiersPressed = pressedKeys.containsAll(keyBind.getModifierKeys());
+            boolean modifiersPressed = keyBind.getModifierKeys() != null && pressedKeys.containsAll(keyBind.getModifierKeys());
             boolean combinationPressed = mainKeyPressed && modifiersPressed;
 
             if (keyBind.getType() == Config.KeyBindType.SINGLE_PRESS) {

@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.modules.maingui;
 
+import me.yuugao.holymoderation.client.obfuscation.DontObf;
 import me.yuugao.holymoderation.client.util.ColorPicker;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
@@ -25,6 +26,7 @@ public class MainGuiScreen extends Screen {
     }
 
     @Override
+    @DontObf
     protected void init() {
         progress = 0f;
         animValue = 0f;
@@ -78,6 +80,7 @@ public class MainGuiScreen extends Screen {
     }
 
     @Override
+    @DontObf
     public void render(DrawContext context, int mouseX, int mouseY, float tickDelta) {
         float targetW = (float) context.getScaledWindowWidth() / 2.2f;
         float targetH = (float) context.getScaledWindowHeight() / 1.8f;
@@ -114,11 +117,13 @@ public class MainGuiScreen extends Screen {
     }
 
     @Override
+    @DontObf
     public void close() {
         opening = false;
     }
 
     @Override
+    @DontObf
     public void removed() {
         stopAnimation();
         super.removed();
