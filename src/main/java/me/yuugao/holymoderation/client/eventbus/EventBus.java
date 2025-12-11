@@ -65,11 +65,6 @@ public class EventBus {
 
     public void setLogger(LoggerService loggerService) {
         this.loggerService = loggerService;
-        getType();
-    }
-
-    public void getType() {
-        System.out.println("Eventbus: Get Type");
     }
 
     @DontObf

@@ -10,14 +10,16 @@ buildscript {
     }
 }
 
+
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.Opcodes
 import org.objectweb.asm.commons.ClassRemapper
 import org.objectweb.asm.commons.Remapper
 import org.objectweb.asm.tree.ClassNode
-import org.objectweb.asm.tree.MethodNode
 import org.objectweb.asm.tree.FieldNode
-import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.LocalVariableNode
+import org.objectweb.asm.tree.MethodNode
 
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
@@ -39,6 +41,7 @@ task obfuscateJar {
         def classMapping = [:]
         def methodMapping = [:]
         def fieldMapping = [:]
+        def paramMapping = [:]
         def dontObfClasses = [] as Set
         def dontObfMethods = [] as Set
         def dontObfFields = [] as Set
@@ -48,8 +51,7 @@ task obfuscateJar {
         def classData = [:]
 
         originalJar.entries().each { entry ->
-            if (entry.name.endsWith('.class') &&
-                    entry.name.startsWith('me/yuugao/holymoderation/')) {
+            if (entry.name.endsWith('.class') && entry.name.startsWith('me/yuugao/holymoderation/')) {
 
                 def is = originalJar.getInputStream(entry)
                 def bytes = is.bytes
@@ -60,7 +62,7 @@ task obfuscateJar {
 
                 def reader = new ClassReader(bytes)
                 def node = new ClassNode()
-                reader.accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES)
+                reader.accept(node, ClassReader.EXPAND_FRAMES)
 
                 def hasClassDontObf = node.visibleAnnotations?.any {
                     it.desc == 'Lme/yuugao/holymoderation/client/obfuscation/DontObf;'
@@ -92,10 +94,7 @@ task obfuscateJar {
                         println "МЕТОД С @dontobf: ${internalName}.${method.name}${method.desc}"
                     }
 
-                    if (!hasMethodDontObf &&
-                            method.name != '<init>' &&
-                            method.name != '<clinit>' &&
-                            !hasClassDontObf) {
+                    if (!hasMethodDontObf && method.name != '<init>' && method.name != '<clinit>' && !hasClassDontObf) {
 
                         if (!methodMapping.containsKey(method.name)) {
                             methodMapping[method.name] = generateRandomMethodName(random)
@@ -121,13 +120,49 @@ task obfuscateJar {
                         }
                     }
                 }
+
+                // Generate parameter mappings
+                node.methods.each { MethodNode method ->
+                    def methodKey = "${method.name}${method.desc}"
+                    def hasMethodDontObf = method.visibleAnnotations?.any {
+                        it.desc == 'Lme/yuugao/holymoderation/client/obfuscation/DontObf;'
+                    } ?: false
+
+                    if (!hasMethodDontObf && !hasClassDontObf) {
+                        def methodDesc = method.desc
+                        def paramTypes = parseMethodDescriptor(methodDesc)
+
+                        if (paramTypes && paramTypes.size() > 0 && method.localVariables) {
+                            def paramIndex = 0
+                            if ((method.access & Opcodes.ACC_STATIC) == 0) {
+                                paramIndex = 1 // Skip 'this' parameter for non-static methods
+                            }
+
+                            method.localVariables.each { LocalVariableNode localVar ->
+                                if (localVar.index >= paramIndex && localVar.index < paramIndex + paramTypes.size()) {
+                                    def obfuscatedClassName = classMapping.getOrDefault(internalName, internalName)
+                                    def obfuscatedMethodName = methodMapping.getOrDefault(method.name, method.name)
+                                    def paramKey = "${obfuscatedClassName}.${obfuscatedMethodName}.${localVar.index - paramIndex}"
+                                    if (!paramMapping.containsKey(paramKey)) {
+                                        def newParamName = generateRandomParamName(random)
+                                        paramMapping[paramKey] = newParamName
+                                        println "НОВЫЙ АРГУМЕНТ: ${obfuscatedMethodName} ${localVar.name} -> ${newParamName}"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
+
+
         originalJar.close()
 
         println "Сгенерировано маппингов классов: ${classMapping.size()}"
         println "Сгенерировано маппингов методов: ${methodMapping.size()}"
         println "Сгенерировано маппингов полей: ${fieldMapping.size()}"
+        println "Сгенерировано маппингов параметров: ${paramMapping.size()}"
         println "Классов с @dontobf: ${dontObfClasses.size()}"
         println "Методов с @dontobf: ${dontObfMethods.size()}"
         println "Полей с @dontobf: ${dontObfFields.size()}"
@@ -144,16 +179,14 @@ task obfuscateJar {
                     return name
                 }
 
-                def externalLibraries = [
-                        'com/google/gson/',
-                        'java/lang/',
-                        'java/util/',
-                        'java/io/',
-                        'java/net/',
-                        'javax/net/ssl/',
-                        'org/jetbrains/annotations/',
-                        'org/objectweb/asm/'
-                ]
+                def externalLibraries = ['com/google/gson/',
+                                         'java/lang/',
+                                         'java/util/',
+                                         'java/io/',
+                                         'java/net/',
+                                         'javax/net/ssl/',
+                                         'org/jetbrains/annotations/',
+                                         'org/objectweb/asm/']
 
                 for (lib in externalLibraries) {
                     if (owner.startsWith(lib)) {
@@ -175,15 +208,7 @@ task obfuscateJar {
                             def reader = new ClassReader(classBytes)
                             def superClassInternalName = reader.getSuperName()
 
-                            if (superClassInternalName && (
-                                    superClassInternalName.startsWith('com/google/gson/') ||
-                                            superClassInternalName.startsWith('java/lang/') ||
-                                            superClassInternalName.startsWith('java/util/') ||
-                                            superClassInternalName.startsWith('java/io/') ||
-                                            superClassInternalName.startsWith('java/net/') ||
-                                            superClassInternalName.startsWith('javax/') ||
-                                            superClassInternalName.startsWith('org/jetbrains/') ||
-                                            superClassInternalName.startsWith('org/objectweb/'))) {
+                            if (superClassInternalName && (superClassInternalName.startsWith('com/google/gson/') || superClassInternalName.startsWith('java/lang/') || superClassInternalName.startsWith('java/util/') || superClassInternalName.startsWith('java/io/') || superClassInternalName.startsWith('java/net/') || superClassInternalName.startsWith('javax/') || superClassInternalName.startsWith('org/jetbrains/') || superClassInternalName.startsWith('org/objectweb/'))) {
                                 isAnonymousFromExternalLib = true
                             }
                         } catch (Exception e) {
@@ -224,6 +249,49 @@ task obfuscateJar {
 
                 return fieldMapping.getOrDefault(name, name)
             }
+
+            String mapLocalVariableName(String owner, String thisName, String name, String descriptor, int index) {
+                if (!owner.startsWith('me/yuugao/holymoderation/')) {
+                    return name
+                }
+
+                def classNode = classData[owner]?.let { bytes ->
+                    def reader = new ClassReader(bytes)
+                    def node = new ClassNode()
+                    reader.accept(node, ClassReader.EXPAND_FRAMES)
+                    node
+                }
+
+                if (!classNode) {
+                    return name
+                }
+
+                for (method in classNode.methods) {
+                    def methodDesc = method.desc
+                    def paramTypes = parseMethodDescriptor(methodDesc)
+
+                    if (paramTypes && paramTypes.size() > 0 && method.localVariables) {
+                        def paramIndex = 0
+                        if ((method.access & Opcodes.ACC_STATIC) == 0) {
+                            paramIndex = 1
+                        }
+
+                        for (localVar in method.localVariables) {
+                            if (localVar.index == index) {
+                                def obfuscatedClassName = classMapping.getOrDefault(owner, owner)
+                                def obfuscatedMethodName = methodMapping.getOrDefault(method.name, method.name)
+                                def paramKey = "${obfuscatedClassName}.${obfuscatedMethodName}.${index - paramIndex}"
+                                if (paramMapping.containsKey(paramKey)) {
+                                    return paramMapping[paramKey]
+                                }
+                                break
+                            }
+                        }
+                    }
+                }
+
+                return name
+            }
         }
 
         def tempJar = new JarOutputStream(new FileOutputStream(outputJar))
@@ -237,8 +305,7 @@ task obfuscateJar {
             def newEntryName = entry.name
             def entryBytes = bytes
 
-            if (entry.name.endsWith('.class') &&
-                    entry.name.startsWith('me/yuugao/holymoderation/')) {
+            if (entry.name.endsWith('.class') && entry.name.startsWith('me/yuugao/holymoderation/')) {
 
                 def internalName = entry.name.replace('.class', '')
 
@@ -247,8 +314,63 @@ task obfuscateJar {
                     def node = new ClassNode()
                     reader.accept(node, ClassReader.EXPAND_FRAMES)
 
-                    def writer = new ClassWriter(ClassWriter.COMPUTE_MAXS)
+                    // Apply parameter obfuscation
+                    node.methods.each { MethodNode method ->
+                        def methodKey = "${method.name}${method.desc}"
+                        def hasMethodDontObf = method.visibleAnnotations?.any {
+                            it.desc == 'Lme/yuugao/holymoderation/client/obfuscation/DontObf;'
+                        } ?: false
+
+                        if (!hasMethodDontObf && !dontObfClasses.contains(internalName)) {
+                            def methodDesc = method.desc
+                            def paramTypes = parseMethodDescriptor(methodDesc)
+
+                            if (paramTypes && paramTypes.size() > 0 && method.localVariables) {
+                                def paramIndex = 0
+                                if ((method.access & Opcodes.ACC_STATIC) == 0) {
+                                    paramIndex = 1 // Skip 'this' parameter for non-static methods
+                                }
+
+                                method.localVariables.each { LocalVariableNode localVar ->
+                                    println "ОБРАБОТКА ЛОКАЛЬНОЙ ПЕРЕМЕННОЙ: ${localVar.name} (индекс: ${localVar.index})"
+                                    if (localVar.index >= paramIndex && localVar.index < paramIndex + paramTypes.size()) {
+                                        def obfuscatedClassName = classMapping.getOrDefault(internalName, internalName)
+                                        def obfuscatedMethodName = methodMapping.getOrDefault(method.name, method.name)
+                                        def paramKey = "${obfuscatedClassName}.${obfuscatedMethodName}.${localVar.index - paramIndex}"
+                                        println "ПРОВЕРКА МАППИНГА ДЛЯ: ${paramKey} (доступно: ${paramMapping.containsKey(paramKey)})"
+                                        boolean contains = false;
+                                        paramMapping.each { key, value ->
+                                            if (key.contains(obfuscatedMethodName)) {
+                                                contains = true;
+                                                return
+                                            }
+                                        }
+                                        if (contains) {
+                                            def oldParamName = localVar.name
+                                            def newParamName = paramMapping[paramKey]
+                                            println "ОБФУСКАЦИЯ ПАРАМЕТРА: ${obfuscatedClassName}.${obfuscatedMethodName} ${oldParamName} -> ${newParamName}"
+                                            localVar.name = newParamName
+                                        } else {
+                                            println "НЕТ МАППИНГА ДЛЯ: ${paramKey}"
+                                        }
+                                    } else {
+                                        println "ПАРАМЕТР ВНЕ ДИАПАЗОНА: ${localVar.index} (диапазон: ${paramIndex}..${paramIndex + paramTypes.size() - 1})"
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    def writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
                     def classRemapper = new ClassRemapper(writer, remapper)
+                    node.methods.each { MethodNode m ->
+                        m.parameters = null
+                        m.visibleParameterAnnotations = null
+                        m.invisibleParameterAnnotations = null
+                        m.signature = null
+                        m.access &= ~Opcodes.ACC_SYNTHETIC
+                        m.access &= ~Opcodes.ACC_MANDATED
+                    }
                     node.accept(classRemapper)
 
                     entryBytes = writer.toByteArray()
@@ -307,18 +429,19 @@ task obfuscateJar {
 
         def mappingFile = new File(inputJar.parent, "obfuscation-mapping.txt")
         mappingFile.text = "=== МАППИНГ КЛАССОВ ===\n"
-        classMapping.each { oldClass, newClass ->
-            mappingFile.append("${oldClass} -> ${newClass}\n")
+        classMapping.each { oldClass, newClass -> mappingFile.append("${oldClass} -> ${newClass}\n")
         }
 
         mappingFile.append("\n=== МАППИНГ МЕТОДОВ ===\n")
-        methodMapping.each { oldMethod, newMethod ->
-            mappingFile.append("${oldMethod} -> ${newMethod}\n")
+        methodMapping.each { oldMethod, newMethod -> mappingFile.append("${oldMethod} -> ${newMethod}\n")
         }
 
         mappingFile.append("\n=== МАППИНГ ПОЛЕЙ ===\n")
-        fieldMapping.each { oldField, newField ->
-            mappingFile.append("${oldField} -> ${newField}\n")
+        fieldMapping.each { oldField, newField -> mappingFile.append("${oldField} -> ${newField}\n")
+        }
+
+        mappingFile.append("\n=== МАППИНГ ПАРАМЕТРОВ ===\n")
+        paramMapping.each { paramKey, newParamName -> mappingFile.append("${paramKey} -> ${newParamName}\n")
         }
 
         mappingFile.append("\n=== ИСКЛЮЧЕНИЯ @dontobf ===\n")
@@ -334,6 +457,7 @@ task obfuscateJar {
         println "Обработано полей: ${fieldMapping.size()}"
     }
 }
+
 
 task buildObfuscated {
     group = 'build'
@@ -386,4 +510,65 @@ def generateRandomFieldName(Random random) {
     }
 
     return name
+}
+
+def generateRandomParamName(Random random) {
+    def chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    def length = 12 + random.nextInt(12)
+    def name = ""
+
+    for (int i = 0; i < length; i++) {
+        name += chars.charAt(random.nextInt(chars.length()))
+    }
+
+    return name
+}
+
+def parseMethodDescriptor(String descriptor) {
+    if (!descriptor || descriptor.length() < 3 || descriptor[0] != '(') {
+        return null
+    }
+
+    def paramTypes = []
+    def i = 1 // Skip '('
+
+    while (i < descriptor.length() && descriptor[i] != ')') {
+        def type = descriptor[i]
+
+        if (type == 'L') {
+            // Object type
+            def end = descriptor.indexOf(';', i)
+            if (end == -1) {
+                return null
+            }
+            paramTypes.add(descriptor.substring(i, end + 1))
+            i = end + 1
+        } else if (type == '[') {
+            // Array type
+            def end = i + 1
+            while (end < descriptor.length() && descriptor[end] == '[') {
+                end++
+            }
+            if (end >= descriptor.length()) {
+                return null
+            }
+            if (descriptor[end] == 'L') {
+                def semiEnd = descriptor.indexOf(';', end)
+                if (semiEnd == -1) {
+                    return null
+                }
+                paramTypes.add(descriptor.substring(i, semiEnd + 1))
+                i = semiEnd + 1
+            } else {
+                paramTypes.add(descriptor.substring(i, end + 1))
+                i = end + 1
+            }
+        } else {
+            // Primitive type
+            paramTypes.add(type)
+            i++
+        }
+    }
+
+    return paramTypes
 }
