@@ -86,6 +86,11 @@ jar {
     }
 }
 
+compileJava {
+    options.debugOptions.debugLevel = "vars,lines"
+    options.debug = true
+}
+
 apply from: 'obfuscator.gradle'
 
 // configure the maven publication
