@@ -5,6 +5,11 @@ import net.minecraft.client.util.math.MatrixStack;
 
 import java.awt.Color;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class ColorPicker {
     private float centerX;
     private float centerY;
@@ -49,46 +54,5 @@ public class ColorPicker {
         float value = 1.0f;
         
         selectedColor = Color.getHSBColor(hue, saturation, value);
-    }
-    
-    public Color getSelectedColor() {
-        return selectedColor;
-    }
-    
-    public void setPosition(float centerX, float centerY) {
-        this.centerX = centerX;
-        this.centerY = centerY;
-    }
-    
-    public void setRadius(float radius) {
-        this.radius = radius;
-    }
-    
-    public void setOutlineColor(Color outlineColor) {
-        this.outlineColor = outlineColor;
-    }
-    
-    public void setOutlineWidth(float outlineWidth) {
-        this.outlineWidth = outlineWidth;
-    }
-    
-    public float getCenterX() {
-        return centerX;
-    }
-    
-    public float getCenterY() {
-        return centerY;
-    }
-    
-    public float getRadius() {
-        return radius;
-    }
-    
-    public Color getOutlineColor() {
-        return outlineColor;
-    }
-    
-    public float getOutlineWidth() {
-        return outlineWidth;
     }
 }
