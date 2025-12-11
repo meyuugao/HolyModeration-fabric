@@ -43,6 +43,7 @@ tasks.register("obfuscateJar") {
         Map<String, String> methodMapping = [:]
         Map<String, String> fieldMapping = [:]
         Map<String, String> paramMapping = [:]
+        Map<String, Set<String>> superClasses = [:]
         Set<String> dontObfClasses = new HashSet<>()
         Set<String> dontObfMethods = new HashSet<>()
         Set<String> dontObfFields = new HashSet<>()
@@ -91,7 +92,11 @@ tasks.register("obfuscateJar") {
                     if (!hasMethodDontObf && method.name != "<init>" && method.name != "<clinit>" && !hasClassDontObf) {
                         String genKey = internalName + "." + method.name + method.desc
                         if (!methodMapping.containsKey(genKey)) {
-                            methodMapping.put(genKey, generateRandomMethodName(random))
+                            String genName = generateRandomMethodName(random)
+                            methodMapping.put(genKey, genName)
+                            String mappedOwner = classMapping.containsKey(internalName) ? classMapping.get(internalName) : internalName
+                            String genKeyMapped = mappedOwner + "." + method.name + method.desc
+                            methodMapping.put(genKeyMapped, genName)
                             println("НОВЫЙ МЕТОД: " + genKey + " -> " + methodMapping.get(genKey))
                         }
                     }
@@ -106,8 +111,12 @@ tasks.register("obfuscateJar") {
                     }
                     if (!hasFieldDontObf && !hasClassDontObf) {
                         if (!fieldMapping.containsKey(fieldKeyFull)) {
-                            fieldMapping.put(fieldKeyFull, generateRandomFieldName(random))
-                            println("НОВОЕ ПОЛЕ: " + field.name + " -> " + fieldMapping.get(fieldKeyFull))
+                            String genField = generateRandomFieldName(random)
+                            fieldMapping.put(fieldKeyFull, genField)
+                            String mappedOwner = classMapping.containsKey(internalName) ? classMapping.get(internalName) : internalName
+                            String fieldKeyMapped = mappedOwner + "." + field.name
+                            fieldMapping.put(fieldKeyMapped, genField)
+                            println("НОВОЕ ПОЛЕ: " + field.name + " -> " + genField)
                         }
                     }
                 }
@@ -125,9 +134,12 @@ tasks.register("obfuscateJar") {
                                     String obfClassName = classMapping.containsKey(internalName) ? classMapping.get(internalName) : internalName
                                     String obfMethodName = methodMapping.containsKey(methodKey) ? methodMapping.get(methodKey) : method.name
                                     String paramKey = obfClassName + "." + obfMethodName + "." + (idx - paramIndex)
+                                    String originalParamKey = internalName + "." + obfMethodName + "." + (idx - paramIndex)
                                     if (!paramMapping.containsKey(paramKey)) {
-                                        paramMapping.put(paramKey, generateRandomParamName(random))
-                                        println("НОВЫЙ АРГУМЕНТ: " + obfMethodName + " " + localVar.name + " -> " + paramMapping.get(paramKey))
+                                        String genParam = generateRandomParamName(random)
+                                        paramMapping.put(paramKey, genParam)
+                                        paramMapping.put(originalParamKey, genParam)
+                                        println("НОВЫЙ АРГУМЕНТ: " + obfMethodName + " " + localVar.name + " -> " + genParam)
                                     }
                                 }
                             }
@@ -138,6 +150,18 @@ tasks.register("obfuscateJar") {
         }
 
         originalJar.close()
+
+        // === построение superClasses ===
+        for (Map.Entry<String, byte[]> entryPair : classData.entrySet()) {
+            String internalName = entryPair.key
+            ClassReader reader = new ClassReader(entryPair.value)
+            ClassNode node = new ClassNode()
+            reader.accept(node, ClassReader.SKIP_FRAMES)
+            Set<String> parents = new HashSet<>()
+            if (node.superName != null) parents.add(node.superName)
+            if (node.interfaces != null) parents.addAll(node.interfaces)
+            superClasses.put(internalName, parents)
+        }
 
         println("Сгенерировано маппингов классов: " + classMapping.size())
         println("Сгенерировано маппингов методов: " + methodMapping.size())
@@ -170,10 +194,13 @@ tasks.register("obfuscateJar") {
                         }
                     }
                 }
-                for (LocalVariableNode localVar : method.localVariables) {
-                    int idx = localVar.index
-                    if (idx >= paramIndex + paramTypes.size()) {
-                        localVar.name = generateRandomParamName(random)
+                if (method.localVariables != null) {
+                    for (LocalVariableNode localVar : method.localVariables) {
+                        if (localVar.name != null && localVar.name != "this") {
+                            String oldName = localVar.name
+                            localVar.name = generateRandomParamName(random)
+                            println("ЛОКАЛЬНАЯ ПЕРЕМЕННАЯ: " + oldName + " -> " + localVar.name)
+                        }
                     }
                 }
             }
@@ -190,20 +217,30 @@ tasks.register("obfuscateJar") {
             @Override
             String mapMethodName(String owner, String name, String descriptor) {
                 if (!owner.startsWith(pkgPrefix)) return name
-                String key = owner + "." + name + descriptor
-                if (dontObfClasses.contains(owner)) return name
-                if (dontObfMethods.contains(key)) return name
-                if (methodMapping.containsKey(key)) return methodMapping.get(key)
+                Set<String> ownersToCheck = new HashSet<>()
+                ownersToCheck.add(owner)
+                if (superClasses.containsKey(owner)) ownersToCheck.addAll(superClasses.get(owner))
+                for (String o : ownersToCheck) {
+                    String key = o + "." + name + descriptor
+                    if (dontObfClasses.contains(o)) return name
+                    if (dontObfMethods.contains(key)) return name
+                    if (methodMapping.containsKey(key)) return methodMapping.get(key)
+                }
                 return name
             }
 
             @Override
             String mapFieldName(String owner, String name, String descriptor) {
                 if (!owner.startsWith(pkgPrefix)) return name
-                String key = owner + "." + name
-                if (dontObfClasses.contains(owner)) return name
-                if (dontObfFields.contains(key)) return name
-                if (fieldMapping.containsKey(key)) return fieldMapping.get(key)
+                Set<String> ownersToCheck = new HashSet<>()
+                ownersToCheck.add(owner)
+                if (superClasses.containsKey(owner)) ownersToCheck.addAll(superClasses.get(owner))
+                for (String o : ownersToCheck) {
+                    String key = o + "." + name
+                    if (dontObfClasses.contains(o)) return name
+                    if (dontObfFields.contains(key)) return name
+                    if (fieldMapping.containsKey(key)) return fieldMapping.get(key)
+                }
                 return name
             }
         }
@@ -229,34 +266,14 @@ tasks.register("obfuscateJar") {
                     reader.accept(node, ClassReader.EXPAND_FRAMES)
 
                     for (MethodNode method : node.methods) {
-                        String methodFullKey = internalName + "." + method.name + method.desc
-                        if (dontObfMethods.contains(methodFullKey) || dontObfClasses.contains(internalName)) continue
-                        List<String> paramTypes = parseMethodDescriptor(method.desc)
-                        if (paramTypes != null && paramTypes.size() > 0 && method.localVariables != null) {
+                        if (dontObfMethods.contains(internalName + "." + method.name + method.desc) || dontObfClasses.contains(internalName)) continue
+
+                        if (method.localVariables != null && method.localVariables.size() > 0) {
                             int paramIndex = ((method.access & Opcodes.ACC_STATIC) == 0) ? 1 : 0
-                            for (LocalVariableNode localVar : method.localVariables) {
-                                int idx = localVar.index
-                                if (idx >= paramIndex && idx < paramIndex + paramTypes.size()) {
-                                    String obfClassName = classMapping.containsKey(internalName) ? classMapping.get(internalName) : internalName
-                                    String obfMethodKey = internalName + "." + method.name + method.desc
-                                    String obfMethodName = methodMapping.containsKey(obfMethodKey) ? methodMapping.get(obfMethodKey) : method.name
-                                    String paramKey = obfClassName + "." + obfMethodName + "." + (idx - paramIndex)
-                                    if (paramMapping.containsKey(paramKey)) {
-                                        localVar.name = paramMapping.get(paramKey)
-                                    }
-                                }
-                            }
-                        }
-                        Map<Integer, String> mapForMethod = localVarMapping.get(internalName).get(method.name)
-                        if (mapForMethod != null) {
-                            for (Map.Entry<Integer, String> me : mapForMethod.entrySet()) {
-                                int idx = me.key
-                                String newName = me.value
-                                for (LocalVariableNode lv : method.localVariables) {
-                                    if (lv.index == idx) {
-                                        lv.name = newName
-                                        break
-                                    }
+                            for (int i = paramIndex; i < method.localVariables.size(); i++) {
+                                LocalVariableNode lv = method.localVariables.get(i)
+                                if (lv.name != "this") {
+                                    lv.name = generateRandomParamName(random)
                                 }
                             }
                         }
