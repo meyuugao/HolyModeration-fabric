@@ -336,18 +336,11 @@ task obfuscateJar {
                                     if (localVar.index >= paramIndex && localVar.index < paramIndex + paramTypes.size()) {
                                         def obfuscatedClassName = classMapping.getOrDefault(internalName, internalName)
                                         def obfuscatedMethodName = methodMapping.getOrDefault(method.name, method.name)
-                                        def paramKey = "${obfuscatedClassName}.${obfuscatedMethodName}.${localVar.index - paramIndex}"
+                                        def paramKey = "${obfuscatedClassName}.${obfuscatedMethodName}.${localVar.index - paramIndex}".intern() //tip: ВАЖНО: ПРЕОБРАЗОВАНИЕ GStringImpl (интерполированная строка) --> String
                                         println "ПРОВЕРКА МАППИНГА ДЛЯ: ${paramKey} (доступно: ${paramMapping.containsKey(paramKey)})"
-                                        boolean contains = false;
-                                        paramMapping.each { key, value ->
-                                            if (key.contains(obfuscatedMethodName)) {
-                                                contains = true;
-                                                return
-                                            }
-                                        }
-                                        if (contains) {
+                                        if (paramMapping.containsKey(paramKey)) {
                                             def oldParamName = localVar.name
-                                            def newParamName = paramMapping[paramKey]
+                                            def newParamName = paramMapping.get(paramKey)
                                             println "ОБФУСКАЦИЯ ПАРАМЕТРА: ${obfuscatedClassName}.${obfuscatedMethodName} ${oldParamName} -> ${newParamName}"
                                             localVar.name = newParamName
                                         } else {
@@ -365,8 +358,6 @@ task obfuscateJar {
                     def classRemapper = new ClassRemapper(writer, remapper)
                     node.methods.each { MethodNode m ->
                         m.parameters = null
-                        m.visibleParameterAnnotations = null
-                        m.invisibleParameterAnnotations = null
                         m.signature = null
                         m.access &= ~Opcodes.ACC_SYNTHETIC
                         m.access &= ~Opcodes.ACC_MANDATED
