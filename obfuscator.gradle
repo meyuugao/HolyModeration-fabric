@@ -10,15 +10,10 @@ buildscript {
     }
 }
 
-import org.objectweb.asm.ClassReader
-import org.objectweb.asm.ClassWriter
-import org.objectweb.asm.Opcodes
-import org.objectweb.asm.commons.ClassRemapper
-import org.objectweb.asm.commons.Remapper
-import org.objectweb.asm.tree.ClassNode
-import org.objectweb.asm.tree.FieldNode
-import org.objectweb.asm.tree.LocalVariableNode
-import org.objectweb.asm.tree.MethodNode
+
+import org.objectweb.asm.*
+import org.objectweb.asm.commons.*
+import org.objectweb.asm.tree.*
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
@@ -361,6 +356,12 @@ tasks.register("obfuscateJar") {
                         }
                     }
 
+                    Random rnd = new Random(System.currentTimeMillis())
+                    for (MethodNode method : node.methods) {
+                        injectGarbage(method, rnd)
+                    }
+                    ensureClinitWithGarbage(node, rnd)
+
                     ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES)
                     ClassRemapper classRemapper = new ClassRemapper(writer, remapper)
                     for (MethodNode m : node.methods) {
@@ -584,4 +585,95 @@ static def parseMethodDescriptor(String descriptor) {
         }
     }
     return paramTypes
+}
+
+static def injectGarbage(MethodNode methodNode, Random rnd) {
+    if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) return
+    if ((methodNode.access & Opcodes.ACC_NATIVE) != 0) return
+    if ("<init>" == methodNode.name) return
+
+    InsnList insns = new InsnList()
+    int localIndex = methodNode.maxLocals
+    int blocks = 8 + rnd.nextInt(8)
+    for (int b = 0; b < blocks; b++) {
+        LabelNode skip = new LabelNode()
+        insns.add(new InsnNode(Opcodes.ICONST_0))
+        insns.add(new JumpInsnNode(Opcodes.IFEQ, skip))
+        int ops = 6 + rnd.nextInt(20)
+        for (int o = 0; o < ops; o++) {
+            int kind = rnd.nextInt(4)
+            if (kind == 0) {
+                int val = rnd.nextInt()
+                insns.add(new LdcInsnNode(val))
+                insns.add(new VarInsnNode(Opcodes.ISTORE, localIndex))
+                insns.add(new VarInsnNode(Opcodes.ILOAD, localIndex))
+                int val2 = rnd.nextInt(1000) + 1
+                insns.add(new LdcInsnNode(val2))
+                insns.add(new InsnNode(Opcodes.IMUL))
+                insns.add(new VarInsnNode(Opcodes.ISTORE, localIndex))
+                localIndex++
+            } else if (kind == 1) {
+                long lval = Math.abs(rnd.nextLong())
+                insns.add(new LdcInsnNode(lval))
+                insns.add(new VarInsnNode(Opcodes.LSTORE, localIndex))
+                insns.add(new VarInsnNode(Opcodes.LLOAD, localIndex))
+                insns.add(new LdcInsnNode(rnd.nextLong()))
+                insns.add(new InsnNode(Opcodes.LXOR))
+                insns.add(new VarInsnNode(Opcodes.LSTORE, localIndex))
+                localIndex += 2
+            } else if (kind == 2) {
+                String s = randomChinese(rnd, 6 + rnd.nextInt(10))
+                insns.add(new LdcInsnNode(s))
+                insns.add(new VarInsnNode(Opcodes.ASTORE, localIndex))
+                insns.add(new VarInsnNode(Opcodes.ALOAD, localIndex))
+                insns.add(new InsnNode(Opcodes.POP))
+                localIndex++
+            } else {
+                double d = rnd.nextDouble() * rnd.nextInt(Integer.MAX_VALUE)
+                insns.add(new LdcInsnNode(d))
+                insns.add(new VarInsnNode(Opcodes.DSTORE, localIndex))
+                insns.add(new VarInsnNode(Opcodes.DLOAD, localIndex))
+                insns.add(new LdcInsnNode(rnd.nextDouble()))
+                insns.add(new InsnNode(Opcodes.DADD))
+                insns.add(new VarInsnNode(Opcodes.DSTORE, localIndex))
+                localIndex += 2
+            }
+        }
+        insns.add(skip)
+    }
+
+    methodNode.maxLocals = Math.max(methodNode.maxLocals, localIndex)
+
+    if (methodNode.instructions == null || methodNode.instructions.size() == 0) {
+        methodNode.instructions = insns
+        methodNode.instructions.add(new InsnNode(Opcodes.RETURN))
+    } else {
+        methodNode.instructions.insert(insns)
+    }
+}
+
+
+static def ensureClinitWithGarbage (ClassNode classNode, Random rnd) {
+    MethodNode clinit = null
+    for (MethodNode m : classNode.methods) {
+        if ("<clinit>" == m.name) {
+            clinit = m
+            break
+        }
+    }
+    if (clinit == null) {
+        clinit = new MethodNode(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null)
+        classNode.methods.add(clinit)
+    }
+    injectGarbage(clinit, rnd)
+}
+
+static def randomChinese (Random rnd, int len) {
+    StringBuilder sb = new StringBuilder()
+    for (int i = 0; i < len; i++) {
+        int base = 0x4E00
+        int ch = base + rnd.nextInt(0x9FA5 - 0x4E00)
+        sb.append((char) ch)
+    }
+    return sb.toString()
 }
