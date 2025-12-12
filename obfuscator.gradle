@@ -65,7 +65,7 @@ tasks.register("obfuscateJar") {
                 boolean hasClassDontObf = node.visibleAnnotations != null && node.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
                 if (hasClassDontObf) {
                     dontObfClasses.add(internalName)
-                    println("КЛАСС С @dontobf: " + internalName)
+                    println("КЛАСС С @DontObf: " + internalName)
                 }
 
                 int idx = internalName.lastIndexOf("/")
@@ -165,7 +165,7 @@ tasks.register("obfuscateJar") {
                     boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
                     if (hasMethodDontObf) {
                         dontObfMethods.add(methodKey)
-                        println("МЕТОД С @dontobf: " + internalName + "." + method.name + method.desc)
+                        println("МЕТОД С @DontObf: " + internalName + "." + method.name + method.desc)
                     }
                     if (!hasMethodDontObf && method.name != "<init>" && method.name != "<clinit>" && !hasClassDontObf) {
                         String genKey = internalName + "." + method.name + method.desc
@@ -185,7 +185,7 @@ tasks.register("obfuscateJar") {
                     boolean hasFieldDontObf = field.visibleAnnotations != null && field.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
                     if (hasFieldDontObf) {
                         dontObfFields.add(fieldKeyFull)
-                        println("ПОЛЕ С @dontobf: " + fieldKeyFull)
+                        println("ПОЛЕ С @DontObf: " + fieldKeyFull)
                     }
                     if (!hasFieldDontObf && !hasClassDontObf) {
                         if (!fieldMapping.containsKey(fieldKeyFull)) {
@@ -244,9 +244,9 @@ tasks.register("obfuscateJar") {
         println("Сгенерировано маппингов методов: " + methodMapping.size())
         println("Сгенерировано маппингов полей: " + fieldMapping.size())
         println("Сгенерировано маппингов параметров: " + paramMapping.size())
-        println("Классов с @dontobf: " + dontObfClasses.size())
-        println("Методов с @dontobf: " + dontObfMethods.size())
-        println("Полей с @dontobf: " + dontObfFields.size())
+        println("Классов С @DontObf: " + dontObfClasses.size())
+        println("Методов С @DontObf: " + dontObfMethods.size())
+        println("Полей С @DontObf: " + dontObfFields.size())
 
         Map<String, Map<String, Map<Integer, String>>> localVarMapping = [:]
 
@@ -358,7 +358,7 @@ tasks.register("obfuscateJar") {
 
                     Random rnd = new Random(System.currentTimeMillis())
                     for (MethodNode method : node.methods) {
-                        injectGarbageScattered(method, rnd)
+                        injectGarbage(method, rnd)
                         insertArtLines(node, method, rnd)
                     }
                     ensureClinitWithGarbage(node, rnd)
@@ -588,7 +588,7 @@ static def parseMethodDescriptor(String descriptor) {
     return paramTypes
 }
 
-static def injectGarbageScattered(MethodNode methodNode, Random rnd) {
+static def injectGarbage(MethodNode methodNode, Random rnd) {
     if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) return
     if ((methodNode.access & Opcodes.ACC_NATIVE) != 0) return
     if ("<init>" == methodNode.name) return
@@ -815,7 +815,7 @@ static def ensureClinitWithGarbage (ClassNode classNode, Random rnd) {
         clinit = new MethodNode(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null)
         classNode.methods.add(clinit)
     }
-    injectGarbageScattered(clinit, rnd)
+    injectGarbage(clinit, rnd)
 }
 
 static def randomChinese (Random rnd, int len) {
