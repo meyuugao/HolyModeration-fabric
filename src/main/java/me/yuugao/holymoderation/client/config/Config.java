@@ -1,8 +1,7 @@
 package me.yuugao.holymoderation.client.config;
 
-import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.obfuscation.DontObf;
-import me.yuugao.holymoderation.client.obfuscation.StringObfuscator;
+import me.yuugao.holymoderation.obfuscation.DontObf;
+
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 

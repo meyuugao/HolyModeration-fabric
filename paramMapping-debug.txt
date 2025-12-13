@@ -453,7 +453,7 @@
   == с искомым: false
   equals с искомым: false
 
-Ключ: 'me/yuugao/holymoderation/client/obfuscation/pLggEvWjseiSSnAtdXNuGepqV.yFYdKVSQXW.0'
+Ключ: 'me/yuugao/holymoderation/client/obfuscator/pLggEvWjseiSSnAtdXNuGepqV.yFYdKVSQXW.0'
   Значение: 'LgOmVkyJLgNRTvI3'
   Длина: 82
   Хэш: 1831277397
@@ -461,7 +461,7 @@
   == с искомым: false
   equals с искомым: false
 
-Ключ: 'me/yuugao/holymoderation/client/obfuscation/pLggEvWjseiSSnAtdXNuGepqV.EcOSpwsypWHfH.0'
+Ключ: 'me/yuugao/holymoderation/client/obfuscator/pLggEvWjseiSSnAtdXNuGepqV.EcOSpwsypWHfH.0'
   Значение: 'SoI5FSBvlzE5LuXobn8O'
   Длина: 85
   Хэш: 1967559971
@@ -469,7 +469,7 @@
   == с искомым: false
   equals с искомым: false
 
-Ключ: 'me/yuugao/holymoderation/client/obfuscation/pLggEvWjseiSSnAtdXNuGepqV.NZLHhCqdWU.0'
+Ключ: 'me/yuugao/holymoderation/client/obfuscator/pLggEvWjseiSSnAtdXNuGepqV.NZLHhCqdWU.0'
   Значение: 'GNOXzRQeglKq9mF55LaJ'
   Длина: 82
   Хэш: 815773065

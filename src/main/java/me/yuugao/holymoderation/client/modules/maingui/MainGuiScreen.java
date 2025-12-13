@@ -1,8 +1,8 @@
 package me.yuugao.holymoderation.client.modules.maingui;
 
-import me.yuugao.holymoderation.client.obfuscation.DontObf;
 import me.yuugao.holymoderation.client.util.ColorPicker;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+import me.yuugao.holymoderation.obfuscation.DontObf;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;

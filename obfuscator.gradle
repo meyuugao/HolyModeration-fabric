@@ -2,18 +2,19 @@ buildscript {
     repositories {
         mavenCentral()
     }
+
     dependencies {
-        classpath "org.ow2.asm:asm:9.5"
-        classpath "org.ow2.asm:asm-commons:9.5"
-        classpath "org.ow2.asm:asm-tree:9.5"
-        classpath "com.google.code.gson:gson:2.10.1"
+        classpath 'org.ow2.asm:asm:9.5'
+        classpath 'org.ow2.asm:asm-tree:9.5'
+        classpath 'org.ow2.asm:asm-commons:9.5'
     }
 }
-
 
 import org.objectweb.asm.*
 import org.objectweb.asm.commons.*
 import org.objectweb.asm.tree.*
+
+import java.security.SecureRandom
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
@@ -62,7 +63,7 @@ tasks.register("obfuscateJar") {
                 ClassNode node = new ClassNode()
                 reader.accept(node, ClassReader.EXPAND_FRAMES)
 
-                boolean hasClassDontObf = node.visibleAnnotations != null && node.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
+                boolean hasClassDontObf = node.visibleAnnotations != null && node.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
                 if (hasClassDontObf) {
                     dontObfClasses.add(internalName)
                     println("КЛАСС С @DontObf: " + internalName)
@@ -74,95 +75,97 @@ tasks.register("obfuscateJar") {
                 String protectedPrefix2 = "me/yuugao/holymoderation/client"
                 String mixinPrefix = "me/yuugao/holymoderation/client/mixin"
 
-                if (internalName.contains('$')) {
-                    String outer = internalName.substring(0, internalName.indexOf('$'))
-                    String innerPart = internalName.substring(internalName.indexOf('$'))
-                    if (classMapping.containsKey(outer)) {
-                        classMapping.put(internalName, classMapping.get(outer) + innerPart)
+                if (internalName != "me/yuugao/holymoderation/obfuscation/DontObf") {
+                    if (internalName.contains('$')) {
+                        String outer = internalName.substring(0, internalName.indexOf('$'))
+                        String innerPart = internalName.substring(internalName.indexOf('$'))
+                        if (classMapping.containsKey(outer)) {
+                            classMapping.put(internalName, classMapping.get(outer) + innerPart)
+                        } else {
+                            String genOuter = generateRandomClassName(random)
+                            String newOuterInternal
+                            if (outer.startsWith(mixinPrefix)) {
+                                if (!classMapping.containsKey(mixinPrefix)) {
+                                    String newMixinDir = protectedPrefix2 + "/" + generateRandomPackageName(random)
+                                    classMapping.put(mixinPrefix, newMixinDir)
+                                }
+                                newOuterInternal = classMapping.get(mixinPrefix) + "/" + genOuter
+                            } else if (outer.startsWith(protectedPrefix2)) {
+                                String suffix = outer.substring(protectedPrefix2.length())
+                                String[] parts = suffix.split("/")
+                                StringBuilder sb = new StringBuilder(protectedPrefix2)
+                                for (String part : parts) {
+                                    if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
+                                }
+                                newOuterInternal = sb.toString() + "/" + genOuter
+                            } else if (outer.startsWith(protectedPrefix1)) {
+                                String suffix = outer.substring(protectedPrefix1.length())
+                                String[] parts = suffix.split("/")
+                                StringBuilder sb = new StringBuilder(protectedPrefix1)
+                                for (String part : parts) {
+                                    if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
+                                }
+                                newOuterInternal = sb.toString() + "/" + genOuter
+                            } else {
+                                String outerIdxPkg = outer.substring(0, outer.lastIndexOf("/"))
+                                String[] parts = outerIdxPkg.split("/")
+                                StringBuilder sb = new StringBuilder()
+                                for (String part : parts) {
+                                    if (!part.isEmpty()) sb.append(generateRandomPackageName(random)).append("/")
+                                }
+                                newOuterInternal = sb.toString().replaceAll("\$", "") + "/" + genOuter
+                            }
+                            if (!classMapping.containsKey(outer)) {
+                                classMapping.put(outer, newOuterInternal)
+                            } else {
+                                newOuterInternal = classMapping.get(outer)
+                            }
+                            classMapping.put(internalName, newOuterInternal + innerPart)
+                        }
                     } else {
-                        String genOuter = generateRandomClassName(random)
-                        String newOuterInternal
-                        if (outer.startsWith(mixinPrefix)) {
-                            if (!classMapping.containsKey(mixinPrefix)) {
-                                String newMixinDir = protectedPrefix2 + "/" + generateRandomPackageName(random)
-                                classMapping.put(mixinPrefix, newMixinDir)
+                        if (!classMapping.containsKey(internalName)) {
+                            String newInternalName
+                            if (packageName.startsWith(mixinPrefix)) {
+                                if (!classMapping.containsKey(mixinPrefix)) {
+                                    String newMixinDir = protectedPrefix2 + "/" + generateRandomPackageName(random)
+                                    classMapping.put(mixinPrefix, newMixinDir)
+                                }
+                                newInternalName = classMapping.get(mixinPrefix) + "/" + generateRandomClassName(random)
+                            } else if (packageName.startsWith(protectedPrefix2)) {
+                                String suffix = packageName.substring(protectedPrefix2.length())
+                                String[] parts = suffix.split("/")
+                                StringBuilder sb = new StringBuilder(protectedPrefix2)
+                                for (String part : parts) {
+                                    if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
+                                }
+                                newInternalName = sb.toString() + "/" + generateRandomClassName(random)
+                            } else if (packageName.startsWith(protectedPrefix1)) {
+                                String suffix = packageName.substring(protectedPrefix1.length())
+                                String[] parts = suffix.split("/")
+                                StringBuilder sb = new StringBuilder(protectedPrefix1)
+                                for (String part : parts) {
+                                    if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
+                                }
+                                newInternalName = sb.toString() + "/" + generateRandomClassName(random)
+                            } else {
+                                String[] parts = packageName.split("/")
+                                StringBuilder sb = new StringBuilder()
+                                for (String part : parts) {
+                                    if (!part.isEmpty()) sb.append(generateRandomPackageName(random)).append("/")
+                                }
+                                newInternalName = sb.toString().replaceAll("\$", "") + "/" + generateRandomClassName(random)
                             }
-                            newOuterInternal = classMapping.get(mixinPrefix) + "/" + genOuter
-                        } else if (outer.startsWith(protectedPrefix2)) {
-                            String suffix = outer.substring(protectedPrefix2.length())
-                            String[] parts = suffix.split("/")
-                            StringBuilder sb = new StringBuilder(protectedPrefix2)
-                            for (String part : parts) {
-                                if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
-                            }
-                            newOuterInternal = sb.toString() + "/" + genOuter
-                        } else if (outer.startsWith(protectedPrefix1)) {
-                            String suffix = outer.substring(protectedPrefix1.length())
-                            String[] parts = suffix.split("/")
-                            StringBuilder sb = new StringBuilder(protectedPrefix1)
-                            for (String part : parts) {
-                                if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
-                            }
-                            newOuterInternal = sb.toString() + "/" + genOuter
+                            classMapping.put(internalName, newInternalName)
+                            println("КЛАСС: " + internalName + " -> " + newInternalName)
                         } else {
-                            String outerIdxPkg = outer.substring(0, outer.lastIndexOf("/"))
-                            String[] parts = outerIdxPkg.split("/")
-                            StringBuilder sb = new StringBuilder()
-                            for (String part : parts) {
-                                if (!part.isEmpty()) sb.append(generateRandomPackageName(random)).append("/")
-                            }
-                            newOuterInternal = sb.toString().replaceAll("\$", "") + "/" + genOuter
+                            println("МАППИНГ УЖЕ СУЩЕСТВУЕТ: " + internalName + " -> " + classMapping.get(internalName))
                         }
-                        if (!classMapping.containsKey(outer)) {
-                            classMapping.put(outer, newOuterInternal)
-                        } else {
-                            newOuterInternal = classMapping.get(outer)
-                        }
-                        classMapping.put(internalName, newOuterInternal + innerPart)
-                    }
-                } else {
-                    if (!classMapping.containsKey(internalName)) {
-                        String newInternalName
-                        if (packageName.startsWith(mixinPrefix)) {
-                            if (!classMapping.containsKey(mixinPrefix)) {
-                                String newMixinDir = protectedPrefix2 + "/" + generateRandomPackageName(random)
-                                classMapping.put(mixinPrefix, newMixinDir)
-                            }
-                            newInternalName = classMapping.get(mixinPrefix) + "/" + generateRandomClassName(random)
-                        } else if (packageName.startsWith(protectedPrefix2)) {
-                            String suffix = packageName.substring(protectedPrefix2.length())
-                            String[] parts = suffix.split("/")
-                            StringBuilder sb = new StringBuilder(protectedPrefix2)
-                            for (String part : parts) {
-                                if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
-                            }
-                            newInternalName = sb.toString() + "/" + generateRandomClassName(random)
-                        } else if (packageName.startsWith(protectedPrefix1)) {
-                            String suffix = packageName.substring(protectedPrefix1.length())
-                            String[] parts = suffix.split("/")
-                            StringBuilder sb = new StringBuilder(protectedPrefix1)
-                            for (String part : parts) {
-                                if (!part.isEmpty()) sb.append("/").append(generateRandomPackageName(random))
-                            }
-                            newInternalName = sb.toString() + "/" + generateRandomClassName(random)
-                        } else {
-                            String[] parts = packageName.split("/")
-                            StringBuilder sb = new StringBuilder()
-                            for (String part : parts) {
-                                if (!part.isEmpty()) sb.append(generateRandomPackageName(random)).append("/")
-                            }
-                            newInternalName = sb.toString().replaceAll("\$", "") + "/" + generateRandomClassName(random)
-                        }
-                        classMapping.put(internalName, newInternalName)
-                        println("КЛАСС: " + internalName + " -> " + newInternalName)
-                    } else {
-                        println("МАППИНГ УЖЕ СУЩЕСТВУЕТ: " + internalName + " -> " + classMapping.get(internalName))
                     }
                 }
 
                 for (MethodNode method : node.methods) {
                     String methodKey = internalName + "." + method.name + method.desc
-                    boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
+                    boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
                     if (hasMethodDontObf) {
                         dontObfMethods.add(methodKey)
                         println("МЕТОД С @DontObf: " + internalName + "." + method.name + method.desc)
@@ -182,7 +185,7 @@ tasks.register("obfuscateJar") {
 
                 for (FieldNode field : node.fields) {
                     String fieldKeyFull = internalName + "." + field.name
-                    boolean hasFieldDontObf = field.visibleAnnotations != null && field.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
+                    boolean hasFieldDontObf = field.visibleAnnotations != null && field.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
                     if (hasFieldDontObf) {
                         dontObfFields.add(fieldKeyFull)
                         println("ПОЛЕ С @DontObf: " + fieldKeyFull)
@@ -201,7 +204,7 @@ tasks.register("obfuscateJar") {
 
                 for (MethodNode method : node.methods) {
                     String methodKey = internalName + "." + method.name + method.desc
-                    boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/client/obfuscation/DontObf;" }
+                    boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
                     if (!hasMethodDontObf && !hasClassDontObf) {
                         List<String> paramTypes = parseMethodDescriptor(method.desc)
                         if (paramTypes != null && paramTypes.size() > 0 && method.localVariables != null) {
@@ -487,21 +490,6 @@ tasks.register("obfuscateJar") {
     }
 }
 
-tasks.register("buildObfuscated") {
-    group = "build"
-    description = "Собирает обычную и обфусцированную версии мода"
-
-    dependsOn build
-    finalizedBy obfuscateJar
-
-    doLast {
-        println("=== СБОРКА ЗАВЕРШЕНА ===")
-        println("Обычный JAR: " + remapJar.archiveFile.get().asFile.name)
-        File obfJar = new File(remapJar.archiveFile.get().asFile.parentFile, remapJar.archiveFile.get().asFile.name.replace(".jar", "") + "-obfuscated.jar")
-        println("Обфусцированный JAR: " + obfJar.name)
-    }
-}
-
 obfuscateJar.mustRunAfter build
 
 static def generateRandomPackageName(Random random) {
@@ -623,7 +611,7 @@ static def injectGarbage(MethodNode methodNode, Random rnd) {
                 insns.add(new VarInsnNode(Opcodes.LSTORE, localIndex))
                 localIndex += 2
             } else if (kind == 2) {
-                String s = randomChinese(rnd, 6 + rnd.nextInt(10))
+                String s = generateRandomChinese(6 + rnd.nextInt(10))
                 insns.add(new LdcInsnNode(s))
                 insns.add(new VarInsnNode(Opcodes.ASTORE, localIndex))
                 insns.add(new VarInsnNode(Opcodes.ALOAD, localIndex))
@@ -659,109 +647,7 @@ static def insertArtLines(ClassNode classNode, MethodNode methodNode, Random rnd
     if ("<init>" == methodNode.name) return
     if (methodNode.instructions == null) return
 
-    final List<String> ARTS = [
-            "⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⠢⡂⢆⠢⠢⠢⠢⠢⠢⡂⢆⠢⠢⡂⢆⠢⠢⠢⡂⢆⠢⠢⠢⡢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⡂⢆⢢\n" +
-                    "⡨⠢⡑⢌⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢍⢊⠕⣉⢊⢊⢊⢊⢊⢊⠪⡘⢌⢊⢊⢊⢊⢊⠪⡘⢌⠪⡨⠢⡑⢌⠆⡕⢌⠆⡕⢌⢆⠣⡱⢨⠢⡑⢕⠩⡊⢕⢑⢌⠢⡃⢕⢌⠢⡑⢍⠬⠨⠢⡑⡑⠕⢌⢊⠪⡡⠩⡊⢅⢃⠣⡑⢕⢑⢑⢑⢑⠍⡌⢕⠩⡨⡑⡑⡑⡑⢌⠢⡑\n" +
-                    "⠨⡊⢌⠢⡢⡑⢜⠨⢌⢊⠢⡑⢅⠕⡑⢌⠢⡑⢌⠢⡡⡡⢅⠥⢡⠡⡑⡌⡢⡡⢅⠥⡡⢅⢕⠸⢈⠊⠐⠁⠊⠀⠁⠈⠀⠀⠀⠀⠀⠀⠀⡀⠀⢀⠀⡀⠀⠁⠀⠂⠑⠈⠂⢂⠣⢊⢢⢑⢍⠪⡨⡘⢌⢊⠢⡑⡌⡪⠨⠢⡡⢃⡊⡢⡑⢌⠪⡐⢅⠪⡐⡑⠔⢌⢌⠢⡑⠅⢕⠸\n" +
-                    "⡑⢌⠢⡑⠔⢌⠢⡑⢅⠪⡨⢌⠢⡑⢌⠢⡱⠨⠢⡑⢔⢌⠢⡊⡢⡑⢅⢢⢑⢌⠢⠑⠈⠀⠀⡀⣀⡠⣄⣆⢦⡲⣕⣞⢮⡺⡽⡽⡽⡽⣝⢮⢯⡲⣳⡪⡮⣲⡢⡦⡤⣂⣄⡠⢀⠀⡀⠐⠐⠑⢌⠢⡑⢅⠕⢌⠢⡊⢌⠕⢌⠢⡊⠔⢌⠢⡑⢌⠢⡑⢌⢌⢊⠢⠢⡑⢌⢊⠢⡑\n" +
-                    "⢜⢐⠱⠨⡊⡢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⠪⡘⢌⢂⠢⡑⠔⢌⠢⡑⠔⠁⠄⠂⢀⢤⢕⢞⢎⢞⢪⢪⢪⡳⣝⢮⢮⡳⣝⢞⡞⣞⢞⢮⣳⡳⣝⡞⡮⡯⣺⡪⡯⣺⢺⡪⡮⣳⢳⡲⣔⢄⠄⠀⠁⠊⠢⡑⠅⢕⠨⡂⢕⢐⠅⡊⢌⠢⡑⢌⠢⡑⢌⠢⡂⢅⠕⡡⢊⠔⡡⡑⢌\n" +
-                    "⢢⠡⡃⠕⢌⢂⠪⡐⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⢂⢊⠢⡊⢌⠢⡑⠨⠀⡁⢄⢎⢎⢝⢪⢇⡇⣕⢅⢧⡳⣝⢮⡳⡳⡝⡮⡳⡹⡪⡫⡳⡱⡝⡮⡪⡫⡺⡪⡎⡯⢮⡳⡽⣝⢮⡳⡯⣗⣯⢷⣕⢄⠀⠐⠈⡊⡢⡑⢌⠢⠢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⡰⠨⢢\n" +
-                    "⠢⡑⢌⢊⠢⡡⡑⢌⢌⠢⡑⢌⠢⡑⢌⠢⢑⠌⠆⠥⠡⠱⠨⠪⠨⠀⡀⡢⡪⡪⢪⠢⡣⡳⣕⢝⢎⢗⢕⡕⣕⢕⢕⢇⢗⢕⢝⢜⡕⣝⢜⢎⢮⢺⡸⣱⢹⢜⢎⡎⣇⢧⢣⡣⡳⡹⢝⢯⣟⣿⢮⣳⡱⡀⠄⠈⠆⠪⠢⠱⠑⠌⠆⠕⠌⠆⠕⠌⡢⢑⠌⡢⢑⠌⡢⢑⠰⠨⡊⡢\n" +
-                    "⠕⢌⠢⡡⡑⢔⠌⡢⠂⠃⠁⠁⠀⠀⠀⠀⠀⠀⠀⡀⠄⠀⠄⠀⠠⢀⢎⢎⢌⢎⢎⢎⢧⢳⢱⢝⢜⡕⡵⡱⡕⣝⢜⡕⣝⢜⡕⣕⢕⢕⢕⢇⢗⢕⡕⡵⡱⡣⡇⡗⣕⢵⢱⢕⢝⢜⢕⢇⢏⢞⢯⢷⢹⢸⡠⠀⠄⠀⡀⠀⠠⠀⠠⠀⢀⠀⡀⠀⠀⠁⠊⠐⢅⠪⡐⠅⢕⢑⠌⡢\n" +
-                    "⠪⡐⡑⠔⠌⠂⠁⠀⢀⠠⠀⠀⣀⣠⣠⣠⣠⣨⣠⣠⣠⣠⡄⠐⠀⡎⡮⡪⣣⢫⡪⡣⡳⡱⣣⢫⢎⢮⢪⢎⢮⢪⡪⡺⡜⣦⡑⠱⢱⢹⢸⢱⡱⡕⡕⣵⡹⡜⣎⢮⢪⢎⢞⢜⡕⣝⢜⢵⢱⢕⡕⡵⡱⡕⣕⠀⠄⣄⣄⣄⣄⣄⣄⣄⣄⣀⣀⡀⠁⠀⠀⠀⠀⠈⠈⠪⠢⡑⢌⠢\n" +
-                    "⡃⡪⠨⠊⠀⠀⠂⠈⢀⣠⣶⣿⣿⣟⣿⣿⣿⣿⣿⢿⣿⣿⡃⠀⢡⢣⢳⢹⡸⣪⢪⡣⡫⡎⡮⡺⡸⡪⡣⡳⡱⡕⡕⡇⣏⢮⡺⣌⠠⠑⢕⠕⠡⡰⣚⢎⢮⢪⡪⡪⡪⡪⣣⢣⢳⡱⡣⡳⡱⣕⢕⢇⢗⢝⡲⠀⠀⢺⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣧⣔⡀⠁⠀⠈⠀⠑⢌⠢⡑\n" +
-                    "⡑⠌⢀⠠⠀⠐⣠⣾⣿⣿⣿⣟⣿⣿⣿⣿⣻⣽⣾⣿⣿⣿⠀⠀⢜⢜⢕⢵⢱⢕⢵⢱⡣⡫⡎⡮⡪⠊⡔⣝⢜⠎⠊⢀⠘⢜⢜⠮⡇⠄⠀⢄⢗⡝⡮⡪⠊⠧⣣⢫⡪⡃⡣⡫⡪⣪⢪⢳⡹⡸⡪⡣⡳⡱⡹⡈⠀⢸⣿⣿⡿⣿⣻⣿⣻⣽⣷⣿⣿⣻⣿⣿⣶⣌⠀⢀⠀⠀⠑⢌\n" +
-                    "⠂⠁⠀⠀⣠⣿⣿⣿⡿⣟⣿⣿⢿⣷⣿⣿⢿⣿⣿⣿⣻⡿⠀⠀⡕⡵⡱⡕⣇⢗⢵⡱⡕⡇⡗⡕⢐⢕⡝⡜⠌⠠⢁⠢⡐⠀⠣⡫⡪⡐⠈⡜⡧⡫⡊⠄⢂⢈⠘⢜⢎⣇⠢⢑⢝⢜⢜⡕⡵⡹⡪⣣⢫⡪⡪⡂⠁⠨⣿⣿⢿⣿⣿⣿⣿⣿⡿⣟⣿⣿⣯⣿⡿⣿⣷⡄⠀⠈⠀⡀\n" +
-                    "⠀⠂⠐⣸⣾⣿⣷⣿⣿⣿⣿⣿⣿⡿⣟⣿⣿⡿⣷⣿⣿⡯⠀⠀⡇⡗⣕⢝⢜⢎⢇⢧⢳⢹⢪⡰⡕⡇⢃⠐⡠⢡⢑⠅⡪⠨⢀⠘⢜⠄⢂⢧⢓⠅⢀⢐⢅⠢⠂⠄⠑⢕⢧⡑⠌⣎⢇⢗⢝⡜⡵⡱⣕⢕⢕⠅⠄⠨⣿⣿⣿⢿⣿⣾⣿⣷⣿⣿⣿⣯⣿⣯⣿⣿⣿⣿⣆⠀⠁⠀\n" +
-                    "⠄⠂⣸⣿⣿⣽⣾⣿⣯⣿⣾⣿⣾⣿⣿⣿⣟⣿⣿⡿⣿⡏⠀⠀⣇⢏⢮⢪⢳⡹⡜⡎⣇⢗⠵⢙⠈⠠⠠⡂⢎⠢⡑⢌⠢⡑⠅⠀⠢⡑⡐⠕⠁⡀⡢⡑⡐⢅⠣⡡⠡⡀⠑⢝⢕⢎⢎⢇⢧⢳⢹⢜⢜⢎⢇⠇⡀⠐⣿⣿⣾⣿⣿⣷⣿⣯⣿⣿⣾⣿⣯⣿⣿⣽⣾⣿⣿⡆⠀⠀\n" +
-                    "⠀⠠⣷⣿⣯⣿⣯⣿⣟⣿⣟⣯⣿⣿⣽⣾⣿⡿⣟⣿⣿⡇⠁⠀⡇⡗⣕⢝⢜⡜⢜⠊⢊⠐⡈⡠⠨⡘⢌⢌⠢⡑⢌⠢⡑⠌⡈⠄⠕⡐⡨⢐⠁⠨⡂⡊⢌⠢⡑⢌⠪⡐⡡⠠⠈⡑⠙⠮⣪⢪⡣⣫⢪⡣⡣⡣⠀⠈⣿⣿⣽⣿⣾⣿⣾⡿⣿⣾⣿⣾⣿⣯⣿⣟⣿⣯⣿⣯⠂⠀\n" +
-                    "⠐⢸⡿⣿⣾⣿⣯⣿⡿⣿⣿⢿⣿⣻⣿⣻⣿⣿⣿⣿⣿⡇⠀⠐⡕⠝⠜⠨⢁⢐⠠⠨⡐⡰⢐⢌⠪⡐⢅⠢⡑⡌⢆⠣⠁⠂⠄⢅⢑⢐⢐⠡⠨⡀⠌⢌⠢⡑⢌⠢⡑⢌⠢⡡⡑⢄⢌⠠⢀⠑⠱⠱⢕⢕⢕⢅⠀⠐⣿⣿⣿⣽⣿⣽⣷⣿⣿⡿⣷⣿⣷⣿⣿⢿⣿⢿⣿⣿⡂⠀\n" +
-                    "⠀⢸⣿⣿⣿⣷⣿⣿⡿⡿⣿⢿⣿⣿⢿⣟⣿⣾⣿⣯⣿⡇⠀⠁⠠⡂⢌⠢⡑⢔⠡⡃⡪⡐⢅⠢⡑⢌⠢⡃⠕⢌⠢⠁⠁⠨⠨⡂⡢⡑⢔⠡⡑⡀⠄⠀⠣⡨⡂⢕⢘⠔⡑⢔⢌⠢⠢⡑⢅⠪⡐⢌⠄⠌⡈⢁⠀⢈⢿⣿⣽⣿⣿⢿⣿⣿⢷⣿⢿⢿⡿⣿⣾⣿⣿⣿⣿⣿⡂⠈\n" +
-                    "⠐⢸⣿⡿⣷⣿⣿⢷⠁⠀⠀⡀⠙⠺⡿⣿⣿⣿⣯⣿⣿⡇⠀⠈⢈⠢⡡⡑⢌⠆⢕⢌⠢⡊⡢⡑⠅⢕⠑⢌⠊⠂⠁⣰⢵⡂⠁⠢⡊⠔⢅⠕⡐⠀⣮⢆⠁⠐⠌⡢⠡⡊⢌⠢⡂⡣⠱⡨⠢⡑⢌⠢⡡⢃⠪⡐⠀⠠⣿⣿⢿⣻⣿⣿⢿⠫⠃⠀⢀⠀⠉⢿⣿⣿⣿⣽⣷⣿⡅⠀\n" +
-                    "⠂⢸⣿⣿⣿⣿⣾⡇⠀⢨⢪⢲⢠⢀⠈⠙⢻⣾⣿⣿⣻⡇⠁⠀⡂⠈⡂⡊⡢⢑⠅⡢⢑⢐⠔⠌⠊⠀⠁⠀⠀⢀⠈⠺⡽⣽⣂⠁⡊⡪⠢⠡⠀⡮⡯⡟⠂⠀⠠⠈⠂⠊⠢⡑⠌⢌⠪⡐⠕⢌⠢⡑⢌⠢⡑⠠⠀⠐⣿⣿⣿⡿⡟⠊⠀⡀⡤⡪⡪⡂⠈⢸⣿⣿⣽⣿⣿⣿⠆⠀\n" +
-                    "⠂⢸⣿⣿⣿⣽⣿⡇⠀⢘⢎⢮⢪⡪⡢⡂⠀⠉⠷⣿⣿⡯⠀⠀⢮⠠⠀⢁⠈⠄⠁⠠⠀⠀⠀⠀⠀⠀⠠⠐⠈⠀⠀⠀⠹⣞⡮⡄⠨⠪⡘⡈⢨⢿⡝⡁⠀⢀⠀⠀⠀⠐⠀⠀⠁⠁⠌⠈⠊⠢⠑⠌⠢⠑⡀⡂⠀⠐⣿⣿⠚⠁⠀⡠⡢⡇⡗⣝⢜⠄⠀⢜⣿⣿⣿⢿⣿⣿⠅⡀\n" +
-                    "⠠⢸⣿⣿⣻⣯⣿⣗⠀⠀⢇⢗⢕⢕⡝⣜⢕⢄⠄⠈⠻⣯⠀⠀⡪⡂⠨⣺⢽⡇⠄⠀⡀⠄⠂⠀⠐⠀⠀⠀⠀⠀⠀⠀⢨⣳⣻⡐⠈⡎⡪⠀⢜⣯⠧⠀⠀⠀⠀⠀⠠⠀⠀⠀⡀⠀⢀⠈⠀⢐⢤⣢⡡⠐⢰⡑⠀⢘⠏⠠⠀⡔⣕⢽⢸⢪⡣⡣⡣⠀⠂⣽⣿⣿⣾⣿⣿⣿⠅⠀\n" +
-                    "⠀⢸⣿⣿⣿⣿⢿⣿⡔⠀⡘⢜⢜⢜⢜⢜⢕⢧⢳⣐⡀⠨⠀⡀⢪⡢⠈⢯⣟⡎⡀⣄⣄⠀⠀⠀⠀⢀⠀⠄⠀⠀⠠⠐⢐⣗⣯⡂⠌⡆⡇⠅⢸⡽⣝⠀⠀⠁⠀⠐⠀⠀⠀⠀⠀⣠⣀⡀⡀⢨⣻⣺⠝⠀⢵⠑⠈⠀⡀⡔⡕⣝⢜⢎⢣⢣⢪⡪⠂⢀⢱⣿⣿⣟⣿⣿⣻⣿⡅⠈\n" +
-                    "⠈⢸⣿⣿⣾⣿⣿⣿⣷⡀⠀⠱⡱⡱⡡⡣⡣⡣⡣⡣⡳⣄⠁⠀⢸⢸⠀⡑⡯⣷⢿⣻⣽⡗⠀⠀⠈⠀⠀⠀⠀⠠⠀⢀⡮⣞⡮⠀⢜⢌⢎⢌⠄⢯⢯⢧⠀⠀⠄⠀⠀⠀⠀⠂⢸⢿⣽⣿⣾⣸⣺⢞⠀⢌⢗⠅⠂⢠⢣⢳⢹⠸⡸⡨⡪⡪⡪⡂⠠⢠⣿⣿⡿⣿⡿⣿⣿⣿⠆⠈\n" +
-                    "⠀⢸⣿⣿⣽⣷⣿⣯⣿⣧⠀⠀⢣⡣⡣⡪⡊⡎⡎⡎⡎⡖⡁⢀⢪⢪⡣⡀⠊⡿⣽⣫⡃⠀⠀⡀⠀⢀⠀⠀⠄⢀⢤⣳⠯⠟⠀⠜⡜⡜⣜⢔⠔⠈⠫⢿⢽⣄⠄⠀⠀⠂⠀⠀⠀⠉⠻⣽⢽⣺⠇⡁⡰⡕⣕⠕⠈⢐⢕⢕⠕⡕⡱⡑⢕⢜⠊⠀⢠⣺⣿⣯⣿⣿⣿⣿⣿⣿⠅⠐\n" +
-                    "⠐⢸⣿⣿⣻⣿⣿⣻⣿⢿⣇⠈⠀⢕⢕⢜⠌⡎⢜⢸⢘⢌⠆⢀⠸⡰⡹⡸⡠⢈⠱⢯⣻⢮⡦⣤⢤⡤⡤⡴⡴⠝⠑⠁⡨⡠⡣⡣⡳⣹⢸⢜⢎⢇⢆⢆⢈⠘⠽⢧⣗⣦⣵⢼⡴⣯⢯⡯⡛⠈⡀⡔⣕⢵⢱⠂⡀⠂⠕⠘⠌⠢⠑⠜⠜⠕⠈⠀⣾⣿⣯⣿⣯⣿⣯⣷⣿⣿⠅⠐\n" +
-                    "⠀⢸⣿⡿⣿⣻⣽⣿⣿⣿⣿⣇⠀⠀⠃⠣⠑⠈⠊⢂⠡⠑⠈⠀⠨⡪⡪⡪⡣⡣⡄⠄⠉⠓⠽⠽⠽⡯⠟⠉⠀⡄⣎⢎⢇⢏⢮⢺⢸⢜⢎⢎⢧⢫⡪⣣⢣⡣⡄⠂⠙⠺⠝⠗⠏⠃⠃⡠⡠⡪⡎⣎⠎⡊⠈⠄⢀⢀⢂⡡⣨⢠⣂⣐⢀⠄⢀⠈⠉⠓⠿⣟⣿⣟⣿⣟⣿⣿⠅⠂\n" +
-                    "⠈⢸⣿⣿⣿⣿⢿⠻⠓⠉⡈⠀⢀⢀⣁⢄⣔⢬⡰⡤⣔⣄⣂⣁⠄⢀⠡⠙⠜⡎⡎⣏⢮⢢⡢⡢⡠⡀⠂⡨⡜⡎⡎⡎⡎⡎⡎⡎⡎⡎⡎⡇⡗⣕⢝⢜⣎⢮⢺⢬⢀⠂⢰⢰⢌⢦⢣⡣⡣⡳⠩⠀⠄⣀⢢⣪⡺⣪⡳⣝⢮⣳⣣⡳⡳⣝⣖⢖⣔⡠⠀⠈⠙⠛⡯⣿⣿⢿⡃⠀\n" +
-                    "⠁⢸⠿⠛⠉⢈⠀⢀⠀⡀⡤⡲⣕⢗⣕⢗⣕⣗⣝⣞⢮⣺⡪⡮⡳⣕⣄⠐⠈⠈⡪⡪⡪⣣⢣⡣⡓⢀⢂⡇⠕⡱⠸⢈⢰⢱⢸⢘⢜⠜⡜⡜⡜⡜⡜⡕⣎⢗⣗⢵⢕⠔⠀⢱⢱⢕⢕⢕⠕⢁⠐⢠⢱⡪⡳⡵⣝⢞⢞⢮⡳⡵⣕⢽⡹⡪⡮⣳⡣⡯⡳⣥⠠⠀⠀⠈⠘⠹⡃⠀\n" +
-                    "⢁⠀⠠⢐⢈⢄⢂⢰⢜⢮⣫⡫⡎⡧⡳⣕⢵⡱⣕⢕⢗⢵⢹⢝⣝⢮⢎⢯⢢⠁⡀⠘⢜⢜⢎⢮⠂⡂⣪⠊⢔⢕⢁⢢⢓⠔⡱⡡⡣⡱⢱⠸⡘⡜⡜⡜⡜⣎⢮⢳⢕⢕⠈⢸⢸⢪⢣⠃⡈⢀⢔⢝⢜⠮⡝⡮⣪⢣⢳⡱⡕⣕⢕⢵⢱⡣⡳⡱⡝⡮⡫⡮⢯⡣⡨⠢⡐⡀⠀⡀\n" +
-                    "⢠⢢⢣⡣⡣⡡⡪⡪⡳⡱⡕⣕⢝⢜⢮⢪⢎⢮⢪⡪⡣⡳⡱⡕⣕⢝⢝⢜⢎⢎⢄⠐⠈⢎⢇⢗⢅⢀⠪⡪⡜⡔⡐⡜⡌⡐⡕⢜⠔⡕⢕⠕⡕⢕⢜⢜⢜⢜⢜⡕⡇⢃⠠⡸⡱⡕⠅⠂⠀⡔⣕⢵⢱⡹⡪⣎⢮⢪⡣⣣⢫⡪⡺⣸⢱⢕⡝⡜⣎⢮⢪⡪⡣⣫⢪⡪⡪⡪⡲⣰\n" +
-                    "⢪⢣⡣⡳⡹⡸⣪⢪⢎⢮⢪⢎⡎⡧⡳⡱⡣⡳⡱⡕⣝⢜⢎⢮⢪⡪⡣⡳⡱⡕⣕⠄⠂⠘⢜⢕⡕⡔⡀⡑⠵⡱⡱⡱⡡⡢⡣⡣⡣⡣⡣⡣⡣⡣⡣⡣⣣⢳⠕⠍⠐⡀⡎⡎⢮⢪⠈⠀⡜⡎⡮⣪⢣⡳⡱⡕⣕⢵⢱⢕⢵⢱⡹⡜⡎⣇⢗⢝⡜⣜⢕⡕⣝⢼⢸⢜⡕⣝⢼⢸\n" +
-                    "⣗⢕⡝⡜⣕⢝⢜⢎⢞⢜⡕⡵⡱⡣⣫⢪⡣⡫⡺⡸⡜⡎⡧⡳⡱⡕⣝⢜⢎⢮⢪⡪⡀⠂⠱⡱⡕⡕⡅⡢⡠⠈⢈⠉⡚⠜⠎⠮⡪⡪⢎⠮⡪⠺⠘⠙⢈⠠⢐⠨⡌⡎⡎⡮⣣⠣⠂⢁⢮⢺⡸⡜⡎⡎⢇⡳⡱⡕⡕⣇⢗⡕⡵⣱⢹⢜⢎⢇⢗⡕⡵⡱⡕⣕⢇⢧⢳⡱⡕⣇\n" +
-                    "⢜⢎⢎⢎⠎⡮⡣⣫⢪⡣⡳⡱⡹⡜⡜⣎⢎⢧⢫⡪⡺⡸⡪⡺⡸⡪⠪⡪⡣⡳⣱⢱⡁⠠⢘⢜⢎⢮⢪⡪⡸⡸⡰⡰⡠⡂⡅⢄⢄⢠⠠⡠⢠⢂⢌⠆⡕⢜⢌⢎⢎⢮⢪⡪⡪⡣⠐⠀⡇⡇⡇⡗⠕⢈⢖⢕⢇⢯⢪⢎⢮⢺⢸⢜⢎⢞⢜⢵⢱⢕⢝⢜⢎⢮⢎⠪⡸⡸⡸⡪\n" +
-                    "⡣⡣⡱⡡⡃⡘⠜⡜⡜⣜⢜⠕⢳⢹⡸⡜⣎⢎⢇⢇⢏⢎⢧⢫⡪⡪⡂⠱⡹⡸⡜⡜⡔⠀⢰⢱⢕⢵⢱⢕⡕⡕⡎⡎⡎⡪⡸⡘⡔⢕⠱⡑⡅⡇⡎⡎⣎⢮⢪⡣⡳⡕⡵⡱⡕⣕⢀⠡⠘⠜⡜⡎⠌⠰⡱⡕⡇⣗⢕⢕⠕⢨⡺⣸⢱⡹⡜⡎⠌⡼⡸⡪⠣⠡⠐⡌⡆⢇⢕⢕\n" +
-                    "⠪⡪⡸⡨⡪⡂⡂⠀⡉⠊⢚⠈⡐⡕⣕⢵⢱⢣⡣⠈⡎⡇⡗⡵⡱⡕⡅⠁⢎⢮⢪⠪⠀⠠⡸⡸⣪⢪⡣⡇⡗⣝⢜⡕⣝⢜⢎⢎⢜⠨⡪⡪⡊⡎⡮⡪⡎⡮⡣⡳⡕⣝⢜⢎⢮⢪⢲⢐⡀⠂⠀⠐⠀⠈⢎⢞⢼⢸⢪⢁⠂⡇⡗⣕⢕⢵⢱⠠⣁⠠⠀⠀⠀⠢⡱⡱⡸⡸⢰⠱\n" +
-                    "⡱⡱⡸⡐⠕⠈⠀⡀⠀⠠⠀⡦⡂⣕⢵⢱⢝⡜⡜⠄⢸⢸⢱⢹⢪⠪⠂⠈⠀⠠⠀⢀⡐⡜⡜⡼⡸⣪⢪⡪⡣⡳⡱⡕⡕⣇⢇⢇⠆⢱⢘⢌⢎⢎⢮⢺⢸⢪⡣⡳⡹⡸⡪⡣⡳⡹⡜⡕⡜⡌⠄⠀⠀⢀⠀⡑⠕⢝⠜⠄⠀⢪⢪⡪⡺⣸⢱⡱⡱⡠⠀⠐⠀⠀⠈⠢⢪⠸⡘⡜\n" +
-                    "⠜⠌⠂⠐⠀⠀⠄⠀⠀⢀⠨⢪⢫⢪⡪⣣⢣⢣⠃⠁⡐⠕⠇⠇⠃⠁⢀⠀⢁⠀⡀⠑⢜⢸⢸⢪⡪⡎⡮⣪⢣⡫⡎⣎⢧⢣⠣⡑⠨⡐⢕⢱⢡⠣⡣⣫⢪⡣⡣⣫⢪⢳⢹⢪⢣⡓⡕⢕⠁⡂⠄⠅⢄⠀⠀⠀⠀⠀⢀⠠⠈⠀⠑⠵⡹⣸⢸⢜⠊⠀⠀⠀⠀⠀⠄⠀⠄⠈⠊⢊\n" +
-                    "⢀⠐⠀⡐⣀⣀⣄⣄⣆⡀⠀⠈⠪⢕⢕⠕⠕⠁⠀⡀⠀⠀⠀⠀⠀⠀⡀⠄⡢⠡⠠⠀⠄⠁⠣⡱⡸⡸⡸⡸⡜⡜⣎⢎⢌⠂⡑⠠⢑⠸⡘⢌⠆⠇⠇⡇⢧⢳⡹⡜⡎⡇⡇⡇⢇⠎⠌⠠⠐⢀⢌⢊⠢⢊⠀⠈⠀⠈⠀⢀⣴⣄⢀⠀⠈⠀⠁⢀⠀⣰⣴⣦⣦⣢⣠⣀⣀⢀⠂⠀\n" +
-                    "⠀⠀⢸⢿⣟⣿⣻⡿⣿⣿⣦⣁⡀⢀⠀⡀⡠⣠⣾⣦⣀⠀⠠⠈⠀⢐⢄⢃⠢⡡⠑⢅⠢⠈⠀⠄⠑⠜⡸⢘⠨⡸⡜⡎⡧⡳⡀⠄⠡⠑⠈⠀⣄⣦⢷⣺⣳⢕⢱⢱⢸⠨⠪⠨⠀⠄⠠⡐⠨⡂⡢⠡⡑⢅⠊⠀⠡⣿⣾⣿⣟⣿⣷⣶⣦⣮⣴⣴⣾⣿⡿⣿⣿⣿⣿⣿⣿⠃⠀⠀\n" +
-                    "⠈⠀⠀⠻⣻⣟⣿⡿⣿⣟⣿⣿⣿⣶⣷⣷⣿⣿⣿⣿⣿⣿⡇⠀⢀⠢⠢⡡⢑⢐⠡⡑⠌⡊⠢⡂⡁⠀⠄⢀⢺⢸⢪⡺⡜⡜⣎⢆⠂⡐⡬⡺⣕⢯⡻⣝⢮⡳⡈⠌⠐⢈⠀⠄⡂⢌⢂⠪⡈⡢⠨⡊⢌⠢⡡⠐⠀⣻⣾⣿⣻⣿⣽⣿⣽⣿⣽⣿⢿⣾⣿⣿⣷⣿⣯⣷⠇⠀⠐⠀\n" +
-                    "⡀⠄⠀⠀⠉⢿⡿⣿⣿⢿⣿⣯⣷⣿⣿⣻⣽⣿⣾⣷⡿⣿⡂⠀⢀⢊⠪⡐⢅⠢⡑⡨⠨⠨⡨⢂⢊⢂⢂⠠⢱⡱⡕⣕⢝⢜⢎⢮⢢⢎⢯⣺⣪⡳⣝⢮⡳⡕⡀⢂⢑⠔⡡⢑⠨⡐⡐⡡⢂⢊⢌⠢⡡⢱⢐⠀⠠⢸⣿⣻⣿⣻⣿⣻⣿⣟⣿⣿⣿⢿⣯⣿⣿⢿⠿⠁⠀⠀⠀⡀\n" +
-                    "⠀⠀⠀⡀⠂⠀⠙⠿⣿⣿⢿⣻⣿⣯⣿⡿⣟⣯⣷⣿⣿⢿⠀⠀⡐⢌⠪⡨⢂⠕⡐⠌⠜⡨⢐⢐⠅⢕⠠⠀⡐⢕⢝⢜⢜⡕⣝⢜⢎⢗⡕⡧⡳⣝⢮⢳⡱⠁⠄⢂⠕⢌⠢⠡⡑⡐⢌⢐⠔⡡⡂⢕⢬⢢⢣⠂⠀⡘⣿⣿⣻⣿⡿⣿⣟⣿⣿⢿⣾⣿⣿⡿⡿⠉⠠⠀⠀⠂⠁⠀\n" +
-                    "⢂⠁⠀⠀⠀⡀⠀⠀⠁⠋⠿⢿⢿⣟⣿⣿⣿⣿⢿⣿⣾⣟⠀⠀⢐⠡⡊⢔⠡⡊⠔⡡⢑⢐⠅⠢⡡⡑⢌⠄⡀⠂⠑⢝⢜⡜⡜⡎⣇⢧⢳⢹⢜⢎⠮⠊⠂⠁⢄⠱⢘⠔⠅⠕⡐⢌⢂⢢⢑⢔⢕⢕⢕⢝⢜⠄⠁⠀⣿⣿⢿⣟⣿⣿⣿⡿⣿⡿⡿⠻⠙⠁⠀⠀⠀⠀⠀⢀⠠⢐\n" +
-                    "⠢⠨⡀⠁⠀⠀⠀⠁⠀⡀⠀⠀⠈⠈⠉⠉⠉⠉⠉⠉⠉⠃⠀⠀⠂⠑⠈⠂⠑⠈⠂⠈⠂⠂⠨⠈⠐⠈⠂⠑⠀⠂⠀⠄⠀⠉⠊⠑⠑⠑⠑⠑⠑⠁⠁⠈⠀⠈⠂⠃⠑⠑⠉⠃⠉⠘⠈⠨⠈⠈⠊⠑⠉⠑⠑⠁⠀⠈⠊⠙⠉⠙⠉⠉⠑⠉⠁⠈⠀⠀⠀⠀⠀⠀⢀⠀⠈⡀⠔⡠\n" +
-                    "⡑⠅⠢⡁⡂⠈⠀⢀⠀⠀⠀⢀⠀⠀⠀⠀⠀⠀⠂⠁⠀⠀⠠⠀⠀⢀⠀⠀⡀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⢀⠀⠀⡀⠄⠀⢀⠀⠀⠠⠐⠀⠐⠀⠠⠀⠂⠀⠀⢀⠀⠀⡀⠄⠀⠀⠀⠀⢀⠠⠀⠠⠀⠀⢀⠠⢂⢊⠔⠔\n" +
-                    "⢌⠪⡈⡢⠨⢊⠔⡀⠄⠀⠁⠀⠀⠀⠈⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠈⠀⠈⠀⠀⠀⠂⠀⠀⠄⠀⠀⠀⠀⡀⠀⠠⠀⠐⠀⠁⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⢀⠠⡨⢐⠌⡂⡢⢡⢩\n" +
-                    "⡐⢅⠆⡪⠨⡂⡊⠄⢅⢑⠌⠄⡂⠄⡂⡀⠄⡀⡀⠄⡀⡐⠈⡀⡀⢂⠀⢄⢀⠂⡀⢂⢀⠄⠠⡀⠠⡀⠠⠐⡀⡀⡠⢀⢀⢀⠄⠠⡀⡀⡀⡀⡀⡀⡀⡀⡠⢀⢁⢀⢀⠠⢀⠠⢀⠂⡀⡁⡀⢁⢀⠐⡀⢐⠀⠄⡐⢀⢈⢀⢀⠂⡀⠄⡀⡂⠠⡈⠄⡊⢌⠢⠑⢄⢑⠌⡢⢊⠢⡑\n" +
-                    "⡅⠕⢌⠢⡱⢐⢌⠪⢐⠡⡨⠨⡂⠕⡐⠌⢌⢂⠪⡈⡂⡪⢈⢂⠪⡐⠅⢅⠢⢑⠌⠢⡂⢅⠣⡘⡨⢂⠕⡑⡐⠌⢔⢐⠅⡢⢊⠌⡂⡢⢑⠌⠢⡑⠌⡂⡪⢐⠔⠡⠢⢑⠡⢊⢂⠕⡐⠔⢌⠢⡑⠌⠢⡑⠌⡊⠔⡡⢂⠢⡑⠌⡢⢑⠌⠢⡑⠌⢌⠢⡑⠌⡊⡢⡑⢌⠢⡡⡑⡌\n" +
-                    "⢌⠪⠢⡑⡌⢆⠢⡑⢅⠕⡨⡨⡐⢅⢊⢌⠢⡂⠕⡠⠡⡂⢅⠢⠡⡂⢅⠅⡊⢔⠨⢊⢐⠡⡂⡢⢂⠅⡂⡪⠐⢅⢑⢐⠌⢔⢐⠡⢊⠄⢅⠌⡌⠔⡡⢂⢊⠔⡨⠊⢌⠢⢑⠰⡐⠌⢔⠡⡑⡐⢌⠌⡊⢄⠕⡨⠨⡐⡡⢊⢐⠅⡊⢔⠨⢊⢐⠅⢕⠨⡐⡑⢌⠢⡊⡢⡑⢔⠡⡊\n" +
-                    "⡅⡣⡑⢅⢊⠢⡑⢅⠕⢌⢢⠢⡊⡢⡒⠔⢅⠪⡨⠢⡑⢌⠢⡑⢅⠪⡐⢅⡊⡢⡡⢱⢐⢕⠰⡨⠢⡑⡌⡢⡑⢅⠪⡐⡑⢔⠡⡊⡢⡡⡑⢌⠢⡑⢌⠢⡑⢔⢌⢊⢢⢑⢅⠪⡐⢅⠕⡨⢂⠪⡐⢅⠪⡐⢌⠢⡑⢌⠔⡡⠢⡑⢌⠢⡡⡑⢔⢑⠔⡡⢊⢌⠢⡑⢌⢂⢊⠢⡑⡌\n",
-
-            "⣢⡞⠎⡢⢢⡒⣎⠖⣕⠮⡲⠅⠓⡁⢃⠑⡑⢑⢓⠑⢞⣜⢮⣖⣗⣗⣗⡗⠗⢃⣁⡤⡤⣖⣖⣗⣗⣗⣗⣗⣗⣗⣗⣖⡦⣤⡒⢜⡺⣺⣺⣲⣲⢴⢤⣠⡐⡐⠤⣤⣀⣀⢺⣺⣲⢴⣄⣄⠑⠓⢗⣗⣗⣗⣗⡷⣜⡪⣎⢦⣓⢜⡲⣜⣞⠎⣔⢆⣞⣞⠎⣔⣗⣗⢗⣗⢗⡱⡜⡴\n" +
-                    "⢁⢴⣙⠮⡓⢝⠢⢋⠠⡡⣒⠦⣋⢎⡣⣋⢎⢧⢯⢯⣗⡯⣟⢞⠞⠞⠈⠤⠺⡺⡺⡽⣽⣳⢵⡑⣗⣗⣗⡷⣷⣗⣗⣗⡯⣗⡯⡷⣌⠦⢕⠳⡯⡯⣟⡾⡽⣽⣲⢦⣕⡯⣿⢾⢾⣿⣾⣾⣽⣲⢤⣠⠑⠓⢗⣟⡾⣝⢮⢷⣝⢮⣟⠞⣂⣟⢢⣞⡞⢊⣰⣳⡳⠃⣼⣺⢣⡱⣍⢞\n" +
-                    "⢪⡕⡪⠓⡉⣠⡲⢕⠳⡱⢪⠳⣩⢪⡱⢭⣺⢽⠽⠝⢊⡨⢤⢦⣖⣶⣲⣺⣲⣲⢴⢬⣘⡪⡯⠟⠖⠑⠓⢙⢉⣩⣨⣨⣨⢤⢬⢴⢴⢴⢴⣐⢄⢆⣆⣍⠹⣳⢯⢿⣾⡽⡽⣝⠽⢽⢽⢿⣳⣿⣿⣞⣯⢷⢤⣠⠙⠹⢽⠃⠏⡰⢩⢼⡳⠡⢺⠪⡂⣞⣞⠞⠀⣜⣞⢼⡱⢜⡢⣫\n" +
-                    "⠑⢈⠴⣑⢜⡲⢜⢵⣙⢜⢱⡙⣔⣳⣺⣳⠏⣡⢶⡜⡝⡽⡧⡝⣞⣞⣞⡞⡞⠞⠙⣁⡡⡤⡦⣖⣗⡯⡷⣍⢻⣺⣺⡺⡺⠽⠽⠽⠹⠙⠝⢚⢊⢊⠂⡙⣀⡾⡽⣽⣿⣿⣽⡽⡽⡮⡍⠯⣗⡯⡯⣿⣺⣽⣽⣺⢽⡲⣠⡔⠡⣱⢽⡝⠀⠀⣥⢃⣞⠷⡁⢀⣲⡳⣭⢲⡹⢪⡺⣺\n" +
-                    "⡨⡪⡕⣥⢣⡱⢍⠖⣕⢧⡱⣍⢶⣕⣗⡟⢰⢯⢯⣟⣎⠪⠫⠛⢂⢁⢡⢤⣖⡾⣽⣳⢯⢯⠯⠳⠓⡋⡋⣉⣡⣠⠠⢴⢴⣲⣲⣷⣯⣯⣯⣯⣯⣯⣟⣮⣢⡫⡯⣗⣿⣿⣿⣯⣯⣯⣯⣗⣦⡙⢽⣳⣳⣻⣿⣯⣯⡯⡗⣅⣾⣽⢽⣰⣡⢼⢊⢼⢊⠎⠀⢔⡷⡝⡦⣓⢝⢵⢽⢽\n" +
-                    "⡽⡽⡽⡮⡷⡽⡵⡽⣔⡷⣼⣺⣓⣗⠗⠁⡺⠝⠙⠈⢀⣀⢄⡺⣺⢽⢮⡙⠞⠝⢑⣁⡥⡴⣴⣺⣺⣺⣽⣳⣳⢯⡻⢬⡛⣞⡾⣽⣻⣟⣟⣿⣿⣿⣳⣳⣳⣳⢭⢳⣻⣺⢿⣿⣿⣿⣟⣾⣾⣽⣲⣘⠺⣺⣻⣻⣟⣟⣞⣞⣾⣿⣽⣺⣺⢃⢀⣰⠃⠠⣪⢯⡳⢝⢖⢭⣺⢽⢽⠝\n" +
-                    "⣌⣈⢙⠹⠽⡽⡽⣽⣳⢯⣗⣗⠗⠁⠀⠁⢀⣄⡦⣗⣗⠯⡓⠘⢈⢉⢤⢴⣲⡩⡻⣺⢽⢽⢽⡿⣿⣿⣿⣿⣿⡯⡷⡅⢳⣎⢝⣗⣟⣞⡾⡿⣿⣿⣿⣿⣷⡯⡯⣗⣮⣺⣿⣿⣿⣿⣿⣿⣿⣿⣷⢯⢷⣌⠺⣺⢽⣻⢿⣿⣿⣿⣿⣿⡾⡽⡽⣎⠠⣱⢯⢯⢯⢧⡻⣼⣺⢽⠝⢀\n" +
-                    "⣗⡯⣟⣖⡦⣆⣍⡑⠹⠽⡺⠊⠀⠀⠀⠢⢹⡺⠙⠁⠁⣀⡤⣖⣎⠲⡹⢽⣺⢽⣳⣜⠽⡽⡽⡽⡽⣿⣿⣿⣿⡯⣿⢽⢦⡘⢳⣆⠳⣳⢯⢿⣳⣿⣿⣿⣿⣿⣿⣟⣞⡾⡿⣟⣿⢿⢿⣿⣿⣿⣿⣿⣿⣺⣳⣌⠻⣺⢽⣺⢽⣿⣿⣿⣿⣿⡯⡯⡧⡌⠹⡽⡽⡽⣽⣳⢯⠃⢤⡣\n" +
-                    "⡣⡫⣳⣳⢯⣗⣗⡯⣗⠇⠀⠀⢀⡦⣄⣀⡀⢀⢤⣖⡯⣗⡯⣗⡯⣷⡘⢎⡺⢽⣺⣞⡷⣍⠯⡯⡯⣷⣳⣿⣿⣿⣿⢯⢯⢿⡄⠈⠳⣌⠫⣟⡾⣽⢿⣺⣻⣿⣿⡿⣯⡯⡯⣗⢯⢯⢯⣿⣿⣿⣿⣿⣿⣿⣾⣟⡶⡌⢻⣺⢽⣿⣿⣿⣿⣿⣿⣿⣻⢽⢦⠈⠫⡯⣗⡯⠃⡰⣕⢕\n" +
-                    "⡪⡪⡪⡪⡻⣺⣺⢽⠙⠀⠀⣠⣸⢽⣿⣗⣟⠂⠙⢺⢽⣷⣻⣷⣿⣳⣻⢦⠹⣜⢺⣺⢽⢯⢷⣍⠯⣗⣗⣿⣿⣿⣿⣿⣿⡯⣟⣆⠀⠈⠳⣑⢯⢯⣟⣞⡞⢺⣺⢽⣳⣿⡽⡽⣎⠯⡿⣾⣻⣿⣿⣿⣿⣿⣿⣿⣿⣻⢦⡙⢽⣺⣺⣿⣿⣿⣿⣷⣿⡽⡽⣧⠢⡈⢗⠁⡔⡕⣕⢕\n" +
-                    "⢖⠜⡜⡮⡪⣚⠾⠁⠀⣠⠂⣞⣾⣽⣾⣷⡇⠀⠀⠀⠙⢞⣞⣿⣿⢾⣾⡯⡷⡌⡳⣜⢽⢽⢽⣾⡽⣦⡓⣗⣗⣿⣿⣿⣿⣿⣷⣯⢧⡀⠠⢈⠢⡙⣞⣾⡽⣆⠪⡻⣺⣺⢽⢽⢽⣳⡍⣗⣗⡯⣯⣿⣿⣿⣿⣷⣿⣾⢽⢽⣄⠳⣳⣳⢯⣿⣿⣿⣿⣿⣽⢽⢧⠱⣄⠘⢮⡪⡪⡪\n" +
-                    "⢕⢕⢕⢕⢕⠕⢁⣜⣼⣺⡱⣳⢯⢿⣺⣳⠅⠀⠀⡅⠄⠀⠘⢺⣺⢽⢽⢽⢽⢽⢦⡙⢮⡹⢽⢽⢽⣳⣻⣺⣺⣺⢽⢽⢿⢿⣿⣿⢽⣳⡀⠂⡂⠄⡀⠳⡯⡯⡷⡌⢎⡺⡽⡽⣽⣾⢽⢦⡓⡯⣗⡯⡯⣿⣿⣿⣿⣿⣯⣟⣞⣷⡘⢾⢽⣿⣿⣻⣻⢿⣿⢽⢽⣇⢹⣲⡀⠓⡝⡮\n" +
-                    "⡱⢕⢕⢕⠕⢁⣞⣞⣾⣞⣮⣯⣯⣟⣞⣾⠀⢀⠱⡨⢊⢂⠡⠠⢈⠹⠽⡽⡽⡽⡽⣽⢦⡙⢧⡫⡷⣌⠺⣺⣺⣺⣝⠽⡽⡽⡽⡯⣟⣾⢽⡄⠢⡈⡐⢄⠈⠫⡯⣟⣦⠙⢮⡹⢽⢽⢽⣽⣳⡍⢷⡹⢽⣳⢯⢯⣟⣟⣿⣻⣺⣺⢽⣌⠫⡯⡯⣗⡯⣿⣿⣽⣽⣺⡆⣳⣻⣄⠘⢜\n" +
-                    "⡌⢢⠑⢅⠁⣞⣞⣾⣿⣿⣿⢿⣳⣳⣳⢱⠀⢐⢑⠌⣎⢗⢖⢌⠂⡢⢀⠉⠙⠽⡽⡯⡯⣟⠦⡹⢽⢽⣳⣄⠘⠚⣞⣶⣈⠙⠽⢽⣻⢿⢽⢽⣆⠨⡢⡠⠑⠄⠈⠑⠯⡿⣄⠉⢮⡹⢽⢳⠳⠻⡂⡛⡂⠋⡏⡛⡺⠺⣺⣳⣻⣿⣽⣺⣦⠹⣝⢳⢯⢿⣿⣿⣿⣗⣯⡂⣗⡯⣧⠈\n" +
-                    "⢫⢣⣙⠄⡒⣗⣗⣿⣿⣿⣿⣟⠎⣞⣞⢌⠀⠠⣑⢑⢎⢧⡣⡣⡅⠜⢔⣑⢄⠄⢈⠉⠫⢗⡧⣄⠈⠙⢞⡚⠦⠀⢠⢈⠚⠷⣤⡀⠉⠫⢯⣟⣞⣦⠈⢎⢗⢅⠅⠡⠀⠉⠙⢑⣀⠈⠴⣐⠯⡯⡯⣧⡙⣧⡙⡽⡽⣽⣳⣳⣻⣿⣿⣿⡯⣧⢚⡎⡯⡿⡿⡿⡿⣗⣗⣧⣸⢽⢽⡳\n" +
-                    "⢀⠁⠀⣲⣻⣺⣺⣾⣿⣿⣿⣯⡃⣗⣗⢅⠀⢐⠔⡱⣕⢧⡫⡪⡪⡊⢄⠑⢕⢕⢵⡨⡂⡢⡈⡙⠳⣌⠐⢈⢉⣑⣄⠠⣄⢄⠠⠁⠡⠄⠠⠀⠢⠂⣅⡀⢠⡠⡰⣔⢠⢡⠑⡄⡈⠒⠄⠈⠳⢍⠯⡗⣳⡜⢷⡘⢽⣳⢯⢿⣿⣿⣿⣿⡿⡽⣧⣸⢼⢽⠽⠽⠝⠓⠃⢃⢉⣁⣁⣤\n" +
-                    "⢀⢧⣄⠸⣺⣾⣷⣿⣿⣿⣿⢷⠅⣗⣗⠅⢐⠀⠕⡺⡪⡳⣝⢎⢮⡺⣌⠳⡢⡑⢳⢝⢮⡢⣑⠱⣕⢄⡑⠄⠑⠳⣻⣆⠱⢕⢝⡝⡮⡪⡢⣄⡑⠄⢅⠳⡀⠫⡪⢪⠀⠡⠑⠠⠀⠀⠀⠀⠀⠈⠑⠀⠑⢟⣆⢧⠑⡯⡏⣟⣾⣿⣿⣿⡯⡯⣇⣅⡥⡤⣄⣄⣄⣈⣉⢙⠙⠘⠘⠘\n" +
-                    "⢧⢽⣺⣳⣜⣞⣞⣾⣿⣿⣿⣯⡇⢺⣺⠐⠐⡀⡣⡹⡪⡳⣕⠕⢘⢜⢮⡪⠪⡮⣢⢑⠕⣝⢮⡣⡪⡱⢝⢕⢤⡀⠄⡙⢧⡈⢧⢏⢗⢝⢮⢮⡪⡳⠄⠑⣠⠀⠊⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠢⢆⠤⠑⠈⣰⣳⣻⣿⣿⣿⣿⣿⣗⣗⣇⢇⢳⣳⣷⣷⣿⣿⢽⣝⢳⡳\n" +
-                    "⣿⣿⣾⣾⣾⣾⣾⣾⣿⣿⣿⣗⠇⢸⣺⡅⠨⡀⡂⢯⢮⡳⡕⠡⢰⢕⢧⡫⡢⢹⠮⡳⣕⢤⠑⢝⢮⡪⡪⡑⢕⢝⢕⢆⢂⠑⠌⠳⣕⢕⢕⠧⢋⢰⢪⠂⠀⠀⠀⠀⠀⠀⡀⡀⠤⠦⡢⠢⡠⢀⠀⠀⠀⠀⠀⠁⠰⠄⢱⣳⣻⣻⢽⣺⡺⣺⣺⣺⣺⣎⡆⣗⡯⡯⣿⣿⢽⣺⡐⣇\n" +
-                    "⣳⢯⢯⣿⣿⣿⣿⣿⣿⣿⣿⣯⠃⠐⣗⡧⠀⡂⠨⡳⣕⢽⠈⡸⡪⡳⣕⢝⢼⡐⢣⠹⡪⡳⣝⢖⢅⡙⡺⡪⡢⣍⢳⢕⢕⢍⢆⡈⠪⡳⡣⣕⢕⠄⠀⠀⠀⠀⠀⠄⠀⣱⢽⠽⡵⣵⣺⣳⣯⢯⢯⢷⣄⡀⠀⠀⠀⠀⠀⠓⠯⠫⢛⡨⣴⣳⣳⣳⣿⣺⢽⡨⡯⡯⣿⣿⣻⣺⣆⢳\n" +
-                    "⢺⢽⢽⣿⣿⣿⣿⣿⣿⣿⢿⣻⠀⠀⠸⣽⠀⢑⠈⡮⣎⠇⡂⡯⡪⡪⣎⢗⢕⢝⠔⢪⢪⡪⣎⢗⢕⢝⢼⢬⢌⡪⢢⠱⣕⢕⢕⣗⢤⠙⡮⣊⠄⠀⠀⠀⢔⡐⡠⡢⡳⢇⢥⢾⢽⣳⣳⣻⣻⣻⢽⢽⣺⡳⠀⠀⠀⠠⡂⢰⣲⣺⣺⣽⣳⣿⣾⣿⣿⣺⣝⢧⢹⢽⣿⣿⣿⣽⣺⣺\n" +
-                    "⢀⡹⡽⣿⣿⣿⣿⣿⣿⣿⣻⢮⠀⢐⠈⢺⡅⠐⠄⡣⡃⡔⡸⣜⢜⢮⡪⡣⡫⡳⣝⢌⠆⢝⢮⡳⡳⡳⡳⣝⢕⢝⢕⣗⡌⡳⡣⡳⣕⢕⡘⠎⢀⢄⢫⣢⣖⡧⡤⡴⡴⡯⡯⡯⠻⣚⣊⣎⡬⣌⣍⡙⢚⠀⢄⠔⢁⢰⠱⡈⣞⢺⣺⣿⣿⣿⣿⣿⣿⣞⣞⡎⡎⢯⣿⣿⣿⣿⣺⡺\n" +
-                    "⠐⡯⣿⣿⣿⣿⣿⣿⣿⣳⢯⡇⢀⠢⡢⠈⣗⠈⡢⡈⠔⡰⣕⢕⢕⢕⢝⢮⡪⡪⡪⡱⢕⢕⢧⡫⡪⡪⡺⣜⢕⢕⢦⡊⢮⡢⡪⡳⣕⢕⢕⡜⡮⡺⣽⣺⣺⢽⢙⣩⢩⠩⣂⡊⡫⣱⡡⣓⣍⣌⠀⣀⣸⢐⢁⠀⠕⢸⢨⠀⢺⡎⣞⡿⣿⣿⣿⣿⣿⣷⣗⣿⢸⢘⣟⡿⣿⣿⣗⣿\n" +
-                    "⢨⢯⢿⢿⢿⣿⣿⣿⣿⢽⢽⡃⠠⡣⡣⡑⠌⡇⠀⡀⢮⡪⡪⡳⡹⡱⣕⢕⢝⢮⡪⡪⡲⡬⡪⡪⢏⢞⢞⢞⢮⡳⣕⢝⢦⢝⢪⡪⡪⡣⡣⡫⡪⡪⡪⢪⠪⡐⢧⣖⡷⡬⡾⡽⡝⠓⠙⠳⣳⢙⣖⡇⢅⢐⡈⡢⠨⡐⠔⢅⠘⣆⠱⣝⣗⣿⣿⣿⣿⣿⣿⣺⡇⡃⣗⡯⣿⣿⣗⣿\n" +
-                    "⢸⢽⢽⢽⢽⣿⣿⣿⣿⢽⢽⡂⢨⢪⡪⡢⠡⠈⠀⣗⠔⡝⢮⠪⠪⠪⠪⠳⠵⣕⢝⢮⡪⡪⣝⢜⢔⢕⠽⡹⡪⡪⡪⡳⡕⡕⡥⡑⠕⡕⢕⢱⢑⠕⡌⡪⡨⡂⡂⠆⠌⢣⡉⡏⡀⡊⠌⠆⠌⢣⢂⢇⠨⢂⠪⠢⡑⢅⠕⡔⡀⣖⠀⢕⣗⣿⣿⣿⣿⣿⣿⢾⢽⢐⢱⢯⢿⣿⣗⣿\n" +
-                    "⢼⢽⡃⡽⡽⣿⣿⣿⣿⢽⢽⠀⢢⢳⢕⠝⡀⠇⠀⡪⡣⢐⢕⢝⠝⠝⠝⡑⢑⢘⠹⣕⢝⢮⡪⡳⡵⡱⣑⢌⠊⠎⠎⢎⡪⠪⡸⡐⢌⢢⢁⢑⠱⠨⢊⢢⢊⠔⢅⢑⠥⠐⡕⠠⣈⢂⠕⠅⠕⡄⢐⢸⠀⢅⢕⠐⢌⠰⡨⡐⢄⢸⠀⠜⣞⣿⣿⣿⣿⣿⣿⡯⣟⡆⢸⢽⢽⣿⣟⣾\n" +
-                    "⢽⢽⡂⡯⣟⣿⣿⣿⣿⢽⢽⠀⣕⢕⠅⡲⡕⢁⡂⢸⠪⢃⢁⢆⠆⠱⠙⠊⠈⠊⠜⠜⡕⣕⢝⠮⡬⡨⣂⢣⢑⢈⠘⡰⢐⠅⠢⠌⠔⡈⢱⡀⢃⠣⡑⠔⡐⢅⢅⢕⠸⡠⡣⠨⡢⣑⣑⢑⠕⡌⡆⡐⢅⢂⢕⢑⠕⢌⢆⢎⢔⠈⡇⠠⠸⡽⡽⣽⣿⣿⣿⣟⣗⡧⠈⡯⣿⣿⣷⣿\n" +
-                    "⢽⢽⡂⢽⣳⣿⣿⣿⣿⡽⡽⠀⠪⡡⡪⡪⢪⡃⢃⠠⠎⠂⠁⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠢⠊⢎⢎⠢⡑⡱⡈⡂⠨⡨⢢⢑⠅⡅⡣⡪⡠⡠⡪⡸⡘⡖⡜⡔⡅⡎⡭⡐⢭⢐⡱⡰⢸⣘⡪⡢⢣⢢⢑⢄⢳⠱⢭⢪⡢⡣⡢⡀⢇⠐⡄⢯⢯⣿⣿⣿⣿⣷⣯⣿⠀⠇⣗⡯⣿⣿\n" +
-                    "⣝⢽⡂⢽⣺⢽⣻⣻⢯⢯⠯⠀⢮⡪⡪⡰⠅⡀⠃⠁⠀⠀⠀⠀⠀⡀⡀⡐⡠⠣⢃⢋⢋⢪⢑⢑⠡⡃⢕⢨⠨⡂⢆⠘⢔⢅⢇⢊⢪⡪⡪⡪⡎⡎⣎⢮⡪⡪⡪⡪⡯⣝⢸⢐⡝⡮⡪⡲⣕⢕⢕⢕⢆⠵⡨⡫⡳⣕⢝⢞⢮⡂⢱⠀⢕⠈⣟⣾⣿⣿⣿⣿⣟⣟⡆⢅⢗⡯⣟⣿\n" +
-                    "⡮⣸⠅⢸⣺⢽⡢⡯⠏⣣⢸⠀⡳⡝⢄⠍⠜⠈⠀⠀⢀⡰⢂⣄⣜⢖⢁⡇⠎⠪⠪⠺⡅⢕⢅⢅⠣⡊⡜⡐⢅⠕⡱⡠⠀⢣⡣⡣⢣⡫⡮⣎⣗⣕⢕⢕⢝⢮⣪⡪⡳⣕⠸⡄⢯⡪⡪⣪⡪⡳⣕⣝⢵⡘⢆⢯⡺⣜⢕⢕⢧⡫⠐⠨⡐⡅⢸⣺⣟⣿⣿⣿⣗⣗⡧⢸⠸⣽⣳⢯\n" +
-                    "⡇⣺⢡⠘⡾⡽⡂⡵⡽⣽⢸⠀⢕⠕⡕⡔⠀⠀⠀⠐⣨⣖⣟⣞⢞⢝⣁⠢⠈⡎⢎⢆⠱⡀⡪⡨⢨⢐⢅⢕⠡⡕⡕⣜⡪⡢⡫⣎⢆⢓⢗⢧⡣⡳⡳⡳⣕⢕⢕⢝⢮⡪⢸⡪⢐⢕⢕⢕⡝⡮⡪⡪⡳⣕⢑⠜⡪⡪⡫⡳⣕⢝⠄⠑⡂⢯⡀⢗⣷⣻⣿⣿⣿⡷⣯⠈⡇⣳⢯⢯\n" +
-                    "⡇⣺⠸⡄⢯⢯⡇⢽⢽⢽⢕⠄⢳⢬⡨⠀⠀⠀⢠⢯⣗⢗⣓⠗⠡⣮⡺⢂⠕⢌⠢⡢⠡⡀⠢⡨⢄⠕⢤⠡⡱⡱⣹⣪⡪⡪⡪⡪⡳⡘⡎⢧⡫⡪⡪⡺⣜⢕⢵⢕⢗⠺⠳⠙⠅⣁⢤⡀⢫⡪⡪⡺⡺⣜⢅⢕⢭⡪⡪⣪⣪⢳⢕⠀⡣⠱⣕⠘⣞⣾⣿⣿⣿⡯⣿⠀⣳⠨⡯⡯\n" +
-                    "⡇⢺⢘⡆⢹⢽⣝⢸⢽⢽⡕⡅⠀⠳⠊⠀⠀⠀⠸⠝⢊⠖⠁⡈⢌⠌⣁⢂⠅⠅⡊⡨⢨⠨⡐⢌⢢⢑⢅⢣⢪⢪⢺⢜⢕⢕⢝⢮⡪⡂⢽⡰⠕⠙⡉⣊⣨⣨⢤⢴⢴⠲⠺⠊⠫⡏⠫⠃⠀⠹⣝⢝⢮⡪⡳⡈⣗⢝⢝⢮⡪⡫⡪⠄⢺⡐⢕⡆⢱⣻⣿⣯⣟⡯⣿⡀⢸⣇⢽⡝\n" +
-                    "⡇⢸⢐⣗⠨⣟⣾⠨⡯⡯⡇⢆⢸⠀⠂⠀⠀⠀⠀⠀⣦⡀⠔⢌⠔⢐⢐⠅⡌⠌⡄⡂⢅⢆⠌⡌⢦⢨⢢⢣⢥⢣⢳⢕⣕⢕⢕⢧⠫⠊⣠⢴⢮⢯⢯⠳⠓⠉⠁⠉⣷⠀⠀⠀⠀⢹⠀⠀⠀⠀⠱⣕⢵⡹⡪⡲⢸⢕⢕⢕⢝⢮⣪⡣⠐⣕⢑⢧⠀⣗⣗⣟⣿⣿⣳⠅⡐⣗⣞⠆\n" +
-                    "⡇⠘⡆⡿⡄⢳⣻⠌⡯⡯⣯⢂⠠⠃⠀⠠⠐⡕⡀⡂⢌⢊⡟⢐⠌⡢⠡⡊⡨⢨⠠⢡⠡⡢⡱⡨⡘⡔⡲⣕⢜⢕⢽⢕⢧⡫⠃⡡⡴⡯⡯⠏⠋⠑⢄⠀⠀⠀⠀⠀⠸⣧⠀⠀⠀⠀⡃⠀⠀⠀⠀⢳⢕⢝⢜⢜⢮⡫⡫⡫⡳⣕⢕⣝⠄⡣⡃⡳⡅⢸⣺⣺⣿⣟⢎⠇⡂⢺⡺⠀\n" +
-                    "⠇⡄⠇⣽⣳⠘⣞⡇⢯⢯⢿⠔⠀⣵⡂⠡⡑⡑⣀⢊⢐⠡⡃⡠⡃⡌⢌⢢⢘⠄⡅⢕⠨⡰⡐⢔⢅⢆⢗⢜⢕⢕⢝⢮⠪⢀⡮⡯⠏⠉⠀⠀⠀⠀⠀⠑⠄⠀⠀⠀⠀⠙⣧⠀⠀⠀⢸⠀⠀⠀⠀⠈⣗⢕⢕⢕⢕⢝⢮⣪⡳⣕⢕⢗⣇⠸⡪⡨⢇⠀⢗⣿⢽⣟⢸⡇⢪⢰⠇⢠\n" +
-                    "⡅⠆⡕⢼⣺⡆⢱⢧⢹⢽⡽⣇⠁⢺⣇⠀⠐⡌⢔⢐⠔⡩⡀⡢⢂⠢⡡⡂⠆⡊⢆⠢⡡⡂⡇⣕⢕⢕⢵⡹⡹⡳⡕⠕⣰⢯⠋⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⡠⡺⣧⢑⠅⠕⣇⠢⡠⠠⡀⢸⡱⡳⡳⣕⠜⣮⢺⡪⡪⡫⡳⣕⠄⢝⡆⠅⠀⢸⣺⢽⢮⢸⡳⢸⢽⠀⢜\n" +
-                    "⡇⢕⠸⢸⣺⢽⠄⢯⠨⡯⣟⣷⠀⢱⣳⢱⠀⠑⠔⡐⡌⡢⠀⢆⠆⢕⢐⠔⠨⠂⡎⡪⡢⡣⡣⣇⢗⢕⢵⡹⡪⡪⢢⢯⢯⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⣪⢪⢪⠪⣧⠨⠨⡒⡕⢌⠪⠠⠐⡝⡮⡪⡪⡇⡳⡱⡹⡪⡪⡳⣕⢕⠔⢝⠀⢀⠀⢯⢯⢧⢸⢽⢨⡇⢀⡯\n" +
-                    "⣗⠸⡈⠜⡾⣽⣳⡈⡇⣹⣳⢯⡇⠐⣿⡨⢆⠈⠢⡂⡂⡢⡀⢔⠰⡐⡔⡌⠨⡪⡢⢇⢗⢕⢗⢧⡫⡳⣕⢌⠀⢲⢯⡉⠙⣆⠀⠀⠀⠀⠀⠀⠀⠀⡀⠄⠔⡐⠠⡫⢓⢕⠷⢕⢝⢦⠑⠌⢮⠢⡑⡑⡀⢝⢮⢮⡪⡪⢸⡘⣞⢞⢞⢮⡪⡳⡕⠀⢠⣆⢀⠹⡽⣇⢸⢽⢽⠀⣰⢯\n" +
-                    "⠺⡌⣆⠈⡯⣟⣞⣷⢘⠸⣺⢽⢽⠀⣗⡇⢕⠀⠈⢢⢑⠔⡄⠢⡱⡨⡢⢪⢄⢣⢳⢕⢕⢝⢮⡪⡪⡪⣪⢳⢕⠄⠳⡆⠀⠈⢧⠀⠀⠀⠀⡠⢂⢑⠌⢌⢂⠢⠡⡃⢅⢂⠢⡂⡁⠝⣆⠑⢅⢇⠪⡐⠄⢸⢕⢕⢝⢮⠸⡢⡱⣕⢕⢧⡫⡪⠀⣠⡙⢾⢀⠀⢯⢧⠸⡽⡇⠀⡾⡕\n" +
-                    "⣨⣐⡈⠀⢸⣳⣳⢯⢷⡀⢯⢯⣟⡆⢸⢽⢘⠄⠄⠂⢕⢱⠸⡨⡸⡸⡸⢕⢕⡘⡮⡪⡫⡳⣕⢝⢝⢝⢼⡹⡪⡳⡄⠀⠀⠀⠀⠣⡀⠀⢄⢂⢢⠐⡡⢑⠄⠅⠌⡢⡑⡐⢅⠪⡐⢄⠘⣆⢌⠸⡌⡢⠀⠨⡫⡫⣏⢮⠸⡕⢼⡸⡵⣕⠍⠀⣰⣳⣻⡜⢸⡆⠙⣗⠨⡿⠀⣸⢽⢽\n" +
-                    "⢾⣾⢽⢂⠀⣗⡯⣿⣿⣲⠸⢽⣺⢧⠘⡽⡅⢣⢱⠀⠈⢎⢎⢦⢪⡪⡪⡳⢵⢥⢙⢮⡪⡪⣎⢗⢕⢕⢵⡹⡪⡪⡺⣄⠀⠀⠀⠀⠑⡀⡢⠂⢕⢐⢈⠢⠡⡑⠨⢸⡐⢌⠢⡑⢌⠢⡑⠌⢮⢢⣜⢄⠀⢨⢪⡪⣎⢗⢌⡢⡣⡫⡪⠂⠀⢼⣳⣳⣳⣻⡐⣯⠐⢬⣰⡋⢀⡾⡽⣽\n" +
-                    "⣿⣿⣝⠰⡀⠸⡽⣽⣿⣺⡆⢕⢽⢽⡀⢯⢯⡐⠌⣆⠀⠈⢗⢵⢕⢝⢮⡪⡳⣕⢥⠑⣝⢮⡪⡣⡳⡳⣕⢝⢜⢞⢮⡪⡣⡀⠀⠀⠀⠈⡆⢕⢐⢐⠡⠈⠪⡨⠢⡡⢣⠡⡑⢌⠢⡑⢌⠪⡈⡧⡣⡣⠀⢝⢆⢯⡪⡳⣕⢽⢜⠜⠀⢠⢊⢺⣺⢽⣺⣺⡆⢯⣇⢸⡺⠀⣸⢽⢽⠃\n" +
-                    "⣿⣿⢮⢘⢔⠠⡫⣿⣿⣺⣝⠀⢌⠻⡆⠈⡯⡧⠱⠸⣄⠀⠘⢜⢕⠜⡪⡪⣪⡪⣳⢳⠘⢮⡪⡪⡪⡊⣮⡳⣕⢕⢵⡹⡪⡪⣦⢀⠀⠀⠘⣖⣔⢐⢈⠪⡈⠢⡑⢌⠪⡑⢌⠢⡑⢌⠢⡑⡌⡚⣎⢎⠀⣕⢕⢆⠫⡪⡪⡪⠃⠀⠀⣿⠨⢺⣺⢽⣳⡳⢧⢹⣺⢼⠃⢠⢯⡏⠃⣠\n" +
-                    "⣺⣻⢽⠠⡣⡀⢯⢿⣿⣳⣳⢑⠹⣌⢫⠐⡸⡽⡎⢌⢺⣆⠀⠈⠹⣕⠜⢮⢺⣪⡪⡂⢷⡑⣝⢞⢞⢮⡘⢇⢳⡳⡳⣝⢞⢮⣪⣳⡢⡀⠀⠊⡺⡐⢅⠢⡘⢄⠌⠢⡑⢌⠢⡑⢜⠰⡑⢌⢪⢸⡸⣕⠀⡨⡳⡳⣳⣲⣺⠈⢀⠨⠀⡺⡕⡱⡯⣟⠎⡰⡘⡆⢯⡏⠀⣞⠇⠠⡼⡝\n" +
-                    "⡯⡯⣯⡃⢕⡢⢸⢽⣻⣺⣺⠀⢦⠺⡄⡃⢔⠹⡽⡌⡂⢯⢷⣀⠀⠸⢕⠑⣕⢕⣝⢮⡢⣢⡳⣕⢕⢕⢝⢦⡪⡪⡺⣜⢕⢕⢕⠎⢯⡪⡣⣄⠀⢙⠔⡱⢨⠀⢏⢆⢌⢐⠑⠌⠢⠃⡃⣡⡡⡎⣎⣮⠂⠨⡨⡪⡲⢑⡕⠠⠪⡨⠂⢸⣳⡆⠟⡐⡴⠝⡆⢽⣺⠂⢘⠊⢠⢾⢽⠈\n" +
-                    "⡯⡯⣗⡧⢐⢕⠌⢟⣞⣞⡾⡄⢹⢧⡙⡄⢘⣇⠹⡽⡌⢌⢻⣺⣲⡀⠘⡕⢌⢧⢳⢕⢝⢞⢮⡪⡳⡳⣹⢺⡪⡮⡺⡪⡳⡕⣗⢝⡘⣎⢮⢮⡳⡠⠈⠨⢢⢑⠸⡜⡆⡕⡱⠡⠣⡣⡓⡕⡝⡜⡜⡾⡱⡀⠸⡮⣖⡯⡇⠨⡘⢔⢑⠐⠗⡡⡪⢊⢰⣳⠄⣞⠎⠀⠁⣰⡏⠹⡽⡅\n" +
-                    "⢹⢽⣳⢯⠀⡇⡇⡆⠓⣗⡯⣇⢸⢽⣳⣌⠀⢯⣇⠹⡽⡌⢆⢳⣳⣻⣆⠘⣦⣪⠑⠕⣕⢕⢧⡫⡪⡪⣪⢳⢕⢝⢮⡪⡪⡪⡪⡳⡕⢜⢕⢧⢯⢮⡳⣄⠁⣊⡼⡳⡕⡌⢰⠸⡰⡰⡠⡉⠝⢮⢪⢪⢪⡂⠀⡠⠈⠛⢠⢑⠅⢕⠰⢐⢬⢾⡅⢃⣟⠞⣱⡏⠀⢀⣼⠳⡱⡠⠹⣽\n" +
-                    "⠸⣽⣺⢽⡂⢜⢜⠸⡱⡠⠙⣗⠸⡽⡾⡾⣕⢸⣺⣆⠹⡽⣌⢆⢳⣳⢯⢷⣌⣊⣂⣦⣀⠁⠃⠏⠮⡮⡪⡳⡵⡵⣕⢝⢮⢮⢮⡳⡕⢱⢕⢝⠝⡝⡚⡚⠲⢌⢺⡚⢮⢪⠢⡣⡣⡣⡣⡣⡣⡣⡣⡣⡣⡣⠂⠪⡐⢅⠕⡐⠁⠁⡀⡈⠈⠉⣉⣀⢐⠙⣗⠁⡠⡞⠎⠢⡘⢜⢄⠸\n" +
-                    "⠈⣞⣞⣟⡆⢸⢸⠈⡎⡎⡧⡄⡁⢫⢯⢯⢷⢔⣳⢯⢧⠙⡽⣮⢢⡹⡽⡽⣾⣞⣞⠎⡤⠢⠁⢄⢄⣈⠈⠈⠊⠪⠪⠳⢕⢕⢕⡝⡎⢬⡫⣇⢳⢕⢝⢮⡣⡣⡂⢽⣳⡳⢀⠁⠑⠑⠕⡵⣕⣕⡕⡕⡕⡕⠀⠕⠨⠀⢀⠄⠔⡁⡢⢘⢐⢀⠀⠫⡯⡯⣗⣖⡯⡧⣄⣄⡂⡠⠣⠣\n"
-    ]
+    final List<String> ARTS = []
 
     Collections.shuffle(ARTS, rnd)
 
@@ -800,10 +686,7 @@ static def insertArtLines(ClassNode classNode, MethodNode methodNode, Random rnd
     }
 }
 
-
-
-
-static def ensureClinitWithGarbage (ClassNode classNode, Random rnd) {
+static def ensureClinitWithGarbage(ClassNode classNode, Random rnd) {
     MethodNode clinit = null
     for (MethodNode m : classNode.methods) {
         if ("<clinit>" == m.name) {
@@ -818,12 +701,13 @@ static def ensureClinitWithGarbage (ClassNode classNode, Random rnd) {
     injectGarbage(clinit, rnd)
 }
 
-static def randomChinese (Random rnd, int len) {
-    StringBuilder sb = new StringBuilder()
+static String generateRandomChinese(int len) {
+    if (len <= 0) return "";
+    final String CHINESE_POOL = "的一是在不了有和人這中大為上個國我以要他時來用們生到作地於出就分對成會可主發年動同工也能下過子說產種面而方後多定行學法所民得經十三之進等部度家電力裡如水化高自二理起小物實加量都兩體制機當使點從業本去把性好應開它合還因由其些然前外天政四日那社義事平形相全表間樣與關各重新線內數正心反你明看原又麼利比或但質氣第向道命此變條只沒結解問意建月公無系軍很情者最立代想已通並提直題黨程展五果料象員革位入常文總次品式活設及管特件長求老頭基資邊流路級少圖山統接知較將組見計別她手角期根論運農指幾九區強放決西被做必戰先回則任取據處隊南給色光門即保治北造百規熱領七海口東導器壓志世金增張於細平";
+    StringBuilder sb = new StringBuilder(len);
+    int poolLen = CHINESE_POOL.length();
     for (int i = 0; i < len; i++) {
-        int base = 0x4E00
-        int ch = base + rnd.nextInt(0x9FA5 - 0x4E00)
-        sb.append((char) ch)
+        sb.append(CHINESE_POOL.charAt(new SecureRandom().nextInt(poolLen)));
     }
-    return sb.toString()
+    return sb.toString();
 }

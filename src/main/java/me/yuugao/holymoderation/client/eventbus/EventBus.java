@@ -2,8 +2,8 @@ package me.yuugao.holymoderation.client.eventbus;
 
 import me.yuugao.holymoderation.client.eventbus.event.Event;
 import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.obfuscation.DontObf;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
+import me.yuugao.holymoderation.obfuscation.DontObf;
 
 import java.lang.reflect.Method;
 import java.util.List;

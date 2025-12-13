@@ -4,9 +4,9 @@ import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.modules.*;
 import me.yuugao.holymoderation.client.modules.maingui.MainGuiModule;
-import me.yuugao.holymoderation.client.obfuscation.DontObf;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.obfuscation.DontObf;
 
 import net.fabricmc.api.ClientModInitializer;
 

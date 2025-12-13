@@ -189,7 +189,7 @@ public class Render2DService extends Service {
         setupRender();
 
         float size = (radius + outlineWidth) * 2;
-        
+
         RGB_PALETTE.getUniformOrDefault("Radius").set(radius);
         RGB_PALETTE.getUniformOrDefault("OutlineColor").set(
                 outlineColor.getRed() / 255f,
