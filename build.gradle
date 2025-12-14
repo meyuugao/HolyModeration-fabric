@@ -58,6 +58,8 @@ processResources {
     }
 }
 
+apply from: 'obfuscator.gradle'
+
 jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}" }
