@@ -180,32 +180,7 @@ tasks.register("obfuscateJar") {
                             methodMapping.put(genKeyMapped, genName)
                             println("НОВЫЙ МЕТОД: " + genKey + " -> " + methodMapping.get(genKey))
                         }
-                    }
-                }
 
-                for (FieldNode field : node.fields) {
-                    String fieldKeyFull = internalName + "." + field.name
-                    boolean hasFieldDontObf = field.visibleAnnotations != null && field.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
-                    if (hasFieldDontObf) {
-                        dontObfFields.add(fieldKeyFull)
-                        println("ПОЛЕ С @DontObf: " + fieldKeyFull)
-                    }
-                    if (!hasFieldDontObf && !hasClassDontObf) {
-                        if (!fieldMapping.containsKey(fieldKeyFull)) {
-                            String genField = generateRandomFieldName(random)
-                            fieldMapping.put(fieldKeyFull, genField)
-                            String mappedOwner = classMapping.containsKey(internalName) ? classMapping.get(internalName) : internalName
-                            String fieldKeyMapped = mappedOwner + "." + field.name
-                            fieldMapping.put(fieldKeyMapped, genField)
-                            println("НОВОЕ ПОЛЕ: " + field.name + " -> " + genField)
-                        }
-                    }
-                }
-
-                for (MethodNode method : node.methods) {
-                    String methodKey = internalName + "." + method.name + method.desc
-                    boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
-                    if (!hasMethodDontObf && !hasClassDontObf) {
                         List<String> paramTypes = parseMethodDescriptor(method.desc)
                         if (paramTypes != null && paramTypes.size() > 0 && method.localVariables != null) {
                             int paramIndex = ((method.access & Opcodes.ACC_STATIC) == 0) ? 1 : 0
@@ -224,6 +199,25 @@ tasks.register("obfuscateJar") {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                for (FieldNode field : node.fields) {
+                    String fieldKeyFull = internalName + "." + field.name
+                    boolean hasFieldDontObf = field.visibleAnnotations != null && field.visibleAnnotations.any { it.desc == "Lme/yuugao/holymoderation/obfuscation/DontObf;" }
+                    if (hasFieldDontObf) {
+                        dontObfFields.add(fieldKeyFull)
+                        println("ПОЛЕ С @DontObf: " + fieldKeyFull)
+                    }
+                    if (!hasFieldDontObf && !hasClassDontObf) {
+                        if (!fieldMapping.containsKey(fieldKeyFull)) {
+                            String genField = generateRandomFieldName(random)
+                            fieldMapping.put(fieldKeyFull, genField)
+                            String mappedOwner = classMapping.containsKey(internalName) ? classMapping.get(internalName) : internalName
+                            String fieldKeyMapped = mappedOwner + "." + field.name
+                            fieldMapping.put(fieldKeyMapped, genField)
+                            println("НОВОЕ ПОЛЕ: " + field.name + " -> " + genField)
                         }
                     }
                 }
