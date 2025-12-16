@@ -1,13 +1,14 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.regex.Pattern;
-
-import static obfuscator.modules.LoggerModule.log;
 
 public class JsonHandler {
     public static byte[] handleJson(JarEntry entry, byte[] entryBytes, Map<String, String> classMapping) {

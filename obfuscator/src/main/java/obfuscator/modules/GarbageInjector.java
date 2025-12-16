@@ -10,8 +10,7 @@ import java.util.List;
 
 public class GarbageInjector {
     private static final SecureRandom secureRandom = new SecureRandom();
-    private static final List<String> ARTS = new ArrayList<>()
-    {{
+    private static final List<String> ARTS = new ArrayList<>() {{
         add("""
                 ⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⠢⡂⢆⠢⠢⠢⠢⠢⠢⡂⢆⠢⠢⡂⢆⠢⠢⠢⡂⢆⠢⠢⠢⡢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⡂⢆⢢
                 ⡨⠢⡑⢌⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢍⢊⠕⣉⢊⢊⢊⢊⢊⢊⠪⡘⢌⢊⢊⢊⢊⢊⠪⡘⢌⠪⡨⠢⡑⢌⠆⡕⢌⠆⡕⢌⢆⠣⡱⢨⠢⡑⢕⠩⡊⢕⢑⢌⠢⡃⢕⢌⠢⡑⢍⠬⠨⠢⡑⡑⠕⢌⢊⠪⡡⠩⡊⢅⢃⠣⡑⢕⢑⢑⢑⢑⠍⡌⢕⠩⡨⡑⡑⡑⡑⢌⠢⡑

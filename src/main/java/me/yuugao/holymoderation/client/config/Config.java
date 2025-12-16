@@ -16,52 +16,51 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@DontObf
 public class Config {
     public Config() {
         keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
     }
-
+    
     private final String currentVersion = "2.9alphafix";
-
-    @Expose
+    
+    @Expose @DontObf
     private String apiToken = StringUtils.EMPTY;
 
-    @Expose
+    @Expose @DontObf
     private boolean soundsEnabled = true;
-    @Expose
+    @Expose @DontObf
     private int spyDelay = 1;
-    @Expose
+    @Expose @DontObf
     private boolean copyButtonEnabled = false;
-    @Expose
+    @Expose @DontObf
     private String copyButtonText = "§f§l[§a§lcopy§f§l]";
-    @Expose
+    @Expose @DontObf
     private String playerMarker = "§d§l[CHECK]";
 
-    @Expose
+    @Expose @DontObf
     private String texts = StringUtils.EMPTY;
 
-    @Expose
+    @Expose @DontObf
     private boolean autoVanishEnabled = false;
-    @Expose
+    @Expose @DontObf
     private boolean autoFlyEnabled = false;
-    @Expose
+    @Expose @DontObf
     private boolean autoGm3Enabled = false;
-    @Expose
+    @Expose @DontObf
     private boolean autoHacAlertsEnabled = false;
-    @Expose
+    @Expose @DontObf
     private boolean autoGodEnabled = false;
 
-    @Expose
+    @Expose @DontObf
     private boolean dupeIpEnabled = false;
-    @Expose
+    @Expose @DontObf
     private boolean autoAnyDeskEnabled = true;
-    @Expose
+    @Expose @DontObf
     private boolean autoTpEnabled = true;
-    @Expose
+    @Expose @DontObf
     private boolean autoBanEnabled = true;
 
-    @Expose
+    @Expose @DontObf
     private Map<String, KeyBindConfig> keyBinds = new HashMap<>();
 
     public KeyBindConfig getKeyBind(String action) {
@@ -90,7 +89,6 @@ public class Config {
 
     @Getter
     @Setter
-    @DontObf
     public static class KeyBindConfig {
         @Expose
         private int mainKey;
@@ -108,7 +106,6 @@ public class Config {
         }
     }
 
-    @DontObf
     public enum KeyBindType {
         SINGLE_PRESS,
         HOLD

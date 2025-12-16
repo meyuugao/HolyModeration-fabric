@@ -31,7 +31,7 @@ public class LoggerModule {
                 writer.println(e.getKey() + " -> " + e.getValue());
             }
 
-            writer.println("\n=== ИСКЛЮЧЕНИЯ @dontobf ===");
+            writer.println("\n=== ИСКЛЮЧЕНИЯ @DontObf ===");
             writer.println("Классы: " + String.join(", ", dontObfClasses));
             writer.println("Методы: " + String.join(", ", dontObfMethods));
             writer.println("Поля: " + String.join(", ", dontObfFields));
@@ -42,12 +42,13 @@ public class LoggerModule {
             log("Обработано классов: " + classMapping.size());
             log("Обработано методов: " + methodMapping.size());
             log("Обработано полей: " + fieldMapping.size());
+            writer.close();
         } catch (Exception e) {
             log("ОШИБКА ПРИ ЗАПИСИ МАППИНГОВ: " + e);
         }
     }
 
     public static void log(String message) {
-        System.out.println("[OBFUSCATOOR] " + message);
+        System.out.println("[HolyObfuscator] " + message);
     }
 }

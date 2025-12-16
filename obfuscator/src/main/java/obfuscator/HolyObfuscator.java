@@ -6,14 +6,14 @@ import java.nio.charset.StandardCharsets;
 
 import obfuscator.modules.RemapperModule;
 
-public class Obfuscator {
-    private Obfuscator() {
+public class HolyObfuscator {
+    private HolyObfuscator() {
     }
 
     public static void main(String[] args) {
-        Obfuscator obfuscator = new Obfuscator();
+        HolyObfuscator holyObfuscator = new HolyObfuscator();
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
-        obfuscator.run(args[0]);
+        holyObfuscator.run(args[0]);
     }
 
     public void run(String path) {
