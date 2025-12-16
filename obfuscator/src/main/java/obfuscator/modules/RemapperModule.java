@@ -3,6 +3,7 @@ package obfuscator.modules;
 import static obfuscator.modules.LoggerModule.log;
 
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.awt.Color;
@@ -16,7 +17,6 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 public class RemapperModule {
-
     public static List<String> parseMethodDescriptor(String descriptor) {
         if (descriptor == null || descriptor.length() < 3 || descriptor.charAt(0) != '(') {
             return null;
@@ -99,6 +99,16 @@ public class RemapperModule {
                     if (ctx.classBytes.containsKey(internalName)) {
                         entryBytes = ClassTransformer.transform(bytes, ctx, remapper);
 
+                        ClassReader cr = new ClassReader(entryBytes);
+                        ClassNode cn = new ClassNode();
+                        cr.accept(cn, 0);
+
+                        StructuralObfuscatorModule.obfuscateClass(cn);
+
+                        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+                        cn.accept(cw);
+                        entryBytes = cw.toByteArray();
+
                         String newInternalName;
 
                         if (internalName.contains("$")) {
@@ -148,7 +158,7 @@ public class RemapperModule {
                     ctx.dontObfFields
             );
         } catch (Exception e) {
-            log(Color.RED + "Исключение при выполнении: " + e);
+            log("Исключение при выполнении: " + e);
         }
     }
 }
