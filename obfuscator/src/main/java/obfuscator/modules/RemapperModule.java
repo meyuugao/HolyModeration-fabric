@@ -2,11 +2,11 @@ package obfuscator.modules;
 
 import static obfuscator.modules.LoggerModule.log;
 
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -102,8 +102,6 @@ public class RemapperModule {
                         ClassReader cr = new ClassReader(entryBytes);
                         ClassNode cn = new ClassNode();
                         cr.accept(cn, 0);
-
-                        StructuralObfuscatorModule.obfuscateClass(cn);
 
                         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
                         cn.accept(cw);

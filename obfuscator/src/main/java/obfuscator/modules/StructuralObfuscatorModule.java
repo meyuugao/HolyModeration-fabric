@@ -2,6 +2,7 @@ package obfuscator.modules;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
+
 import java.security.SecureRandom;
 import java.util.HashMap;
 
@@ -10,7 +11,7 @@ public class StructuralObfuscatorModule {
 
     public static void obfuscateClass(ClassNode cn) {
         for (MethodNode mn : cn.methods) {
-            if (mn.name.equals("<clinit>") || mn.name.equals("<init>")) continue;
+            if (mn.name.startsWith("<")) continue;
             if ((mn.access & Opcodes.ACC_ABSTRACT) != 0) continue;
             if ((mn.access & Opcodes.ACC_NATIVE) != 0) continue;
 

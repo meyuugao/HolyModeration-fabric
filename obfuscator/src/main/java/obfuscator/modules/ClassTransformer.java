@@ -2,6 +2,7 @@ package obfuscator.modules;
 
 import static obfuscator.modules.LoggerModule.log;
 
+
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
@@ -36,13 +37,20 @@ public final class ClassTransformer {
             }
 
             for (MethodNode methodNode : classNode.methods) {
+                StackAbuseModule.obfuscate(methodNode);
+                FakeExceptionFlowModule.obfuscate(methodNode);
+                ControlFlowFlatteningModule.obfuscate(methodNode);
+
                 GarbageInjector.injectGarbage(methodNode);
                 GarbageInjector.insertArtLines(classNode, methodNode);
             }
+
+            StructuralObfuscatorModule.obfuscateClass(classNode);
+
             GarbageInjector.ensureClinitWithGarbage(classNode);
         }
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
         ClassRemapper classRemapper = new ClassRemapper(writer, remapper);
         for (MethodNode m : classNode.methods) {
             m.parameters = null;

@@ -2,16 +2,13 @@ package obfuscator.modules;
 
 import static obfuscator.modules.LoggerModule.log;
 
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public final class MappingGenerator {
     private MappingGenerator() {
