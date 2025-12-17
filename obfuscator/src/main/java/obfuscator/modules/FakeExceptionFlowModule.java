@@ -6,7 +6,6 @@ import org.objectweb.asm.tree.*;
 import java.util.ArrayList;
 
 public class FakeExceptionFlowModule {
-
     public static void obfuscate(MethodNode mn) {
         if (mn.instructions == null || mn.instructions.size() < 10) return;
         if (mn.name.startsWith("<")) return;

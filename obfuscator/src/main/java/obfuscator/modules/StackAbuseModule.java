@@ -4,7 +4,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 public class StackAbuseModule {
-
     public static void obfuscate(MethodNode mn) {
         if (mn.instructions == null || mn.instructions.size() < 5) return;
         if (mn.name.startsWith("<")) return;

@@ -4,7 +4,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 public class ControlFlowFlatteningModule {
-
     public static void obfuscate(MethodNode mn) {
         if (mn.name.startsWith("<")) return;
         if (mn.instructions.size() < 20) return;

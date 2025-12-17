@@ -40,6 +40,9 @@ public final class ClassTransformer {
                 StackAbuseModule.obfuscate(methodNode);
                 FakeExceptionFlowModule.obfuscate(methodNode);
                 ControlFlowFlatteningModule.obfuscate(methodNode);
+                OpaquePredicateModule.obfuscate(methodNode);
+                ExceptionStateLoopModule.obfuscate(methodNode);
+                SwitchBombModule.obfuscate(methodNode);
 
                 GarbageInjector.injectGarbage(methodNode);
                 GarbageInjector.insertArtLines(classNode, methodNode);
