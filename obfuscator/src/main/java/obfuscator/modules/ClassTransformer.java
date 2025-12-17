@@ -3,6 +3,7 @@ package obfuscator.modules;
 import static obfuscator.modules.LoggerModule.log;
 
 
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
@@ -15,9 +16,9 @@ public final class ClassTransformer {
     }
 
     public static byte[] transform(byte[] bytes, ObfContext ctx, ObfRemapper remapper) {
-        org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(bytes);
+        ClassReader reader = new ClassReader(bytes);
         ClassNode classNode = new ClassNode();
-        reader.accept(classNode, org.objectweb.asm.ClassReader.EXPAND_FRAMES);
+        reader.accept(classNode, ClassReader.EXPAND_FRAMES);
 
         String internalName = classNode.name;
         boolean isDontObf = ctx.dontObfClasses.contains(internalName);
@@ -36,12 +37,22 @@ public final class ClassTransformer {
                 }
             }
 
+            String decoderMethodName = NameGenerator.generateChineseName();
+            StringEncryptionModule.injectDecoder(classNode, decoderMethodName);
+            StringEncryptionModule.obfuscateFields(classNode, decoderMethodName);
+
             for (MethodNode methodNode : classNode.methods) {
-                StackAbuseModule.obfuscate(methodNode);
-                FakeExceptionFlowModule.obfuscate(methodNode);
-                ControlFlowFlatteningModule.obfuscate(methodNode);
+                StringEncryptionModule.obfuscateMethods(classNode, methodNode, decoderMethodName);
+
                 OpaquePredicateModule.obfuscate(methodNode);
+
+                StackAbuseModule.obfuscate(methodNode);
+
+                ControlFlowFlatteningModule.obfuscate(methodNode);
+
+                FakeExceptionFlowModule.obfuscate(methodNode);
                 ExceptionStateLoopModule.obfuscate(methodNode);
+
                 SwitchBombModule.obfuscate(methodNode);
 
                 GarbageInjector.injectGarbage(methodNode);
