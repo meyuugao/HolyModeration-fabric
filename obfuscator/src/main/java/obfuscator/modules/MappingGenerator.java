@@ -3,6 +3,8 @@ package obfuscator.modules;
 import static obfuscator.modules.LoggerModule.log;
 
 
+import obfuscator.ObfRule;
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.LocalVariableNode;
@@ -108,9 +110,15 @@ public final class MappingGenerator {
 
             for (FieldNode field : classNode.fields) {
                 String fieldKeyFull = internalName + "." + field.name;
-                boolean hasFieldDontObf = field.visibleAnnotations != null && field.visibleAnnotations.stream().anyMatch(an -> an.desc.contains(ctx.dontObfAnnotationClass));
+                java.util.EnumSet<ObfRule> fieldRules =
+                        ctx.dontObfRules.getOrDefault(fieldKeyFull, java.util.EnumSet.noneOf(ObfRule.class));
+                java.util.EnumSet<ObfRule> classRules =
+                        ctx.dontObfRules.getOrDefault(internalName, java.util.EnumSet.noneOf(ObfRule.class));
+                java.util.EnumSet<ObfRule> combinedFieldRules = java.util.EnumSet.copyOf(classRules);
+                combinedFieldRules.addAll(fieldRules);
+                boolean hasFieldDontObf = combinedFieldRules.contains(ObfRule.RENAME_FIELD);
                 if (hasFieldDontObf) ctx.dontObfFields.add(fieldKeyFull);
-                if (!hasFieldDontObf && !hasClassDontObf) {
+                if (!hasFieldDontObf) {
                     if (!ctx.fieldMap.containsKey(fieldKeyFull)) {
                         String genField = NameGenerator.generateChineseName();
                         ctx.fieldMap.put(fieldKeyFull, genField);
@@ -124,35 +132,45 @@ public final class MappingGenerator {
 
             for (MethodNode method : classNode.methods) {
                 String methodKey = internalName + "." + method.name + method.desc;
-                boolean hasMethodDontObf = method.visibleAnnotations != null && method.visibleAnnotations.stream().anyMatch(an -> an.desc.contains(ctx.dontObfAnnotationClass));
-                if (hasMethodDontObf) ctx.dontObfMethods.add(methodKey);
-                if (!hasMethodDontObf && !Objects.equals(method.name, "<init>") && !Objects.equals(method.name, "<clinit>") && !hasClassDontObf) {
-                    String genKey = internalName + "." + method.name + method.desc;
-                    if (!ctx.methodMap.containsKey(genKey)) {
+                java.util.EnumSet<ObfRule> methodRules =
+                        ctx.dontObfRules.getOrDefault(methodKey, java.util.EnumSet.noneOf(ObfRule.class));
+                java.util.EnumSet<ObfRule> classRules =
+                        ctx.dontObfRules.getOrDefault(internalName, java.util.EnumSet.noneOf(ObfRule.class));
+                java.util.EnumSet<ObfRule> combinedMethodRules = java.util.EnumSet.copyOf(classRules);
+                combinedMethodRules.addAll(methodRules);
+
+                if (combinedMethodRules.contains(ObfRule.RENAME_METHOD)) {
+                    ctx.dontObfMethods.add(methodKey);
+                    continue;
+                }
+
+                if (!Objects.equals(method.name, "<init>") && !Objects.equals(method.name, "<clinit>")) {
+                    if (!ctx.methodMap.containsKey(methodKey)) {
                         String genName = NameGenerator.generateChineseName();
-                        ctx.methodMap.put(genKey, genName);
+                        ctx.methodMap.put(methodKey, genName);
                         String mappedOwner = ctx.classMap.getOrDefault(internalName, internalName);
                         String genKeyMapped = mappedOwner + "." + method.name + method.desc;
                         ctx.methodMap.put(genKeyMapped, genName);
-                        log("НОВЫЙ МЕТОД: " + genKey + " -> " + ctx.methodMap.get(genKey));
+                        log("НОВЫЙ МЕТОД: " + methodKey + " -> " + ctx.methodMap.get(methodKey));
                     }
+                }
 
-                    List<String> paramTypes = RemapperModule.parseMethodDescriptor(method.desc);
-                    if (paramTypes != null && !paramTypes.isEmpty() && method.localVariables != null) {
-                        int paramIndex = ((method.access & Opcodes.ACC_STATIC) == 0) ? 1 : 0;
-                        for (LocalVariableNode localVar : method.localVariables) {
-                            int idx1 = localVar.index;
-                            if (idx1 >= paramIndex && idx1 < paramIndex + paramTypes.size()) {
-                                String obfClassName = ctx.classMap.getOrDefault(internalName, internalName);
-                                String obfMethodName = ctx.methodMap.containsKey(methodKey) ? ctx.methodMap.get(methodKey) : method.name;
-                                String paramKey = obfClassName + "." + obfMethodName + "." + (idx1 - paramIndex);
-                                String originalParamKey = internalName + "." + obfMethodName + "." + (idx1 - paramIndex);
-                                if (!ctx.paramMap.containsKey(paramKey)) {
-                                    String genParam = NameGenerator.generateChineseName();
-                                    ctx.paramMap.put(paramKey, genParam);
-                                    ctx.paramMap.put(originalParamKey, genParam);
-                                    log("НОВЫЙ АРГУМЕНТ: " + obfMethodName + " " + localVar.name + " -> " + genParam);
-                                }
+                List<String> paramTypes = RemapperModule.parseMethodDescriptor(method.desc);
+                boolean blockLocalRename = combinedMethodRules.contains(ObfRule.RENAME_LOCALVARS);
+                if (paramTypes != null && !paramTypes.isEmpty() && method.localVariables != null && !blockLocalRename) {
+                    int paramIndex = ((method.access & Opcodes.ACC_STATIC) == 0) ? 1 : 0;
+                    for (LocalVariableNode localVar : method.localVariables) {
+                        int idx1 = localVar.index;
+                        if (idx1 >= paramIndex && idx1 < paramIndex + paramTypes.size()) {
+                            String obfClassName = ctx.classMap.getOrDefault(internalName, internalName);
+                            String obfMethodName = ctx.methodMap.containsKey(methodKey) ? ctx.methodMap.get(methodKey) : method.name;
+                            String paramKey = obfClassName + "." + obfMethodName + "." + (idx1 - paramIndex);
+                            String originalParamKey = internalName + "." + obfMethodName + "." + (idx1 - paramIndex);
+                            if (!ctx.paramMap.containsKey(paramKey)) {
+                                String genParam = NameGenerator.generateChineseName();
+                                ctx.paramMap.put(paramKey, genParam);
+                                ctx.paramMap.put(originalParamKey, genParam);
+                                log("НОВЫЙ АРГУМЕНТ: " + obfMethodName + " " + localVar.name + " -> " + genParam);
                             }
                         }
                     }

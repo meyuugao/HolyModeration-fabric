@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.config;
 
-import me.yuugao.holymoderation.obfuscation.DontObf;
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
 
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
@@ -23,44 +24,44 @@ public class Config {
     
     private final String currentVersion = "2.9alphafix";
     
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private String apiToken = StringUtils.EMPTY;
 
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean soundsEnabled = true;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private int spyDelay = 1;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean copyButtonEnabled = false;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private String copyButtonText = "§f§l[§a§lcopy§f§l]";
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private String playerMarker = "§d§l[CHECK]";
 
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private String texts = StringUtils.EMPTY;
 
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoVanishEnabled = false;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoFlyEnabled = false;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoGm3Enabled = false;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoHacAlertsEnabled = false;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoGodEnabled = false;
 
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean dupeIpEnabled = false;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoAnyDeskEnabled = true;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoTpEnabled = true;
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private boolean autoBanEnabled = true;
 
-    @Expose @DontObf
+    @Expose @DontObf(ObfRule.RENAME_FIELD)
     private Map<String, KeyBindConfig> keyBinds = new HashMap<>();
 
     public KeyBindConfig getKeyBind(String action) {

@@ -2,34 +2,32 @@ package obfuscator.modules;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
-
 import java.security.SecureRandom;
 
 public class PrimitiveObfuscationModule {
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    public static void obfuscate(MethodNode mn) {
-        if (mn.instructions == null) return;
+    public static void obfuscateClass(ClassNode cn) {
+        for (MethodNode mn : cn.methods) {
+            if (mn.instructions == null) continue;
+            if (mn.name.startsWith("<")) continue;
+            obfuscateMethod(mn);
+        }
+    }
 
+    private static void obfuscateMethod(MethodNode mn) {
         for (AbstractInsnNode insn : mn.instructions.toArray()) {
-
             if (insn instanceof LdcInsnNode ldc) {
                 Object c = ldc.cst;
-
-                if (c instanceof Integer i) {
-                    replace(mn, insn, buildInt(i));
-                } else if (c instanceof Long l) {
-                    replace(mn, insn, buildLong(l));
-                } else if (c instanceof Float f) {
-                    replace(mn, insn, buildFloat(f));
-                } else if (c instanceof Double d) {
-                    replace(mn, insn, buildDouble(d));
-                }
+                if (c instanceof Integer i) replace(mn, insn, buildInt(i));
+                else if (c instanceof Long l) replace(mn, insn, buildLong(l));
+                else if (c instanceof Float f) replace(mn, insn, buildFloat(f));
+                else if (c instanceof Double d) replace(mn, insn, buildDouble(d));
             }
-
-            if (insn.getOpcode() == Opcodes.ICONST_0 || insn.getOpcode() == Opcodes.ICONST_1) {
-                int v = insn.getOpcode() == Opcodes.ICONST_1 ? 1 : 0;
-                replace(mn, insn, buildBoolean(v == 1));
+            int op = insn.getOpcode();
+            if (op == Opcodes.ICONST_0 || op == Opcodes.ICONST_1) {
+                boolean v = op == Opcodes.ICONST_1;
+                replace(mn, insn, buildBoolean(v));
             }
         }
     }
@@ -43,26 +41,22 @@ public class PrimitiveObfuscationModule {
         int k1 = secureRandom.nextInt();
         int k2 = secureRandom.nextInt();
         int enc = (v ^ k1) + k2;
-
         InsnList il = new InsnList();
         il.add(new LdcInsnNode(enc));
         il.add(new LdcInsnNode(k2));
         il.add(new InsnNode(Opcodes.ISUB));
         il.add(new LdcInsnNode(k1));
         il.add(new InsnNode(Opcodes.IXOR));
-
-        runtime(il);
-
+        il.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/System", "nanoTime", "()J", false));
+        il.add(new InsnNode(Opcodes.POP2));
         return il;
     }
 
     private static InsnList buildBoolean(boolean v) {
         int a = secureRandom.nextInt();
         int b = v ? a : ~a;
-
         LabelNode l1 = new LabelNode();
         LabelNode l2 = new LabelNode();
-
         InsnList il = new InsnList();
         il.add(new LdcInsnNode(b));
         il.add(new LdcInsnNode(a));
@@ -72,9 +66,8 @@ public class PrimitiveObfuscationModule {
         il.add(l1);
         il.add(new InsnNode(Opcodes.ICONST_0));
         il.add(l2);
-
-        runtime(il);
-
+        il.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/System", "nanoTime", "()J", false));
+        il.add(new InsnNode(Opcodes.POP2));
         return il;
     }
 
@@ -82,59 +75,26 @@ public class PrimitiveObfuscationModule {
         long k1 = secureRandom.nextLong();
         long k2 = secureRandom.nextLong();
         long enc = (v ^ k1) + k2;
-
         InsnList il = new InsnList();
         il.add(new LdcInsnNode(enc));
         il.add(new LdcInsnNode(k2));
         il.add(new InsnNode(Opcodes.LSUB));
         il.add(new LdcInsnNode(k1));
         il.add(new InsnNode(Opcodes.LXOR));
-
-        runtime(il);
-
+        il.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/System", "nanoTime", "()J", false));
+        il.add(new InsnNode(Opcodes.POP2));
         return il;
     }
 
     private static InsnList buildFloat(float v) {
         InsnList il = buildInt(Float.floatToIntBits(v));
-        il.add(new MethodInsnNode(
-                Opcodes.INVOKESTATIC,
-                "java/lang/Float",
-                "intBitsToFloat",
-                "(I)F",
-                false
-        ));
+        il.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Float", "intBitsToFloat", "(I)F", false));
         return il;
     }
 
     private static InsnList buildDouble(double v) {
         InsnList il = buildLong(Double.doubleToLongBits(v));
-        il.add(new MethodInsnNode(
-                Opcodes.INVOKESTATIC,
-                "java/lang/Double",
-                "longBitsToDouble",
-                "(J)D",
-                false
-        ));
+        il.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "java/lang/Double", "longBitsToDouble", "(J)D", false));
         return il;
-    }
-
-    private static void flow(InsnList il) {
-        LabelNode l = new LabelNode();
-        il.add(new InsnNode(Opcodes.DUP));
-        il.add(new JumpInsnNode(Opcodes.IFGE, l));
-        il.add(new InsnNode(Opcodes.POP));
-        il.add(l);
-    }
-
-    private static void runtime(InsnList il) {
-        il.add(new MethodInsnNode(
-                Opcodes.INVOKESTATIC,
-                "java/lang/System",
-                "nanoTime",
-                "()J",
-                false
-        ));
-        il.add(new InsnNode(Opcodes.POP2));
     }
 }

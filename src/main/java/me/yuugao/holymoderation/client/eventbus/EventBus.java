@@ -3,7 +3,8 @@ package me.yuugao.holymoderation.client.eventbus;
 import me.yuugao.holymoderation.client.eventbus.event.Event;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
-import me.yuugao.holymoderation.obfuscation.DontObf;
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -67,7 +68,7 @@ public class EventBus {
         this.loggerService = loggerService;
     }
 
-    @DontObf
+    @DontObf(ObfRule.RENAME_METHOD)
     private record Subscriber(Module target, Method method, int priority) {
         private Subscriber(Module target, Method method, int priority) {
             this.target = target;
