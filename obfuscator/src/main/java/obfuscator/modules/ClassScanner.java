@@ -2,10 +2,8 @@ package obfuscator.modules;
 
 import static obfuscator.modules.LoggerModule.log;
 
-
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.ClassNode;
-
+import org.objectweb.asm.tree.*;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
@@ -30,8 +28,39 @@ public final class ClassScanner {
             ClassNode cn = new ClassNode();
             cr.accept(cn, ClassReader.EXPAND_FRAMES);
             ctx.classNodes.put(internalName, cn);
-            boolean hasClassDontObf = cn.visibleAnnotations != null && cn.visibleAnnotations.stream().anyMatch(an -> an.desc.contains(ctx.dontObfAnnotationClass));
-            if (hasClassDontObf) ctx.dontObfClasses.add(internalName);
+
+            if (cn.visibleAnnotations != null) {
+                for (AnnotationNode o : cn.visibleAnnotations) {
+                    if (o.desc != null && o.desc.contains(ctx.dontObfAnnotationClass)) {
+                        ctx.dontObfRules.put(internalName, AnnotationUtil.readRules(o));
+                    }
+                }
+            }
+
+            if (cn.methods != null) {
+                for (MethodNode mn : cn.methods) {
+                    if (mn.visibleAnnotations == null) continue;
+                    String key = internalName + "." + mn.name + mn.desc;
+                    for (AnnotationNode o : mn.visibleAnnotations) {
+                        if (o.desc != null && o.desc.contains(ctx.dontObfAnnotationClass)) {
+                            ctx.dontObfRules.put(key, AnnotationUtil.readRules(o));
+                        }
+                    }
+                }
+            }
+
+            if (cn.fields != null) {
+                for (FieldNode fn : cn.fields) {
+                    if (fn.visibleAnnotations == null) continue;
+                    String key = internalName + "." + fn.name;
+                    for (AnnotationNode o : fn.visibleAnnotations) {
+                        if (o.desc != null && o.desc.contains(ctx.dontObfAnnotationClass)) {
+                            ctx.dontObfRules.put(key, AnnotationUtil.readRules(o));
+                        }
+                    }
+                }
+            }
+
             int idx = internalName.lastIndexOf('/');
             if (idx > 0) {
                 String packageName = internalName.substring(0, idx);

@@ -1,12 +1,13 @@
 package me.yuugao.holymoderation;
 
-import me.yuugao.holymoderation.obfuscation.DontObf;
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
 
 import net.fabricmc.api.ModInitializer;
 
 public class HolyModeration implements ModInitializer {
     @Override
-    @DontObf
+    @DontObf(ObfRule.RENAME_METHOD)
     public void onInitialize() {
     }
 }

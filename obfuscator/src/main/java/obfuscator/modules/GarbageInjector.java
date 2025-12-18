@@ -2,7 +2,6 @@ package obfuscator.modules;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
-
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -210,13 +209,19 @@ public class GarbageInjector {
                 """);
     }};
 
+    public static void obfuscateClass(ClassNode cn) {
+        for (MethodNode mn : cn.methods) {
+            injectGarbage(mn);
+            insertArtLines(cn, mn);
+        }
+    }
+
     public static void injectGarbage(MethodNode methodNode) {
+        if (methodNode == null) return;
         if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) return;
         if ((methodNode.access & Opcodes.ACC_NATIVE) != 0) return;
         if ("<init>".equals(methodNode.name)) return;
-
         InsnList instructions = generateGarbage(methodNode);
-
         if (methodNode.instructions == null || methodNode.instructions.size() == 0) {
             methodNode.instructions = instructions;
             methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
@@ -275,19 +280,14 @@ public class GarbageInjector {
             }
             instructions.add(skip);
         }
-
         methodNode.maxLocals = Math.max(methodNode.maxLocals, localIndex);
-
         return instructions;
     }
 
     public static void ensureClinitWithGarbage(ClassNode classNode) {
         MethodNode clinit = null;
         for (MethodNode m : classNode.methods) {
-            if (m.name.equals("<clinit>")) {
-                clinit = m;
-                break;
-            }
+            if (m.name.equals("<clinit>")) { clinit = m; break; }
         }
         if (clinit == null) {
             clinit = new MethodNode(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
@@ -297,55 +297,37 @@ public class GarbageInjector {
     }
 
     public static void insertArtLines(ClassNode classNode, MethodNode methodNode) {
+        if (methodNode == null) return;
         if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) return;
         if ((methodNode.access & Opcodes.ACC_NATIVE) != 0) return;
         if ("<init>".equals(methodNode.name)) return;
         if (methodNode.instructions == null) return;
-
         Collections.shuffle(ARTS, secureRandom);
-
         for (int artIndex = 0; artIndex < ARTS.size(); artIndex++) {
             String ART = ARTS.get(artIndex);
             String[] lines = ART.split("\n");
-
             String fieldName;
             int suffix = 0;
             boolean fieldExists;
-
             do {
                 fieldName = "me_yuugaos_property_" + artIndex + "_" + suffix;
                 suffix++;
-
                 fieldExists = false;
                 for (FieldNode field : classNode.fields) {
-                    if (fieldName.equals(field.name)) {
-                        fieldExists = true;
-                        break;
-                    }
+                    if (fieldName.equals(field.name)) { fieldExists = true; break; }
                 }
             } while (fieldExists);
-
-            classNode.fields.add(new FieldNode(
-                    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-                    fieldName,
-                    "[Ljava/lang/String;",
-                    null,
-                    null
-            ));
-
+            classNode.fields.add(new FieldNode(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, fieldName, "[Ljava/lang/String;", null, null));
             InsnList instructions = new InsnList();
-
             instructions.add(new LdcInsnNode(lines.length));
             instructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/String"));
             instructions.add(new FieldInsnNode(Opcodes.PUTSTATIC, classNode.name, fieldName, "[Ljava/lang/String;"));
-
             for (int i = 0; i < lines.length; i++) {
                 instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, classNode.name, fieldName, "[Ljava/lang/String;"));
                 instructions.add(new LdcInsnNode(i));
                 instructions.add(new LdcInsnNode(lines[i]));
                 instructions.add(new InsnNode(Opcodes.AASTORE));
             }
-
             AbstractInsnNode first = methodNode.instructions.getFirst();
             methodNode.instructions.insertBefore(first, instructions);
         }
