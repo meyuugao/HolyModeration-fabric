@@ -24,7 +24,7 @@ public final class ClassTransformer {
 
         EnumSet<ObfRule> classRules = ctx.dontObfRules.getOrDefault(internalName, EnumSet.noneOf(ObfRule.class));
 
-        if (!classRules.contains(ObfRule.RENAME_LOCALVARS) || true) {
+        if (!classRules.contains(ObfRule.RENAME_LOCALVARS)) {
             for (MethodNode method : classNode.methods) {
                 String mk = internalName + "." + method.name + method.desc;
                 EnumSet<ObfRule> methodRules = ctx.dontObfRules.getOrDefault(mk, EnumSet.noneOf(ObfRule.class));

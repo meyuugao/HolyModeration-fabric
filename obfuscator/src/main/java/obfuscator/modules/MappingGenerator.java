@@ -30,47 +30,48 @@ public final class MappingGenerator {
 
             if (internalName.contains("$")) {
                 String outer = internalName.substring(0, internalName.indexOf('$'));
-                String inner = internalName.substring(internalName.indexOf('$'));
+                String innerName = internalName.substring(internalName.indexOf('$') + 1);
 
-                String mappedOuter;
+                EnumSet<ObfRule> classRules =
+                        ctx.dontObfRules.getOrDefault(internalName, EnumSet.noneOf(ObfRule.class));
+                boolean blockRename = classRules.contains(ObfRule.RENAME_CLASS);
 
-                if (ctx.classMap.containsKey(outer)) {
-                    mappedOuter = ctx.classMap.get(outer);
-                } else {
+                String mappedOuter = ctx.classMap.get(outer);
+                if (mappedOuter == null) {
+                    String pkg = outer.contains("/") ? outer.substring(0, outer.lastIndexOf('/')) : "";
                     String genOuter = NameGenerator.generateLatName();
 
-                    if (outer.startsWith(ctx.mixinPrefix)) {
-                        ctx.classMap.computeIfAbsent(
-                                ctx.mixinPrefix,
-                                k -> ctx.protectedPrefixes[1] + "/" + NameGenerator.generateLatName()
-                        );
-                    } else {
-                        boolean matched = false;
-                        String pkg = outer.contains("/") ? outer.substring(0, outer.lastIndexOf('/')) : "";
-                        for (String prefix : prefixes) {
-                            if (pkg.startsWith(prefix)) {
-                                String[] parts = pkg.substring(prefix.length()).split("/");
-                                StringBuilder sb = new StringBuilder(prefix);
-                                for (String p : parts)
-                                    if (!p.isEmpty()) sb.append("/").append(NameGenerator.generateLatName());
-                                matched = true;
-                                ctx.classMap.put(outer, sb + "/" + genOuter);
-                                break;
-                            }
-                        }
-                        if (!matched) {
-                            StringBuilder sb = new StringBuilder();
-                            for (String p : pkg.split("/"))
-                                if (!p.isEmpty()) sb.append(NameGenerator.generateLatName()).append("/");
-                            ctx.classMap.put(outer, sb + genOuter);
+                    boolean matched = false;
+                    for (String prefix : prefixes) {
+                        if (pkg.startsWith(prefix)) {
+                            String[] parts = pkg.substring(prefix.length()).split("/");
+                            StringBuilder sb = new StringBuilder(prefix);
+                            for (String p : parts)
+                                if (!p.isEmpty()) sb.append("/").append(NameGenerator.generateLatName());
+                            sb.append("/").append(genOuter);
+                            mappedOuter = sb.toString();
+                            matched = true;
+                            break;
                         }
                     }
 
-                    mappedOuter = ctx.classMap.get(outer);
+                    if (!matched) {
+                        StringBuilder sb = new StringBuilder();
+                        for (String p : pkg.split("/"))
+                            if (!p.isEmpty()) sb.append(NameGenerator.generateLatName()).append("/");
+                        sb.append(genOuter);
+                        mappedOuter = sb.toString();
+                    }
+
+                    ctx.classMap.put(outer, mappedOuter);
                     log("НОВЫЙ КЛАСС: " + outer + " -> " + mappedOuter);
                 }
 
-                String finalName = mappedOuter + inner;
+                String mappedInner = blockRename
+                        ? innerName
+                        : NameGenerator.generateLatName();
+
+                String finalName = mappedOuter + "$" + mappedInner;
                 ctx.classMap.put(internalName, finalName);
 
                 log("НОВЫЙ КЛАСС: " + internalName + " -> " + finalName);
