@@ -75,7 +75,6 @@ public final class MappingGenerator {
                 ctx.classMap.put(internalName, finalName);
 
                 log("НОВЫЙ КЛАСС: " + internalName + " -> " + finalName);
-                continue;
             } else {
                 if (!ctx.classMap.containsKey(internalName)) {
                     String newName = "";
@@ -110,6 +109,10 @@ public final class MappingGenerator {
             }
 
             for (FieldNode field : classNode.fields) {
+                if ((field.access & Opcodes.ACC_SYNTHETIC) != 0) {
+                    continue;
+                }
+
                 String fieldKeyFull = internalName + "." + field.name;
                 java.util.EnumSet<ObfRule> fieldRules =
                         ctx.dontObfRules.getOrDefault(fieldKeyFull, java.util.EnumSet.noneOf(ObfRule.class));

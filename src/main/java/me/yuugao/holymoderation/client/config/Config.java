@@ -91,11 +91,11 @@ public class Config {
     @Getter
     @Setter
     public static class KeyBindConfig {
-        @Expose
+        @Expose @DontObf(ObfRule.RENAME_FIELD)
         private int mainKey;
-        @Expose
+        @Expose @DontObf(ObfRule.RENAME_FIELD)
         private Set<Integer> modifierKeys = new HashSet<>();
-        @Expose
+        @Expose @DontObf(ObfRule.RENAME_FIELD)
         private KeyBindType type;
 
         public KeyBindConfig(KeyBindType type, int mainKey, int... modifiers) {
@@ -107,6 +107,7 @@ public class Config {
         }
     }
 
+    @DontObf({ObfRule.RENAME_METHOD, ObfRule.RENAME_FIELD})
     public enum KeyBindType {
         SINGLE_PRESS,
         HOLD
