@@ -43,6 +43,7 @@ public final class ClassTransformer {
 
             for (MethodNode methodNode : classNode.methods) {
                 StringEncryptionModule.obfuscateMethods(classNode, methodNode, decoderMethodName);
+                PrimitiveObfuscationModule.obfuscate(methodNode);
 
                 OpaquePredicateModule.obfuscate(methodNode);
 
