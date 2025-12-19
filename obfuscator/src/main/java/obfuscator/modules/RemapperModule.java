@@ -16,11 +16,12 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
+import obfuscator.ObfContext;
+
 public class RemapperModule {
     public static List<String> parseMethodDescriptor(String descriptor) {
-        if (descriptor == null || descriptor.length() < 3 || descriptor.charAt(0) != '(') {
-            return null;
-        }
+        if (descriptor == null || descriptor.length() < 3 || descriptor.charAt(0) != '(') return null;
+
         List<String> paramTypes = new ArrayList<>();
         int i = 1;
         while (i < descriptor.length() && descriptor.charAt(i) != ')') {
@@ -53,20 +54,20 @@ public class RemapperModule {
     public static void runRemap(File inputJar) {
         ObfContext ctx = new ObfContext();
         if (!inputJar.exists()) {
-            log("Обфускатор не был запущен. Не обнаружен jar файл по указанному пути.");
+            log("Обфускатор не был запущен, т.к. не обнаружен jar файл по указанному пути.");
             return;
         }
 
         File outputJar = new File(
                 inputJar.getParentFile(),
-                inputJar.getName().replace(".jar", "") + "-obfuscated.jar"
+                "%s-obfuscated.jar".formatted(inputJar.getName().replace(".jar", ""))
         );
 
         try (JarFile originalJar = new JarFile(inputJar)) {
-            log("Обфускатор запущен. Полученная jar: " + originalJar.getName());
+            log("Обфускатор запущен. Полученная jar: %s".formatted(originalJar.getName()));
 
-            ClassScanner.scanJar(originalJar, ctx);
-            MappingGenerator.generate(ctx);
+            ClassScannerModule.scanJar(originalJar, ctx);
+            MappingGeneratorModule.generate(ctx);
 
             for (Map.Entry<String, byte[]> e : ctx.classBytes.entrySet()) {
                 ClassReader cr = new ClassReader(e.getValue());
@@ -78,7 +79,7 @@ public class RemapperModule {
                 ctx.superClasses.put(e.getKey(), parents);
             }
 
-            ObfRemapper remapper = new ObfRemapper(ctx);
+            ObfRemapperModule remapper = new ObfRemapperModule(ctx);
 
             JarFile jarFile = new JarFile(inputJar);
             JarOutputStream out = new JarOutputStream(new FileOutputStream(outputJar));
@@ -97,7 +98,7 @@ public class RemapperModule {
                     String internalName = entry.getName().replace(".class", "");
 
                     if (ctx.classBytes.containsKey(internalName)) {
-                        entryBytes = ClassTransformer.transform(bytes, ctx, remapper);
+                        entryBytes = ClassTransformerModule.transform(bytes, ctx, remapper);
 
                         ClassReader cr = new ClassReader(entryBytes);
                         ClassNode cn = new ClassNode();
@@ -116,22 +117,22 @@ public class RemapperModule {
                             String mappedOuter = ctx.classMap.getOrDefault(outer, outer);
 
                             if (ctx.dontObfClasses.contains(internalName)) {
-                                newInternalName = mappedOuter + inner;
+                                newInternalName = "%s%s".formatted(mappedOuter, inner);
                             } else {
-                                newInternalName = ctx.classMap.getOrDefault(internalName, mappedOuter + inner);
+                                newInternalName = ctx.classMap.getOrDefault(internalName, "%s%s".formatted(mappedOuter, inner));
                             }
                         } else {
                             newInternalName = ctx.classMap.getOrDefault(internalName, internalName);
                         }
 
-                        newEntryName = newInternalName + ".class";
+                        newEntryName = "%s.class".formatted(newInternalName);
                     }
                 }
 
                 if (entry.getName().equals("fabric.mod.json")
-                        || entry.getName().equals("holymoderation.mixins.json")
-                        || entry.getName().equals("HolyModeration-refmap.json")) {
-                    entryBytes = JsonHandler.handleJson(entry, entryBytes, ctx.classMap);
+                        || entry.getName().equals(ctx.mixinFile)
+                        || entry.getName().equals(ctx.refmapFile)) {
+                    entryBytes = JsonHandlerModule.handleJson(entry, entryBytes, ctx);
                 }
 
                 ZipEntry newEntry = new ZipEntry(newEntryName);
@@ -156,7 +157,7 @@ public class RemapperModule {
                     ctx.dontObfFields
             );
         } catch (Exception e) {
-            log("Исключение при выполнении: " + e);
+            log("Исключение при выполнении: %s".formatted(e));
         }
     }
 }

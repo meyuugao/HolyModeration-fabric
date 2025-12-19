@@ -4,8 +4,13 @@
   "version": "3.0",
   "name": "HolyModeration",
   "description": "An auxiliary mod for moderation on HolyWorld | Bugs? @meyuugao",
-  "authors": ["MeYuugao"],
-  "contact": {"tg": "t.me/meyuugao", "vk": "vk.com/meyuugao"},
+  "authors": [
+    "MeYuugao"
+  ],
+  "contact": {
+    "tg": "t.me/meyuugao",
+    "vk": "vk.com/meyuugao"
+  },
   "icon": "assets/holymoderation/icon.png",
   "environment": "client",
   "entrypoints": {

@@ -1,8 +1,5 @@
 package me.yuugao.holymoderation.client.config;
 
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
-
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
@@ -14,6 +11,8 @@ import java.util.Set;
 import com.google.gson.annotations.Expose;
 import lombok.Getter;
 import lombok.Setter;
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
 
 @Getter
 @Setter
@@ -21,47 +20,64 @@ public class Config {
     public Config() {
         keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
     }
-    
+
     private final String currentVersion = "2.9alphafix";
-    
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private String apiToken = StringUtils.EMPTY;
 
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean soundsEnabled = true;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private int spyDelay = 1;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean copyButtonEnabled = false;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private String copyButtonText = "§f§l[§a§lcopy§f§l]";
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private String playerMarker = "§d§l[CHECK]";
 
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private String texts = StringUtils.EMPTY;
 
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoVanishEnabled = false;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoFlyEnabled = false;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoGm3Enabled = false;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoHacAlertsEnabled = false;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoGodEnabled = false;
 
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean dupeIpEnabled = false;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoAnyDeskEnabled = true;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoTpEnabled = true;
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoBanEnabled = true;
 
-    @Expose @DontObf(ObfRule.RENAME_FIELD)
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private Map<String, KeyBindConfig> keyBinds = new HashMap<>();
 
     public KeyBindConfig getKeyBind(String action) {
@@ -91,11 +107,14 @@ public class Config {
     @Getter
     @Setter
     public static class KeyBindConfig {
-        @Expose @DontObf(ObfRule.RENAME_FIELD)
+        @Expose
+        @DontObf(ObfRule.MAP_FIELD)
         private int mainKey;
-        @Expose @DontObf(ObfRule.RENAME_FIELD)
+        @Expose
+        @DontObf(ObfRule.MAP_FIELD)
         private Set<Integer> modifierKeys = new HashSet<>();
-        @Expose @DontObf(ObfRule.RENAME_FIELD)
+        @Expose
+        @DontObf(ObfRule.MAP_FIELD)
         private KeyBindType type;
 
         public KeyBindConfig(KeyBindType type, int mainKey, int... modifiers) {
@@ -107,7 +126,7 @@ public class Config {
         }
     }
 
-    @DontObf({ObfRule.RENAME_METHOD, ObfRule.RENAME_FIELD})
+    @DontObf({ObfRule.MAP_METHOD, ObfRule.MAP_FIELD})
     public enum KeyBindType {
         SINGLE_PRESS,
         HOLD

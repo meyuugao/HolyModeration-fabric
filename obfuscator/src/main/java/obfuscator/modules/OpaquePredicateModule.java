@@ -1,13 +1,16 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 public class OpaquePredicateModule {
     public static void obfuscateClass(ClassNode cn) {
         for (MethodNode mn : cn.methods) {
-            if (mn.name.startsWith("<")) continue;
-            if (mn.instructions == null || mn.instructions.size() < 10) continue;
+            if (mn.name.startsWith("<") || mn.instructions == null || mn.instructions.size() < 10) continue;
+
             int v = mn.maxLocals++;
             LabelNode ok = new LabelNode();
             InsnList il = new InsnList();
@@ -23,5 +26,7 @@ public class OpaquePredicateModule {
             mn.instructions.insert(il);
             mn.maxStack += 2;
         }
+
+        log("Модуль OpaquePredicate обфусцировал класс %s".formatted(cn.name));
     }
 }

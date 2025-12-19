@@ -1,15 +1,31 @@
-package obfuscator.modules;
+package obfuscator;
 
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import org.objectweb.asm.tree.ClassNode;
 
-public class GarbageInjector {
-    private static final SecureRandom secureRandom = new SecureRandom();
-    private static final List<String> ARTS = new ArrayList<>() {{
+import java.util.*;
+
+public final class ObfContext {
+    public final Map<String, String> classMap = new HashMap<>();
+    public final Map<String, String> methodMap = new HashMap<>();
+    public final Map<String, String> fieldMap = new HashMap<>();
+    public final Map<String, String> paramMap = new HashMap<>();
+    public final Map<String, byte[]> classBytes = new HashMap<>();
+    public final Map<String, ClassNode> classNodes = new HashMap<>();
+    public final Map<String, Set<String>> superClasses = new HashMap<>();
+    public final Set<String> dontObfClasses = new HashSet<>();
+    public final Set<String> dontObfMethods = new HashSet<>();
+    public final Set<String> dontObfFields = new HashSet<>();
+    public final Map<String, java.util.EnumSet<ObfRule>> dontObfRules = new java.util.HashMap<>();
+
+    public final String mainPrefix = "me/yuugao/holymoderation";
+    public final String mainClientPrefix = "me/yuugao/holymoderation/client";
+    public final String mixinPrefix = "me/yuugao/holymoderation/client/mixin";
+    public final String[] protectedPrefixes = new String[]{mainPrefix, mainClientPrefix};
+    public final String dontObfAnnotationClass = "obfuscator/DontObf";
+    public final String mixinFile = "holymoderation.mixins.json";
+    public final String refmapFile = "HolyModeration-refmap.json";
+
+    public final List<String> arts = new ArrayList<>() {{
         add("""
                 ⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⡂⢆⠢⠢⡂⢆⠢⠢⠢⠢⠢⠢⡂⢆⠢⠢⡂⢆⠢⠢⠢⡂⢆⠢⠢⠢⡢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⠢⡂⢆⢢
                 ⡨⠢⡑⢌⢌⠢⡑⢌⠢⡑⢌⠢⡑⢌⠢⡑⢍⢊⠕⣉⢊⢊⢊⢊⢊⢊⠪⡘⢌⢊⢊⢊⢊⢊⠪⡘⢌⠪⡨⠢⡑⢌⠆⡕⢌⠆⡕⢌⢆⠣⡱⢨⠢⡑⢕⠩⡊⢕⢑⢌⠢⡃⢕⢌⠢⡑⢍⠬⠨⠢⡑⡑⠕⢌⢊⠪⡡⠩⡊⢅⢃⠣⡑⢕⢑⢑⢑⢑⠍⡌⢕⠩⡨⡑⡑⡑⡑⢌⠢⡑
@@ -208,128 +224,4 @@ public class GarbageInjector {
                 ⢁⠁⡐⠈⡀⠂⢁⠀⢂⠠⠐⠈⠀⠂⠡⠑⠁⠃⠃⠣⠙⠉⠂⠌⠊⠩⠩⠉⠃⠅⠩⠙⢈⠐⠉⡊⠙⠨⠀⠂⠄⠂⠐⡀⠡⠈⠐⢈⠀⢂⠐⠀⠄⡀⠂⠠⠀⠄⠂⠠⠀⠄⠂⠠⠀⠄⠂⡀⠂⡈⠐⠠⠐⠈⡀⠡⠐⠀⠂⡐⠠⠐⠈⡀⠄⠂⡀⠂⠄⠂⠁⠄⠂⡈⠄⢁⠀⢂⠠⠁
                 """);
     }};
-
-    public static void obfuscateClass(ClassNode cn) {
-        for (MethodNode mn : cn.methods) {
-            injectGarbage(mn);
-            insertArtLines(cn, mn);
-        }
-    }
-
-    public static void injectGarbage(MethodNode methodNode) {
-        if (methodNode == null) return;
-        if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) return;
-        if ((methodNode.access & Opcodes.ACC_NATIVE) != 0) return;
-        if ("<init>".equals(methodNode.name)) return;
-        InsnList instructions = generateGarbage(methodNode);
-        if (methodNode.instructions == null || methodNode.instructions.size() == 0) {
-            methodNode.instructions = instructions;
-            methodNode.instructions.add(new InsnNode(Opcodes.RETURN));
-        } else {
-            methodNode.instructions.insert(instructions);
-        }
-    }
-
-    private static InsnList generateGarbage(MethodNode methodNode) {
-        InsnList instructions = new InsnList();
-        int localIndex = methodNode.maxLocals;
-        int blocks = 8 + secureRandom.nextInt(8);
-        for (int b = 0; b < blocks; b++) {
-            LabelNode skip = new LabelNode();
-            instructions.add(new InsnNode(Opcodes.ICONST_0));
-            instructions.add(new JumpInsnNode(Opcodes.IFEQ, skip));
-            int ops = 6 + secureRandom.nextInt(20);
-            for (int o = 0; o < ops; o++) {
-                int kind = secureRandom.nextInt(4);
-                if (kind == 0) {
-                    int val = secureRandom.nextInt();
-                    instructions.add(new LdcInsnNode(val));
-                    instructions.add(new VarInsnNode(Opcodes.ISTORE, localIndex));
-                    instructions.add(new VarInsnNode(Opcodes.ILOAD, localIndex));
-                    int val2 = secureRandom.nextInt(1000) + 1;
-                    instructions.add(new LdcInsnNode(val2));
-                    instructions.add(new InsnNode(Opcodes.IMUL));
-                    instructions.add(new VarInsnNode(Opcodes.ISTORE, localIndex));
-                    localIndex++;
-                } else if (kind == 1) {
-                    long lval = Math.abs(secureRandom.nextLong());
-                    instructions.add(new LdcInsnNode(lval));
-                    instructions.add(new VarInsnNode(Opcodes.LSTORE, localIndex));
-                    instructions.add(new VarInsnNode(Opcodes.LLOAD, localIndex));
-                    instructions.add(new LdcInsnNode(secureRandom.nextLong()));
-                    instructions.add(new InsnNode(Opcodes.LXOR));
-                    instructions.add(new VarInsnNode(Opcodes.LSTORE, localIndex));
-                    localIndex += 2;
-                } else if (kind == 2) {
-                    String s = NameGenerator.generateRandomChinese(secureRandom.nextInt(10));
-                    instructions.add(new LdcInsnNode(s));
-                    instructions.add(new VarInsnNode(Opcodes.ASTORE, localIndex));
-                    instructions.add(new VarInsnNode(Opcodes.ALOAD, localIndex));
-                    instructions.add(new InsnNode(Opcodes.POP));
-                    localIndex++;
-                } else {
-                    double d = secureRandom.nextDouble() * secureRandom.nextInt(Integer.MAX_VALUE);
-                    instructions.add(new LdcInsnNode(d));
-                    instructions.add(new VarInsnNode(Opcodes.DSTORE, localIndex));
-                    instructions.add(new VarInsnNode(Opcodes.DLOAD, localIndex));
-                    instructions.add(new LdcInsnNode(secureRandom.nextDouble()));
-                    instructions.add(new InsnNode(Opcodes.DADD));
-                    instructions.add(new VarInsnNode(Opcodes.DSTORE, localIndex));
-                    localIndex += 2;
-                }
-            }
-            instructions.add(skip);
-        }
-        methodNode.maxLocals = Math.max(methodNode.maxLocals, localIndex);
-        return instructions;
-    }
-
-    public static void ensureClinitWithGarbage(ClassNode classNode) {
-        MethodNode clinit = null;
-        for (MethodNode m : classNode.methods) {
-            if (m.name.equals("<clinit>")) { clinit = m; break; }
-        }
-        if (clinit == null) {
-            clinit = new MethodNode(Opcodes.ACC_STATIC, "<clinit>", "()V", null, null);
-            classNode.methods.add(clinit);
-        }
-        injectGarbage(clinit);
-    }
-
-    public static void insertArtLines(ClassNode classNode, MethodNode methodNode) {
-        if (methodNode == null) return;
-        if ((methodNode.access & Opcodes.ACC_ABSTRACT) != 0) return;
-        if ((methodNode.access & Opcodes.ACC_NATIVE) != 0) return;
-        if ("<init>".equals(methodNode.name)) return;
-        if (methodNode.instructions == null) return;
-        Collections.shuffle(ARTS, secureRandom);
-        for (int artIndex = 0; artIndex < ARTS.size(); artIndex++) {
-            String ART = ARTS.get(artIndex);
-            String[] lines = ART.split("\n");
-            String fieldName;
-            int suffix = 0;
-            boolean fieldExists;
-            do {
-                fieldName = "me_yuugaos_property_" + artIndex + "_" + suffix;
-                suffix++;
-                fieldExists = false;
-                for (FieldNode field : classNode.fields) {
-                    if (fieldName.equals(field.name)) { fieldExists = true; break; }
-                }
-            } while (fieldExists);
-            classNode.fields.add(new FieldNode(Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC, fieldName, "[Ljava/lang/String;", null, null));
-            InsnList instructions = new InsnList();
-            instructions.add(new LdcInsnNode(lines.length));
-            instructions.add(new TypeInsnNode(Opcodes.ANEWARRAY, "java/lang/String"));
-            instructions.add(new FieldInsnNode(Opcodes.PUTSTATIC, classNode.name, fieldName, "[Ljava/lang/String;"));
-            for (int i = 0; i < lines.length; i++) {
-                instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, classNode.name, fieldName, "[Ljava/lang/String;"));
-                instructions.add(new LdcInsnNode(i));
-                instructions.add(new LdcInsnNode(lines[i]));
-                instructions.add(new InsnNode(Opcodes.AASTORE));
-            }
-            AbstractInsnNode first = methodNode.instructions.getFirst();
-            methodNode.instructions.insertBefore(first, instructions);
-        }
-    }
 }

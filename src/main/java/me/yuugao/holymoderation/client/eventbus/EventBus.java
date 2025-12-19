@@ -3,14 +3,15 @@ package me.yuugao.holymoderation.client.eventbus;
 import me.yuugao.holymoderation.client.eventbus.event.Event;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
 
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
 
 public class EventBus {
     private final Map<Class<?>, List<Subscriber>> subscribers = new ConcurrentHashMap<>();
@@ -68,7 +69,7 @@ public class EventBus {
         this.loggerService = loggerService;
     }
 
-    @DontObf(ObfRule.RENAME_METHOD)
+    @DontObf(ObfRule.MAP_METHOD)
     private record Subscriber(Module target, Method method, int priority) {
         private Subscriber(Module target, Method method, int priority) {
             this.target = target;

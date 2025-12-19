@@ -1,13 +1,16 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 public class StackAbuseModule {
     public static void obfuscateClass(ClassNode cn) {
         for (MethodNode mn : cn.methods) {
-            if (mn.instructions == null || mn.instructions.size() < 5) continue;
-            if (mn.name.startsWith("<")) continue;
+            if (mn.name.startsWith("<") || mn.instructions == null || mn.instructions.size() < 5) continue;
+
             for (AbstractInsnNode insn : mn.instructions.toArray()) {
                 int op = insn.getOpcode();
                 if (op >= Opcodes.IRETURN && op <= Opcodes.RETURN) {
@@ -23,5 +26,7 @@ public class StackAbuseModule {
             }
             mn.maxStack += 2;
         }
+
+        log("Модуль StackAbuse обфусцировал класс %s".formatted(cn.name));
     }
 }

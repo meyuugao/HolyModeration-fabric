@@ -1,13 +1,16 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 public class ControlFlowFlatteningModule {
     public static void obfuscateClass(ClassNode cn) {
         for (MethodNode mn : cn.methods) {
-            if (mn.name.startsWith("<")) continue;
-            if (mn.instructions == null || mn.instructions.size() < 20) continue;
+            if (mn.name.startsWith("<") || mn.instructions == null || mn.instructions.size() < 20) continue;
+
             int s1 = mn.maxLocals++;
             int s2 = mn.maxLocals++;
             InsnList junk = new InsnList();
@@ -34,5 +37,7 @@ public class ControlFlowFlatteningModule {
             mn.instructions.insert(junk);
             mn.maxStack += 2;
         }
+
+        log("Модуль ControlFLowFlattening обфусцировал класс %s".formatted(cn.name));
     }
 }

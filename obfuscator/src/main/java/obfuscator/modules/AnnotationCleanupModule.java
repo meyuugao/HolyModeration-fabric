@@ -1,27 +1,33 @@
 package obfuscator.modules;
 
-import org.objectweb.asm.tree.*;
-import java.util.Iterator;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.MethodNode;
+
+import java.util.List;
+
+import obfuscator.ObfContext;
 
 public class AnnotationCleanupModule {
-    public static void clean(ClassNode cn, ObfContext oc) {
-        removeFromList(cn.visibleAnnotations, oc);
-        removeFromList(cn.invisibleAnnotations, oc);
+    public static void clean(ClassNode cn, ObfContext ctx) {
+        removeFromList(cn.visibleAnnotations, ctx);
+        removeFromList(cn.invisibleAnnotations, ctx);
 
         for (MethodNode mn : cn.methods) {
-            removeFromList(mn.visibleAnnotations, oc);
-            removeFromList(mn.invisibleAnnotations, oc);
+            removeFromList(mn.visibleAnnotations, ctx);
+            removeFromList(mn.invisibleAnnotations, ctx);
         }
 
         for (FieldNode fn : cn.fields) {
-            removeFromList(fn.visibleAnnotations, oc);
-            removeFromList(fn.invisibleAnnotations, oc);
+            removeFromList(fn.visibleAnnotations, ctx);
+            removeFromList(fn.invisibleAnnotations, ctx);
         }
     }
 
-    private static void removeFromList(java.util.List<AnnotationNode> list, ObfContext oc) {
-        if (list == null) return;
+    private static void removeFromList(List<AnnotationNode> anList, ObfContext ctx) {
+        if (anList == null) return;
 
-        list.removeIf(an -> an.desc.contains(oc.dontObfAnnotationClass));
+        anList.removeIf(an -> an.desc.contains(ctx.dontObfAnnotationClass));
     }
 }

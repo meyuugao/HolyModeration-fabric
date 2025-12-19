@@ -1,14 +1,18 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
+
 import java.util.ArrayList;
 
 public class FakeExceptionFlowModule {
     public static void obfuscateClass(ClassNode cn) {
         for (MethodNode mn : cn.methods) {
-            if (mn.instructions == null || mn.instructions.size() < 10) continue;
-            if (mn.name.startsWith("<")) continue;
+            if (mn.name.startsWith("<") || mn.instructions == null || mn.instructions.size() < 10) continue;
+
             LabelNode start = new LabelNode();
             LabelNode end = new LabelNode();
             LabelNode handler = new LabelNode();
@@ -34,5 +38,7 @@ public class FakeExceptionFlowModule {
             mn.instructions.add(handlerCode);
             mn.maxStack += 2;
         }
+
+        log("Модуль FakeExceptionFlow обфусцировал класс %s".formatted(cn.name));
     }
 }

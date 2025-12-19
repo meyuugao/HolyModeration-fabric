@@ -2,8 +2,6 @@ package me.yuugao.holymoderation.client.modules.maingui;
 
 import me.yuugao.holymoderation.client.util.ColorPicker;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -12,6 +10,9 @@ import net.minecraft.text.Text;
 import java.awt.Color;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
 
 public class MainGuiScreen extends Screen {
     private float progress = 0f;
@@ -27,7 +28,7 @@ public class MainGuiScreen extends Screen {
     }
 
     @Override
-    @DontObf(ObfRule.RENAME_METHOD)
+    @DontObf(ObfRule.MAP_METHOD)
     protected void init() {
         progress = 0f;
         animValue = 0f;
@@ -81,7 +82,7 @@ public class MainGuiScreen extends Screen {
     }
 
     @Override
-    @DontObf(ObfRule.RENAME_METHOD)
+    @DontObf(ObfRule.MAP_METHOD)
     public void render(DrawContext context, int mouseX, int mouseY, float tickDelta) {
         float targetW = (float) context.getScaledWindowWidth() / 2.2f;
         float targetH = (float) context.getScaledWindowHeight() / 1.8f;
@@ -118,13 +119,13 @@ public class MainGuiScreen extends Screen {
     }
 
     @Override
-    @DontObf(ObfRule.RENAME_METHOD)
+    @DontObf(ObfRule.MAP_METHOD)
     public void close() {
         opening = false;
     }
 
     @Override
-    @DontObf(ObfRule.RENAME_METHOD)
+    @DontObf(ObfRule.MAP_METHOD)
     public void removed() {
         stopAnimation();
         super.removed();

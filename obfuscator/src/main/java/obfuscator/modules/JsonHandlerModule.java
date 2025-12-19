@@ -10,12 +10,16 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.regex.Pattern;
 
-public class JsonHandler {
-    public static byte[] handleJson(JarEntry entry, byte[] entryBytes, Map<String, String> classMapping) {
+import obfuscator.ObfContext;
+
+public class JsonHandlerModule {
+    public static byte[] handleJson(JarEntry entry, byte[] entryBytes, ObfContext ctx) {
         try {
+            Map<String, String> classMapping = ctx.classMap;
+
             String updatedContent = new String(entryBytes, StandardCharsets.UTF_8);
 
-            String mixinPrefix = "me/yuugao/holymoderation/client/mixin";
+            String mixinPrefix = ctx.mixinPrefix;
 
             List<Map.Entry<String, String>> mappingEntries = new ArrayList<>(classMapping.entrySet());
             mappingEntries.sort((a, b) -> Integer.compare(b.getKey().length(), a.getKey().length()));
@@ -34,29 +38,30 @@ public class JsonHandler {
                 String oldClass = mapEntry.getKey();
                 String newClass = mapEntry.getValue();
 
-                if (entry.getName().equals("HolyModeration-refmap.json")) {
+                if (entry.getName().equals(ctx.refmapFile)) {
                     updatedContent = updatedContent.replaceAll(Pattern.quote(oldClass), newClass);
                 } else {
                     String oldClassName = oldClass.replace("/", ".");
                     String newClassName = newClass.replace("/", ".");
-                    updatedContent = updatedContent.replaceAll("\\b" + Pattern.quote(oldClassName) + "\\b", newClassName);
+                    updatedContent = updatedContent.replaceAll("\\b%s\\b".formatted(Pattern.quote(oldClassName)), newClassName);
                 }
 
-                if (entry.getName().equals("holymoderation.mixins.json") && oldClass.startsWith(mixinPrefix + "/")) {
+                if (entry.getName().equals(ctx.mixinFile) && oldClass.startsWith("%s/".formatted(mixinPrefix))) {
                     String oldSimple = oldClass.substring(oldClass.lastIndexOf('/') + 1);
                     String newSimple = newClass.substring(newClass.lastIndexOf('/') + 1);
-                    updatedContent = updatedContent.replace("\"" + oldSimple + "\"", "\"" + newSimple + "\"");
+                    updatedContent = updatedContent.replace("\"%s\"".formatted(oldSimple), "\"%s\"".formatted(newSimple));
                 }
             }
 
-            if (entry.getName().equals("holymoderation.mixins.json") && newMixinDirSimple != null) {
-                updatedContent = updatedContent.replace("\"me.yuugao.holymoderation.client.mixin\"", "\"me.yuugao.holymoderation.client." + newMixinDirSimple + "\"");
+            if (entry.getName().equals(ctx.mixinFile) && newMixinDirSimple != null) {
+                updatedContent = updatedContent.replace("\"%s\"".formatted(mixinPrefix.replace("/", ".")),
+                        "\"%s.%s\"".formatted(ctx.mainClientPrefix.replace("/", "."), newMixinDirSimple));
             }
 
-            log("ОБНОВЛЕН JSON: " + entry.getName());
+            log("Обновлён json файл %s".formatted(entry.getName()));
             return updatedContent.getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log("ОШИБКА при обновлении " + entry.getName() + ": " + e.getMessage());
+            log("Ошибка при обновлении json файла %s: %s".formatted(entry.getName(), e.getMessage()));
             return entryBytes;
         }
     }

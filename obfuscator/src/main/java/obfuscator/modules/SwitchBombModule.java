@@ -1,13 +1,16 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
 public class SwitchBombModule {
     public static void obfuscateClass(ClassNode cn) {
         for (MethodNode mn : cn.methods) {
-            if (mn.name.startsWith("<")) continue;
-            if (mn.instructions == null || mn.instructions.size() < 10) continue;
+            if (mn.name.startsWith("<") || mn.instructions == null || mn.instructions.size() < 10) continue;
+
             int v = mn.maxLocals++;
             LabelNode d = new LabelNode();
             LabelNode l0 = new LabelNode();
@@ -28,5 +31,7 @@ public class SwitchBombModule {
             mn.instructions.insert(il);
             mn.maxStack += 1;
         }
+
+        log("Модуль StringEncryption обфусцировал класс %s".formatted(cn.name));
     }
 }
