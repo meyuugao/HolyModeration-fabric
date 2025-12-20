@@ -51,7 +51,7 @@ public class RemapperModule {
         return paramTypes;
     }
 
-    public static void runRemap(File inputJar) {
+    public static void run(File inputJar) {
         ObfContext ctx = new ObfContext();
         if (!inputJar.exists()) {
             log("Обфускатор не был запущен, т.к. не обнаружен jar файл по указанному пути.");

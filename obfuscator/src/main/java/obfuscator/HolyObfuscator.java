@@ -17,6 +17,6 @@ public class HolyObfuscator {
     }
 
     public void run(String path) {
-        RemapperModule.runRemap(new File(path));
+        RemapperModule.run(new File(path));
     }
 }
