@@ -1,11 +1,8 @@
 package obfuscator.modules;
 
-import static obfuscator.modules.LoggerModule.log;
-
-
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.tree.ClassNode;
+import obfuscator.ObfContext;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -16,7 +13,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-import obfuscator.ObfContext;
+import static obfuscator.modules.LoggerModule.log;
 
 public class RemapperModule {
     public static List<String> parseMethodDescriptor(String descriptor) {
@@ -66,6 +63,8 @@ public class RemapperModule {
         try (JarFile originalJar = new JarFile(inputJar)) {
             log("Обфускатор запущен. Полученная jar: %s".formatted(originalJar.getName()));
 
+            AssetsObfuscatorModule.obfuscateAssets(originalJar, ctx);
+
             ClassScannerModule.scanJar(originalJar, ctx);
             MappingGeneratorModule.generate(ctx);
 
@@ -81,6 +80,12 @@ public class RemapperModule {
 
             ObfRemapperModule remapper = new ObfRemapperModule(ctx);
 
+            Map<String, byte[]> transformedBytes = new HashMap<>();
+            for (Map.Entry<String, byte[]> entry : ctx.classBytes.entrySet()) {
+                byte[] transformed = ClassTransformerModule.transform(entry.getValue(), ctx, remapper);
+                transformedBytes.put(entry.getKey(), transformed);
+            }
+
             JarFile jarFile = new JarFile(inputJar);
             JarOutputStream out = new JarOutputStream(new FileOutputStream(outputJar));
 
@@ -91,22 +96,41 @@ public class RemapperModule {
                 byte[] bytes = is.readAllBytes();
                 is.close();
 
-                String newEntryName = entry.getName();
+                String entryName = entry.getName();
+                String newEntryName = entryName;
                 byte[] entryBytes = bytes;
 
-                if (entry.getName().endsWith(".class") && entry.getName().startsWith(ctx.mainPrefix)) {
-                    String internalName = entry.getName().replace(".class", "");
+                if (entry.isDirectory()) {
+                    ZipEntry newEntry = new ZipEntry(newEntryName);
+                    newEntry.setTime(entry.getTime());
+                    out.putNextEntry(newEntry);
+                    out.closeEntry();
+                    continue;
+                }
 
-                    if (ctx.classBytes.containsKey(internalName)) {
-                        entryBytes = ClassTransformerModule.transform(bytes, ctx, remapper);
+                if (ctx.assetsMap.containsKey(entryName)) {
+                    newEntryName = ctx.assetsMap.get(entryName);
+                    entryBytes = ctx.assetsBytes.get(newEntryName);
 
-                        ClassReader cr = new ClassReader(entryBytes);
-                        ClassNode cn = new ClassNode();
-                        cr.accept(cn, 0);
+                    String directory = newEntryName.substring(0, newEntryName.lastIndexOf('/') + 1);
+                    ZipEntry dirEntry = new ZipEntry(directory);
+                    dirEntry.setTime(System.currentTimeMillis());
+                    try {
+                        out.putNextEntry(dirEntry);
+                        out.closeEntry();
+                    } catch (Exception ignored) {}
 
-                        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
-                        cn.accept(cw);
-                        entryBytes = cw.toByteArray();
+                    ZipEntry newEntry = new ZipEntry(newEntryName);
+                    newEntry.setTime(System.currentTimeMillis());
+                    out.putNextEntry(newEntry);
+                    out.write(entryBytes);
+                    out.closeEntry();
+                    continue;
+                } else if (entryName.endsWith(".class") && entryName.startsWith(ctx.mainPrefix)) {
+                    String internalName = entryName.replace(".class", "");
+
+                    if (transformedBytes.containsKey(internalName)) {
+                        entryBytes = transformedBytes.get(internalName);
 
                         String newInternalName;
 
@@ -129,11 +153,13 @@ public class RemapperModule {
                     }
                 }
 
-                if (entry.getName().equals("fabric.mod.json")
-                        || entry.getName().equals(ctx.mixinFile)
-                        || entry.getName().equals(ctx.refmapFile)) {
+                if (entryName.equals("fabric.mod.json")
+                        || entryName.equals(ctx.mixinFile)
+                        || entryName.equals(ctx.refmapFile)) {
                     entryBytes = JsonHandlerModule.handleJson(entry, entryBytes, ctx);
                 }
+
+                if (entryName.startsWith("assets/")) continue;
 
                 ZipEntry newEntry = new ZipEntry(newEntryName);
                 newEntry.setTime(entry.getTime());
@@ -148,13 +174,7 @@ public class RemapperModule {
             LoggerModule.writeMappings(
                     inputJar,
                     outputJar,
-                    ctx.classMap,
-                    ctx.methodMap,
-                    ctx.fieldMap,
-                    ctx.paramMap,
-                    ctx.dontObfClasses,
-                    ctx.dontObfMethods,
-                    ctx.dontObfFields
+                    ctx
             );
         } catch (Exception e) {
             log("Исключение при выполнении: %s".formatted(e));

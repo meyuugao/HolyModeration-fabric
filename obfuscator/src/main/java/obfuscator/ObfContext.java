@@ -6,6 +6,7 @@ import java.util.*;
 
 public final class ObfContext { //todo: расставь поля по последовательности действий
     public final Map<String, byte[]> classBytes = new HashMap<>();
+    public final Map<String, byte[]> assetsBytes = new HashMap<>();
     public final Map<String, ClassNode> classNodes = new HashMap<>();
     public final Map<String, Set<String>> superClasses = new HashMap<>();
 
@@ -13,6 +14,8 @@ public final class ObfContext { //todo: расставь поля по посл�
     public final Map<String, String> methodMap = new HashMap<>();
     public final Map<String, String> fieldMap = new HashMap<>();
     public final Map<String, String> paramMap = new HashMap<>();
+    public final Map<String, String> assetsMap = new HashMap<>();
+    public final Map<String, String> shadersNameMap = new HashMap<>();
 
     public final Set<String> dontObfClasses = new HashSet<>();
     public final Set<String> dontObfMethods = new HashSet<>();

@@ -35,9 +35,6 @@ public class KeyBindingService extends Service {
             boolean combinationPressed = mainKeyPressed && modifiersPressed;
 
             if (keyBind.getType() == Config.KeyBindType.SINGLE_PRESS) {
-                System.out.println(entry.getKey());
-                System.out.println(keyBind.getMainKey() + " " + keyBind.getModifierKeys());
-                System.out.println(mainKeyPressed + " " + modifiersPressed + " " + !keyStates.getOrDefault(actionName, false));
                 if (combinationPressed && !keyStates.getOrDefault(actionName, false)) {
                     keyStates.put(actionName, true);
                 }

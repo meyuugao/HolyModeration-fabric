@@ -1,8 +1,5 @@
 package obfuscator.modules;
 
-import static obfuscator.modules.LoggerModule.log;
-
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -10,24 +7,27 @@ import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
+import obfuscator.ObfContext;
+import obfuscator.ObfRule;
 
 import java.util.EnumSet;
 
-import obfuscator.ObfContext;
-import obfuscator.ObfRule;
+import static obfuscator.modules.LoggerModule.log;
 
 public final class ClassTransformerModule {
     private ClassTransformerModule() {
     }
 
     public static byte[] transform(byte[] bytes, ObfContext ctx, ObfRemapperModule obfRemapper) {
-        ClassReader reader = new org.objectweb.asm.ClassReader(bytes);
+        ClassReader reader = new ClassReader(bytes);
         ClassNode cn = new ClassNode();
         reader.accept(cn, ClassReader.EXPAND_FRAMES);
 
         String internalName = cn.name;
 
         EnumSet<ObfRule> classRules = ctx.dontObfRules.getOrDefault(internalName, EnumSet.noneOf(ObfRule.class));
+
+        AssetsObfuscatorModule.replaceShaderNamesInClass(cn, ctx);
 
         if (!classRules.contains(ObfRule.MAP_LOCALVARS)) {
             for (MethodNode mn : cn.methods) {
@@ -41,7 +41,7 @@ public final class ClassTransformerModule {
                     for (LocalVariableNode lv : mn.localVariables) {
                         if (!lv.name.equals("this")) {
                             lv.name = NameGeneratorModule.generateChineseName();
-                            log("Обфускация локальной переменной: %S.%s -> %s".formatted(internalName, mn.name, lv.name));
+                            log("Обфускация локальной переменной: %s.%s -> %s".formatted(internalName, mn.name, lv.name));
                         }
                     }
                 }

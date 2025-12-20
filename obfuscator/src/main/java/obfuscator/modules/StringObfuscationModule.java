@@ -45,7 +45,7 @@ public class StringObfuscationModule {
 
     private static void obfuscateFields(ClassNode cn, String decoderMethodName) {
         for (FieldNode fn : cn.fields) {
-            if (!"Ljava/lang/String;".equals(fn.desc) || !(fn.value instanceof String s) || s.isEmpty()) continue;
+            if (!fn.desc.equals("Ljava/lang/String;") || !(fn.value instanceof String s) || s.isEmpty()) continue;
 
             AbstractMap.SimpleEntry<byte[], Integer> encWithKey = getEncWithKey(s);
             byte[] enc = encWithKey.getKey();
