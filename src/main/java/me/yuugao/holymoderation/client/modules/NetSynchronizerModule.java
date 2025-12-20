@@ -14,7 +14,7 @@ public class NetSynchronizerModule extends Module {
 
     @Subscribe
     public void onServerConnect(ServerConnectEvent event) {
-        if (!event.isSwitch()) refresh();
+        if (!event.isSwitch() && stateService.isOnHW()) refresh();
     }
 
     @Subscribe

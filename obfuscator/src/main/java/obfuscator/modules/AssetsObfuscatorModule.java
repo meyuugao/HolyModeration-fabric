@@ -15,36 +15,9 @@ import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-
 import obfuscator.ObfContext;
 
 public class AssetsObfuscatorModule {
-    private static final String AES_ALGORITHM = "AES";
-    private static SecretKey encryptionKey;
-
-    static {
-        try {
-            encryptionKey = generateEncryptionKey();
-        } catch (Exception e) {
-            log("Исключение при генерации ключа обфускации: %s".formatted(e));
-        }
-    }
-
-    private static SecretKey generateEncryptionKey() throws Exception {
-        KeyGenerator keyGen = KeyGenerator.getInstance(AES_ALGORITHM);
-        keyGen.init(256);
-        return keyGen.generateKey();
-    }
-
-    private static byte[] encryptFile(byte[] fileData) throws Exception {
-        Cipher cipher = Cipher.getInstance(AES_ALGORITHM);
-        cipher.init(Cipher.ENCRYPT_MODE, encryptionKey);
-        return cipher.doFinal(fileData);
-    }
-
     public static void obfuscateAssets(JarFile originalJar, ObfContext ctx) {
         try {
             Map<String, String> shaderBaseNameMap = new HashMap<>();
@@ -112,7 +85,7 @@ public class AssetsObfuscatorModule {
                     }
 
                     ctx.assetsMap.put(entryName, fullNewPath);
-                    ctx.assetsBytes.put(fullNewPath, encryptFile(fileData));
+                    ctx.assetsBytes.put(fullNewPath, fileData);
 
                     is.close();
                     log("Ресурс обфусцирован: %s -> %s".formatted(entryName, newFileName));

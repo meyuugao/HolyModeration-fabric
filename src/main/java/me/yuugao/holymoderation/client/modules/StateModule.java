@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 public class StateModule extends Module {
     private boolean blocked = false;
     private boolean enabled = true;
-    private boolean isOnHW = false;
     private boolean needUpdate = false;
 
     @Subscribe(priority = 100)
@@ -32,7 +31,7 @@ public class StateModule extends Module {
             checkServerAddress(event);
             checkUpdates();
 
-            boolean shouldBlock = !isOnHW || needUpdate || !enabled;
+            boolean shouldBlock = !stateService.isOnHW() || needUpdate || !enabled;
             if (!blocked && shouldBlock) {
                 block();
             } else if (blocked && !shouldBlock) {
@@ -63,7 +62,7 @@ public class StateModule extends Module {
 
     @Subscribe(priority = 100)
     public void onMessageSend(MessageSendEvent event) {
-        if (!isOnHW) return;
+        if (!stateService.isOnHW()) return;
 
         if (!stateService.isGameInitCompleted()) {
             event.setCancelled(true);
@@ -134,7 +133,7 @@ public class StateModule extends Module {
     }
 
     private void checkServerAddress(ServerConnectEvent event) {
-        isOnHW = event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*");
+        stateService.setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
     }
 
     private void checkUpdates() {
