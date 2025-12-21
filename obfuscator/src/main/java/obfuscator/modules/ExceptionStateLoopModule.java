@@ -2,7 +2,6 @@ package obfuscator.modules;
 
 import static obfuscator.modules.LoggerModule.log;
 
-
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 
@@ -32,9 +31,17 @@ public class ExceptionStateLoopModule {
             il.add(new InsnNode(Opcodes.NOP));
             il.add(end);
             mn.instructions.insert(il);
-            if (mn.tryCatchBlocks == null) mn.tryCatchBlocks = new ArrayList<>();
+
+            if (mn.tryCatchBlocks == null) {
+                mn.tryCatchBlocks = new ArrayList<>();
+            }
             mn.tryCatchBlocks.add(new TryCatchBlockNode(start, end, h1, "java/lang/RuntimeException"));
             mn.tryCatchBlocks.add(new TryCatchBlockNode(start, end, h2, "java/lang/Throwable"));
+
+            LabelNode jumpBack = new LabelNode();
+            mn.instructions.add(jumpBack);
+            mn.instructions.add(new JumpInsnNode(Opcodes.GOTO, start));
+
             InsnList h1c = new InsnList();
             h1c.add(h1);
             h1c.add(new VarInsnNode(Opcodes.ASTORE, ex1));
