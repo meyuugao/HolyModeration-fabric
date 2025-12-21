@@ -20,18 +20,18 @@ public class LoggerService {
         this.soundService = soundService;
     }
 
-    public void printException(String message) {
-        logger.error(message);
+    public void printException(Object message) {
+        logger.error(String.valueOf(message));
         chatService.clientMessage(RED + BOLD + message);
         soundService.playSound("exception.wav", 70);
     }
 
-    public void printError(String message) {
+    public void printError(Object message) {
         chatService.clientMessage(RED + BOLD + message);
         soundService.playSound("error.wav", 70);
     }
 
-    public void printSuccess(String message) {
+    public void printSuccess(Object message) {
         chatService.clientMessage(AQUA + BOLD + message);
         soundService.playSound("success.wav", 70);
     }

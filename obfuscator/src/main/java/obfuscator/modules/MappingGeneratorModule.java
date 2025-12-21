@@ -22,6 +22,7 @@ public final class MappingGeneratorModule {
         for (Map.Entry<String, byte[]> entry : ctx.classBytes.entrySet()) {
             String internalName = entry.getKey();
             if (internalName.equals(ctx.dontObfAnnotationClass)) continue;
+
             ClassNode cn = ctx.classNodes.get(internalName);
             int idx = internalName.lastIndexOf('/');
             String packageName = idx > 0 ? internalName.substring(0, idx) : "";
@@ -78,6 +79,14 @@ public final class MappingGeneratorModule {
 
                     log("Новый класс: %s -> %s".formatted(internalName, finalName));
                 } else {
+                    EnumSet<ObfRule> classRules =
+                            ctx.dontObfRules.getOrDefault(internalName, EnumSet.noneOf(ObfRule.class));
+                    if (classRules.contains(ObfRule.MAP_CLASS)) {
+                        ctx.classMap.put(internalName, internalName);
+                        log("Новый класс: %s -> %s".formatted(internalName, internalName));
+                        continue;
+                    }
+
                     String newName = "";
                     if (packageName.startsWith(ctx.mixinPrefix)) {
                         ctx.classMap.computeIfAbsent(ctx.mixinPrefix, k -> "%s/%s".formatted(ctx.mainClientPrefix, NameGeneratorModule.generateLatName()));

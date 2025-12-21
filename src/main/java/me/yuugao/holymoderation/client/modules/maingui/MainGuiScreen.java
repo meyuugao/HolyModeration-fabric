@@ -84,42 +84,38 @@ public class MainGuiScreen extends Screen {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void render(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-        try {
-            float targetW = (float) context.getScaledWindowWidth() / 2.2f;
-            float targetH = (float) context.getScaledWindowHeight() / 1.8f;
+        float targetW = (float) context.getScaledWindowWidth() / 2.2f;
+        float targetH = (float) context.getScaledWindowHeight() / 1.8f;
 
-            float w = targetW * animValue;
-            float h = targetH * animValue;
+        float w = targetW * animValue;
+        float h = targetH * animValue;
 
-            float cx = (float) context.getScaledWindowWidth() / 2;
-            float cy = (float) context.getScaledWindowHeight() / 2;
+        float cx = (float) context.getScaledWindowWidth() / 2;
+        float cy = (float) context.getScaledWindowHeight() / 2;
 
-            float x = cx - w / 2;
-            float y = cy - h / 2;
+        float x = cx - w / 2;
+        float y = cy - h / 2;
 
-            float baseOutline = 1f;
-            float scaleFactor = Math.min(w, h) / 100f;
-            float scaledOutline = baseOutline * scaleFactor;
+        float baseOutline = 1f;
+        float scaleFactor = Math.min(w, h) / 100f;
+        float scaledOutline = baseOutline * scaleFactor;
 
-            ServiceLocator.getRender2DService().renderSoftRoundedRectOutline(
-                    context.getMatrices(),
-                    x, y, Math.max(1, w), Math.max(1, h),
-                    10f,
-                    new Color(0x002AFF),
-                    outlineColor,
-                    scaledOutline, 3
-            );
+        ServiceLocator.getRender2DService().renderSoftRoundedRectOutline(
+                context.getMatrices(),
+                x, y, Math.max(1, w), Math.max(1, h),
+                10f,
+                new Color(0x002AFF),
+                outlineColor,
+                scaledOutline, 3
+        );
 
-            super.render(context, mouseX, mouseY, tickDelta);
+        super.render(context, mouseX, mouseY, tickDelta);
 
-            float radius = 25f;
-            ColorPicker picker = new ColorPicker(x + w / 2, y + h / 2, radius * animValue, new Color(0x000000), 3);
-            picker.render(context.getMatrices());
-            picker.updateColorFromMouse(mouseX, mouseY);
-            outlineColor = picker.getSelectedColor();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        float radius = 25f;
+        ColorPicker picker = new ColorPicker(x + w / 2, y + h / 2, radius * animValue, new Color(0x000000), 3);
+        picker.render(context.getMatrices());
+        picker.updateColorFromMouse(mouseX, mouseY);
+        outlineColor = picker.getSelectedColor();
     }
 
     @Override

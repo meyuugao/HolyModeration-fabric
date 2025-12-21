@@ -56,11 +56,16 @@ public class EventBus {
     public void invokeEvent(Event event) {
         List<Subscriber> eventSubscribers = subscribers.get(event.getClass());
         if (eventSubscribers != null) {
-            for (Subscriber subscriber : eventSubscribers) {
-                if (subscribers.getOrDefault(event.getClass(), List.of()).contains(subscriber)) {
-                    subscriber.invoke(event);
-                    loggerService.getLogger().debug("Eventbus: Invoked event - {} for subscriber - {}", event, subscriber);
-                }
+            executeSubscribersSync(eventSubscribers, event);
+        }
+    }
+
+    private void executeSubscribersSync(List<Subscriber> subscribers, Event event) {
+        for (Subscriber subscriber : subscribers) {
+            try {
+                subscriber.invoke(event);
+            } catch (Exception e) {
+                loggerService.printException("Error in subscriber " + subscriber + ": " + e);
             }
         }
     }
