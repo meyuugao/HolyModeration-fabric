@@ -48,6 +48,10 @@ public final class ClassTransformerModule {
             }
         }
 
+        if (!classRules.contains(ObfRule.ANTI_DEBUG)) {
+            AntiDebugInjectModule.obfuscateClass(cn);
+        }
+
         String decoderMethodName = NameGeneratorModule.generateChineseName();
         if (!classRules.contains(ObfRule.OBF_STRING)) {
             StringObfuscationModule.injectDecoder(cn, decoderMethodName);
