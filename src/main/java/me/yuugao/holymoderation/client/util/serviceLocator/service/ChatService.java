@@ -33,7 +33,14 @@ public class ChatService extends Service {
     public void clientMessage(String message) {
         ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
         if (player != null) {
-            player.sendMessage(Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE + message), false);
+            player.sendMessage(generateComponent(HMTextComponent, Text.of(message)), false);
+        }
+    }
+
+    public void clientMessage(Text text) {
+        ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
+        if (player != null) {
+            player.sendMessage(generateComponent(HMTextComponent, text), false);
         }
     }
 

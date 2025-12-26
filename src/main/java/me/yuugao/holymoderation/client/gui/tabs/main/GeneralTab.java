@@ -1,8 +1,8 @@
-package me.yuugao.holymoderation.client.modules.gui.tabs.main;
+package me.yuugao.holymoderation.client.gui.tabs.main;
 
-import me.yuugao.holymoderation.client.modules.gui.modules.ColorPickerModule;
-import me.yuugao.holymoderation.client.modules.gui.screen.MainGuiScreen;
-import me.yuugao.holymoderation.client.modules.gui.tabs.Tab;
+import me.yuugao.holymoderation.client.gui.modules.ColorPickerModule;
+import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
+import me.yuugao.holymoderation.client.gui.tabs.Tab;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;

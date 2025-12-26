@@ -29,9 +29,13 @@ public class ConfigManager {
     }
 
     private void createConfigDirectory() {
-        File directory = new File(CONFIG_DIRECTORY);
-        if (!directory.exists()) {
-            directory.mkdirs();
+        try {
+            File directory = new File(CONFIG_DIRECTORY);
+            if (!directory.exists()) {
+                Files.createDirectory(directory.toPath());
+            }
+        } catch (Exception e) {
+            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/createConfigDirectory: " + e);
         }
     }
 

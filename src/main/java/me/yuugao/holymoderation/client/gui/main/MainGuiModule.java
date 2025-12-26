@@ -1,9 +1,9 @@
-package me.yuugao.holymoderation.client.modules.gui.main;
+package me.yuugao.holymoderation.client.gui.main;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
+import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.modules.gui.screen.MainGuiScreen;
 
 import net.minecraft.client.gui.screen.Screen;
 

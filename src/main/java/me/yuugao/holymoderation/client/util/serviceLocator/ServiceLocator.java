@@ -16,11 +16,15 @@ public class ServiceLocator {
     @Getter
     private static ChatService chatService;
     @Getter
+    private static CheckoutsService checkoutsService;
+    @Getter
     private static KeyBindingService keyBindingService;
     @Getter
     private static MinecraftService minecraftService;
     @Getter
     private static NetService netService;
+    @Getter
+    private static PunishmentsService punishmentsService;
     @Getter
     private static Render2DService render2DService;
     @Getter
@@ -32,13 +36,15 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, KeyBindingService keyBindingService, MinecraftService minecraftService, NetService netService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
+    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, CheckoutsService checkoutsService, KeyBindingService keyBindingService, MinecraftService minecraftService, NetService netService, PunishmentsService punishmentsService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
+        ServiceLocator.checkoutsService = checkoutsService;
         ServiceLocator.keyBindingService = keyBindingService;
         ServiceLocator.minecraftService = minecraftService;
         ServiceLocator.netService = netService;
+        ServiceLocator.punishmentsService = punishmentsService;
         ServiceLocator.render2DService = render2DService;
         ServiceLocator.schedulerService = schedulerService;
         ServiceLocator.soundService = soundService;

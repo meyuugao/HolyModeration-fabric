@@ -181,6 +181,7 @@ public class RemapperModule {
             );
         } catch (Exception e) {
             log("Исключение при выполнении: %s".formatted(e));
+            e.printStackTrace();
         }
     }
 }

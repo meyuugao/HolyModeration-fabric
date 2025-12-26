@@ -95,7 +95,12 @@ public final class ClassTransformerModule {
 
         AnnotationCleanupModule.clean(cn, ctx);
 
-        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+        ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
+            @Override
+            protected String getCommonSuperClass(String type1, String type2) {
+                return "java/lang/Object";
+            }
+        };
         ClassRemapper classRemapper = new ClassRemapper(writer, obfRemapper);
         for (MethodNode mn : cn.methods) {
             mn.parameters = null;

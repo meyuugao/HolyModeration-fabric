@@ -11,9 +11,11 @@ public class ServiceContext {
     private final ConfigManager configManager;
     private final EventBus eventBus;
     private final ChatService chatService;
+    private final CheckoutsService checkoutsService;
     private final KeyBindingService keyBindingService;
     private final MinecraftService minecraftService;
     private final NetService netService;
+    private final PunishmentsService punishmentsService;
     private final Render2DService render2DService;
     private final SchedulerService schedulerService;
     private final SoundService soundService;
@@ -24,9 +26,11 @@ public class ServiceContext {
         this.configManager = ServiceLocator.getConfigManager();
         this.eventBus = ServiceLocator.getEventBus();
         this.chatService = ServiceLocator.getChatService();
+        this.checkoutsService = ServiceLocator.getCheckoutsService();
         this.keyBindingService = ServiceLocator.getKeyBindingService();
         this.minecraftService = ServiceLocator.getMinecraftService();
         this.netService = ServiceLocator.getNetService();
+        this.punishmentsService = ServiceLocator.getPunishmentsService();
         this.render2DService = ServiceLocator.getRender2DService();
         this.schedulerService = ServiceLocator.getSchedulerService();
         this.soundService = ServiceLocator.getSoundService();

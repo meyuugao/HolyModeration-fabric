@@ -1,7 +1,7 @@
-package me.yuugao.holymoderation.client.modules.gui.tabs;
+package me.yuugao.holymoderation.client.gui.tabs;
 
-import me.yuugao.holymoderation.client.modules.gui.modules.GuiModule;
-import me.yuugao.holymoderation.client.modules.gui.screen.GuiScreen;
+import me.yuugao.holymoderation.client.gui.modules.GuiModule;
+import me.yuugao.holymoderation.client.gui.screen.GuiScreen;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;

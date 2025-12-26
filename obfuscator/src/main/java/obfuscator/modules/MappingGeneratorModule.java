@@ -250,13 +250,7 @@ public final class MappingGeneratorModule {
         return null;
     }
 
-    private static void propagateMethodToChildren(
-            ObfContext ctx,
-            String owner,
-            String name,
-            String desc,
-            String mappedName
-    ) {
+    private static void propagateMethodToChildren(ObfContext ctx, String owner, String name, String desc, String mappedName) {
         for (ClassNode cn : ctx.classNodes.values()) {
             if (cn.superName == null) continue;
 

@@ -13,7 +13,7 @@ public class HolyObfuscator {
     public static void main(String[] args) {
         HolyObfuscator holyObfuscator = new HolyObfuscator();
         System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
-        holyObfuscator.run(args[0]);
+        holyObfuscator.run("C:\\GitProjects\\IntelliJ IDEA WorkSpace\\HolyModeration-fabric\\build\\libs\\HolyModeration-1.0.0.jar");
     }
 
     public void run(String path) {

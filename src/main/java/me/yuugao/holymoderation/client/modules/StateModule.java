@@ -18,7 +18,6 @@ import org.apache.commons.lang3.StringUtils;
 public class StateModule extends Module {
     private boolean blocked = false;
     private boolean enabled = true;
-    private boolean needUpdate = false;
 
     @Subscribe(priority = 100)
     public void onServerConnect(ServerConnectEvent event) {
@@ -29,9 +28,8 @@ public class StateModule extends Module {
 
             serviceContext.getStateService().setConnected(true);
             checkServerAddress(event);
-            checkUpdates();
 
-            boolean shouldBlock = !serviceContext.getStateService().isOnHW() || needUpdate || !enabled;
+            boolean shouldBlock = !serviceContext.getStateService().isOnHW() || needUpdate() || !enabled;
             if (!blocked && shouldBlock) {
                 block();
             } else if (blocked && !shouldBlock) {
@@ -136,17 +134,22 @@ public class StateModule extends Module {
         serviceContext.getStateService().setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
     }
 
-    private void checkUpdates() {
+    private boolean needUpdate() {
         String lastVersion = serviceContext.getNetService().getLastUpdates().getKey();
         String description = serviceContext.getNetService().getLastUpdates().getValue();
 
         if (!serviceContext.getConfigManager().getConfig().getCurrentVersion().equals(lastVersion)) {
             serviceContext.getChatService().clientMessage(RED + BOLD + "Ваша версия HolyModeration устарела. Новейшая версия: " + DARK_GREEN + BOLD + lastVersion + RED + BOLD + ", ваша: " + DARK_GREEN + BOLD + serviceContext.getConfigManager().getConfig().getCurrentVersion());
             serviceContext.getChatService().clientMessage(AQUA + BOLD + "Описание обновления: " + LIGHT_PURPLE + BOLD + description.replace("\\n", "\n"));
-            serviceContext.getChatService().clientMessage("ссылканаобновление");
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().openURLTextComponent(
+                    GREEN + BOLD + "ССЫЛКА НА НОВУЮ ВЕРСИЮ",
+                    "Нажмите, чтобы перейти на страницу с новой версией мода.",
+                    "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/" + lastVersion));
             serviceContext.getSoundService().playSound("update.wav", 70);
-            needUpdate = true;
+            return true;
         }
+
+        return false;
     }
 
     private void block() {

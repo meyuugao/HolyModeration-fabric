@@ -29,20 +29,6 @@ public class ClientPlayNetworkHandlerMixin {
         }
     }
 
-    @Inject(method = "onGameMessage", at = @At("HEAD"), cancellable = true)
-    private void onGameMessageModify(GameMessageS2CPacket packet, CallbackInfo ci) {
-        if (packet.overlay()) return;
-
-        MessageReceiveEvent event = new MessageReceiveEvent(packet.content());
-
-        ServiceLocator.getEventBus().invokeEvent(event);
-
-        ci.cancel();
-        if (!event.isCancelled()) {
-            ServiceLocator.getMinecraftService().getClient().inGameHud.getChatHud().addMessage(event.getMessage());
-        }
-    }
-
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
     private void sendChatMessage(String content, CallbackInfo ci) {
         MessageSendEvent event = new MessageSendEvent(content);

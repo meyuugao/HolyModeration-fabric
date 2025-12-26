@@ -1,4 +1,4 @@
-package me.yuugao.holymoderation.client.modules.gui.screen;
+package me.yuugao.holymoderation.client.gui.screen;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
