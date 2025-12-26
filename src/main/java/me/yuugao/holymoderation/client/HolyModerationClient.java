@@ -3,7 +3,7 @@ package me.yuugao.holymoderation.client;
 import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.modules.*;
-import me.yuugao.holymoderation.client.modules.maingui.MainGuiModule;
+import me.yuugao.holymoderation.client.modules.gui.main.MainGuiModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
@@ -29,12 +29,12 @@ public class HolyModerationClient implements ClientModInitializer {
         ServiceLocator.getLoggerService().getLogger().info("Eventbus & modules has been initialized");
     }
 
-    public static void registerEventListeners(EventBus gnida) {
-        gnida.register(new MainGuiModule());
-        gnida.register(new KeyBindingModule());
-        gnida.register(new NetSynchronizerModule());
-        gnida.register(new SettingsModule());
-        gnida.register(new StateModule());
-        gnida.register(new SpyModule());
+    public static void registerEventListeners(EventBus eventBus) {
+        eventBus.register(new MainGuiModule());
+        eventBus.register(new KeyBindingModule());
+        eventBus.register(new NetSynchronizerModule());
+        eventBus.register(new SettingsModule());
+        eventBus.register(new StateModule());
+        eventBus.register(new SpyModule());
     }
 }

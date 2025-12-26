@@ -23,50 +23,50 @@ public class StateModule extends Module {
     @Subscribe(priority = 100)
     public void onServerConnect(ServerConnectEvent event) {
         if (!event.isSwitch()) {
-            if (minecraftService.getPlayer() != null) {
-                stateService.setModerNickname(minecraftService.getPlayer().getName().getString());
+            if (serviceContext.getMinecraftService().getPlayer() != null) {
+                serviceContext.getStateService().setModerNickname(serviceContext.getMinecraftService().getPlayer().getName().getString());
             }
 
-            stateService.setConnected(true);
+            serviceContext.getStateService().setConnected(true);
             checkServerAddress(event);
             checkUpdates();
 
-            boolean shouldBlock = !stateService.isOnHW() || needUpdate || !enabled;
+            boolean shouldBlock = !serviceContext.getStateService().isOnHW() || needUpdate || !enabled;
             if (!blocked && shouldBlock) {
                 block();
             } else if (blocked && !shouldBlock) {
                 unblock();
-                eventBus.invokeEvent(event);
+                serviceContext.getEventBus().invokeEvent(event);
             }
         }
 
-        stateService.setGameInitCompleted(false);
+        serviceContext.getStateService().setGameInitCompleted(false);
 
-        if (minecraftService.getClient().interactionManager != null && minecraftService.getClient().interactionManager.getCurrentGameMode().equals(GameMode.ADVENTURE)) {
-            stateService.setInHub(true);
-            stateService.setModerLocation(StringUtils.EMPTY);
+        if (serviceContext.getMinecraftService().getClient().interactionManager != null && serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode().equals(GameMode.ADVENTURE)) {
+            serviceContext.getStateService().setInHub(true);
+            serviceContext.getStateService().setModerLocation(StringUtils.EMPTY);
         } else {
-            stateService.setInHub(false);
-            chatService.chatMessage("/find " + stateService.getModerNickname());
+            serviceContext.getStateService().setInHub(false);
+            serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getModerNickname());
         }
 
-        stateService.setGameInitCompleted(true);
+        serviceContext.getStateService().setGameInitCompleted(true);
     }
 
     @Subscribe(priority = 100)
     public void onServerDisconnect(ServerDisconnectEvent event) {
-        if (stateService.isConnected()) {
-            stateService.reset();
+        if (serviceContext.getStateService().isConnected()) {
+            serviceContext.getStateService().reset();
         }
     }
 
     @Subscribe(priority = 100)
     public void onMessageSend(MessageSendEvent event) {
-        if (!stateService.isOnHW()) return;
+        if (!serviceContext.getStateService().isOnHW()) return;
 
-        if (!stateService.isGameInitCompleted()) {
+        if (!serviceContext.getStateService().isGameInitCompleted()) {
             event.setCancelled(true);
-            loggerService.printError("Не спеши, инициализация игры ещё не завершилась!");
+            serviceContext.getLoggerService().printError("Не спеши, инициализация игры ещё не завершилась!");
             return;
         }
 
@@ -75,20 +75,20 @@ public class StateModule extends Module {
             case (".setapitoken"): {
                 event.setCancelled(true);
                 if (messageSplit.length == 1) {
-                    loggerService.printError("Вы не ввели токен.");
+                    serviceContext.getLoggerService().printError("Вы не ввели токен.");
                     return;
                 }
                 String apiToken = messageSplit[1];
                 if (apiToken.contains(" ")) {
-                    loggerService.printError("В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
+                    serviceContext.getLoggerService().printError("В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
                     return;
                 }
-                configManager.getConfig().setApiToken(apiToken);
-                configManager.saveCfg(configManager.getConfig());
-                soundService.playSound("success.wav", 70);
+                serviceContext.getConfigManager().getConfig().setApiToken(apiToken);
+                serviceContext.getConfigManager().saveCfg(serviceContext.getConfigManager().getConfig());
+                serviceContext.getSoundService().playSound("success.wav", 70);
 
-                if (minecraftService.getClient().getNetworkHandler() != null) {
-                    minecraftService.getClient().getNetworkHandler().getConnection().disconnect(Text.of(AQUA + BOLD + "Вы успешно установили API токен. Пожалуйста, перезайдите на сервер."));
+                if (serviceContext.getMinecraftService().getClient().getNetworkHandler() != null) {
+                    serviceContext.getMinecraftService().getClient().getNetworkHandler().getConnection().disconnect(Text.of(AQUA + BOLD + "Вы успешно установили API токен. Пожалуйста, перезайдите на сервер."));
                 }
                 break;
             }
@@ -97,7 +97,7 @@ public class StateModule extends Module {
                 event.setCancelled(true);
                 enabled = true;
                 unblock();
-                loggerService.printSuccess("Мод включен!");
+                serviceContext.getLoggerService().printSuccess("Мод включен!");
                 break;
             }
 
@@ -105,7 +105,7 @@ public class StateModule extends Module {
                 event.setCancelled(true);
                 enabled = false;
                 block();
-                loggerService.printSuccess(RED + BOLD + "Мод выключен!");
+                serviceContext.getLoggerService().printSuccess(RED + BOLD + "Мод выключен!");
                 break;
             }
         }
@@ -113,50 +113,50 @@ public class StateModule extends Module {
 
     @Subscribe(priority = 100)
     public void onMessageReceive(MessageReceiveEvent event) {
-        String receivedText = chatService.formatReceivedText(event.getMessage().getString());
+        String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (receivedText == null) {
             return;
         }
 
         if (receivedText.equals("▶ Ожидайте завершения проверки... Пожалуйста, не двигайтесь.") || receivedText.equals("▶ Введите цифры с картинки в чат! Для открытия чата, нажмите <T>")) {
-            stateService.setInHub(true);
-            stateService.setGameInitCompleted(true);
-            stateService.setModerLocation(StringUtils.EMPTY);
+            serviceContext.getStateService().setInHub(true);
+            serviceContext.getStateService().setGameInitCompleted(true);
+            serviceContext.getStateService().setModerLocation(StringUtils.EMPTY);
         }
 
-        if (stateService.getModerLocation().isEmpty()) {
-            if (receivedText.startsWith("Игрок " + stateService.getModerNickname())) {
+        if (serviceContext.getStateService().getModerLocation().isEmpty()) {
+            if (receivedText.startsWith("Игрок " + serviceContext.getStateService().getModerNickname())) {
                 event.setCancelled(true);
-                stateService.setModerLocation(chatService.formatLocation(receivedText.split("сервере ")[1])); //tip: определяет но всё равно в чат пишет
+                serviceContext.getStateService().setModerLocation(serviceContext.getChatService().formatLocation(receivedText.split("сервере ")[1])); //tip: определяет но всё равно в чат пишет
             }
         }
     }
 
     private void checkServerAddress(ServerConnectEvent event) {
-        stateService.setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
+        serviceContext.getStateService().setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
     }
 
     private void checkUpdates() {
-        String lastVersion = netService.getLastUpdates().getKey();
-        String description = netService.getLastUpdates().getValue();
+        String lastVersion = serviceContext.getNetService().getLastUpdates().getKey();
+        String description = serviceContext.getNetService().getLastUpdates().getValue();
 
-        if (!configManager.getConfig().getCurrentVersion().equals(lastVersion)) {
-            chatService.clientMessage(RED + BOLD + "Ваша версия HolyModeration устарела. Новейшая версия: " + DARK_GREEN + BOLD + lastVersion + RED + BOLD + ", ваша: " + DARK_GREEN + BOLD + configManager.getConfig().getCurrentVersion());
-            chatService.clientMessage(AQUA + BOLD + "Описание обновления: " + LIGHT_PURPLE + BOLD + description.replace("\\n", "\n"));
-            chatService.clientMessage("ссылканаобновление");
-            soundService.playSound("update.wav", 70);
+        if (!serviceContext.getConfigManager().getConfig().getCurrentVersion().equals(lastVersion)) {
+            serviceContext.getChatService().clientMessage(RED + BOLD + "Ваша версия HolyModeration устарела. Новейшая версия: " + DARK_GREEN + BOLD + lastVersion + RED + BOLD + ", ваша: " + DARK_GREEN + BOLD + serviceContext.getConfigManager().getConfig().getCurrentVersion());
+            serviceContext.getChatService().clientMessage(AQUA + BOLD + "Описание обновления: " + LIGHT_PURPLE + BOLD + description.replace("\\n", "\n"));
+            serviceContext.getChatService().clientMessage("ссылканаобновление");
+            serviceContext.getSoundService().playSound("update.wav", 70);
             needUpdate = true;
         }
     }
 
     private void block() {
         blocked = true;
-        eventBus.clear();
-        eventBus.register(this);
+        serviceContext.getEventBus().clear();
+        serviceContext.getEventBus().register(this);
     }
 
     private void unblock() {
         blocked = false;
-        HolyModerationClient.registerEventListeners(eventBus);
+        HolyModerationClient.registerEventListeners(serviceContext.getEventBus());
     }
 }

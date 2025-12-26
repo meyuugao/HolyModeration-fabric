@@ -3,9 +3,7 @@ package obfuscator.modules;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import obfuscator.ObfContext;
 

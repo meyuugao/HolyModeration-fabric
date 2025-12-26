@@ -1,6 +1,7 @@
-package me.yuugao.holymoderation.client.util;
+package me.yuugao.holymoderation.client.modules.gui.modules;
 
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+import me.yuugao.holymoderation.client.modules.gui.tabs.Tab;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.util.math.MatrixStack;
 
@@ -11,7 +12,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ColorPicker {
+public class ColorPickerModule extends GuiModule {
     private float centerX;
     private float centerY;
     private float radius;
@@ -20,17 +21,19 @@ public class ColorPicker {
 
     private Color selectedColor;
 
-    public ColorPicker(float centerX, float centerY, float radius, Color outlineColor, float outlineWidth) {
+    public ColorPickerModule(Tab parent, ServiceContext serviceContext) {
+        super(parent, serviceContext);
+
+        this.selectedColor = Color.WHITE;
+    }
+
+    public void render(MatrixStack matrices, float centerX, float centerY, float radius, Color outlineColor, float outlineWidth) {
         this.centerX = centerX;
         this.centerY = centerY;
         this.radius = radius;
         this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
-        this.selectedColor = Color.WHITE;
-    }
-
-    public void render(MatrixStack matrices) {
-        ServiceLocator.getRender2DService().renderRGBPalette(matrices, centerX, centerY, radius, outlineColor, outlineWidth);
+        serviceContext.getRender2DService().renderRGBPalette(matrices, centerX, centerY, radius, outlineColor, outlineWidth);
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {

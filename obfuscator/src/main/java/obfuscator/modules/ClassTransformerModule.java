@@ -1,5 +1,8 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
@@ -7,12 +10,11 @@ import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.LocalVariableNode;
 import org.objectweb.asm.tree.MethodNode;
-import obfuscator.ObfContext;
-import obfuscator.ObfRule;
 
 import java.util.EnumSet;
 
-import static obfuscator.modules.LoggerModule.log;
+import obfuscator.ObfContext;
+import obfuscator.ObfRule;
 
 public final class ClassTransformerModule {
     private ClassTransformerModule() {

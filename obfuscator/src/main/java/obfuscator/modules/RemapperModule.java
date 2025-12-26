@@ -1,8 +1,10 @@
 package obfuscator.modules;
 
+import static obfuscator.modules.LoggerModule.log;
+
+
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
-import obfuscator.ObfContext;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -13,7 +15,7 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
-import static obfuscator.modules.LoggerModule.log;
+import obfuscator.ObfContext;
 
 public class RemapperModule {
     public static List<String> parseMethodDescriptor(String descriptor) {
@@ -118,7 +120,8 @@ public class RemapperModule {
                     try {
                         out.putNextEntry(dirEntry);
                         out.closeEntry();
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
 
                     ZipEntry newEntry = new ZipEntry(newEntryName);
                     newEntry.setTime(System.currentTimeMillis());

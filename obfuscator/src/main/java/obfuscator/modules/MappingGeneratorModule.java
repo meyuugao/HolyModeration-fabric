@@ -121,19 +121,20 @@ public final class MappingGeneratorModule {
             for (FieldNode fn : cn.fields) {
                 if ((fn.access & Opcodes.ACC_SYNTHETIC) != 0) continue;
 
-                String fieldKeyFull = "%s.%s".formatted(internalName, fn.name);
-                if (getCombinedRules(ctx, internalName, fieldKeyFull).contains(ObfRule.MAP_FIELD)) {
-                    ctx.dontObfFields.add(fieldKeyFull);
+                String owner = findFieldOwner(ctx, cn, fn.name, fn.desc);
+                if (owner == null) owner = cn.name;
+
+                String fieldKey = "%s.%s".formatted(owner, fn.name + fn.desc);
+
+                if (getCombinedRules(ctx, cn.name, fieldKey).contains(ObfRule.MAP_FIELD)) {
+                    ctx.dontObfFields.add(fieldKey);
                     continue;
                 }
 
-                if (!ctx.fieldMap.containsKey(fieldKeyFull)) {
+                if (!ctx.fieldMap.containsKey(fieldKey)) {
                     String genField = NameGeneratorModule.generateChineseName();
-                    ctx.fieldMap.put(fieldKeyFull, genField);
-                    String mappedOwner = ctx.classMap.getOrDefault(internalName, internalName);
-                    String fieldKeyMapped = "%s.%s".formatted(mappedOwner, fn.name);
-                    ctx.fieldMap.put(fieldKeyMapped, genField);
-                    log("Новое поле: %s -> %s".formatted(fn.name, genField));
+                    ctx.fieldMap.put(fieldKey, genField);
+                    log("Новое поле: %s -> %s".formatted(fieldKey, genField));
                 }
             }
 
@@ -147,11 +148,27 @@ public final class MappingGeneratorModule {
 
                 if (!Objects.equals(mn.name, "<init>") && !Objects.equals(mn.name, "<clinit>")) {
                     if (!ctx.methodMap.containsKey(methodKey)) {
-                        String genName = NameGeneratorModule.generateChineseName();
-                        ctx.methodMap.put(methodKey, genName);
-                        String mappedOwner = ctx.classMap.getOrDefault(internalName, internalName);
-                        String genKeyMapped = "%s.%s%s".formatted(mappedOwner, mn.name, mn.desc);
-                        ctx.methodMap.put(genKeyMapped, genName);
+                        String overriddenOwner = findOverriddenMethodOwner(ctx, cn, mn);
+
+                        if (overriddenOwner != null) {
+                            String parentKey = "%s.%s%s".formatted(overriddenOwner, mn.name, mn.desc);
+                            String mappedName = ctx.methodMap.get(parentKey);
+
+                            if (mappedName != null) {
+                                ctx.methodMap.put(methodKey, mappedName);
+                            }
+                        } else {
+                            if (!ctx.methodMap.containsKey(methodKey)) {
+                                String genName = NameGeneratorModule.generateChineseName();
+                                ctx.methodMap.put(methodKey, genName);
+
+                                String mappedOwner = ctx.classMap.getOrDefault(internalName, internalName);
+                                ctx.methodMap.put("%s.%s%s".formatted(mappedOwner, mn.name, mn.desc), genName);
+
+                                propagateMethodToChildren(ctx, internalName, mn.name, mn.desc, genName);
+                            }
+                        }
+
                         log("Новый метод: %s -> %s".formatted(methodKey, ctx.methodMap.get(methodKey)));
                     }
                 }
@@ -188,5 +205,76 @@ public final class MappingGeneratorModule {
         EnumSet<ObfRule> combinedMethodRules = EnumSet.copyOf(classRules);
         combinedMethodRules.addAll(methodRules);
         return combinedMethodRules;
+    }
+
+    private static String findOverriddenMethodOwner(ObfContext ctx, ClassNode cn, MethodNode mn) {
+        Queue<String> toCheck = new ArrayDeque<>();
+        if (cn.superName != null) toCheck.add(cn.superName);
+        if (cn.interfaces != null) toCheck.addAll(cn.interfaces);
+
+        while (!toCheck.isEmpty()) {
+            String parent = toCheck.poll();
+            ClassNode parentNode = ctx.classNodes.get(parent);
+            if (parentNode == null) continue;
+
+            for (MethodNode pm : parentNode.methods) {
+                if (pm.name.equals(mn.name) && pm.desc.equals(mn.desc)) {
+                    return parent;
+                }
+            }
+
+            if (parentNode.superName != null) toCheck.add(parentNode.superName);
+            if (parentNode.interfaces != null) toCheck.addAll(parentNode.interfaces);
+        }
+        return null;
+    }
+
+    private static String findFieldOwner(ObfContext ctx, ClassNode cn, String fieldName, String desc) {
+        Queue<String> q = new ArrayDeque<>();
+        q.add(cn.name);
+
+        while (!q.isEmpty()) {
+            String cur = q.poll();
+            ClassNode node = ctx.classNodes.get(cur);
+            if (node == null) continue;
+
+            for (FieldNode fn : node.fields) {
+                if (fn.name.equals(fieldName) && fn.desc.equals(desc)) {
+                    return cur;
+                }
+            }
+
+            if (node.superName != null) q.add(node.superName);
+            if (node.interfaces != null) q.addAll(node.interfaces);
+        }
+        return null;
+    }
+
+    private static void propagateMethodToChildren(
+            ObfContext ctx,
+            String owner,
+            String name,
+            String desc,
+            String mappedName
+    ) {
+        for (ClassNode cn : ctx.classNodes.values()) {
+            if (cn.superName == null) continue;
+
+            if (isSubclassOf(ctx, cn.name, owner)) {
+                String key = "%s.%s%s".formatted(cn.name, name, desc);
+                String mappedOwner = ctx.classMap.getOrDefault(cn.name, cn.name);
+                ctx.methodMap.putIfAbsent(key, mappedName);
+                ctx.methodMap.putIfAbsent("%s.%s".formatted(mappedOwner, name + desc), mappedName);
+            }
+        }
+    }
+
+    private static boolean isSubclassOf(ObfContext ctx, String child, String parent) {
+        while (true) {
+            ClassNode cn = ctx.classNodes.get(child);
+            if (cn == null || cn.superName == null) return false;
+            if (cn.superName.equals(parent)) return true;
+            child = cn.superName;
+        }
     }
 }

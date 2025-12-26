@@ -11,10 +11,9 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class NetSynchronizerModule extends Module {
-
     @Subscribe
     public void onServerConnect(ServerConnectEvent event) {
-        if (!event.isSwitch() && stateService.isOnHW()) refresh();
+        if (!event.isSwitch() && serviceContext.getStateService().isOnHW()) refresh();
     }
 
     @Subscribe
@@ -26,26 +25,26 @@ public class NetSynchronizerModule extends Module {
     }
 
     private void refresh() {
-        if (configManager.getConfig().getApiToken().isEmpty()) {
-            loggerService.printError("У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (" + GOLD + GOLD + BOLD + ".setapitoken " + GREEN + BOLD + "apitoken" + WHITE + RED + BOLD + ") и перезайти на сервер.");
+        if (serviceContext.getConfigManager().getConfig().getApiToken().isEmpty()) {
+            serviceContext.getLoggerService().printError("У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (" + GOLD + GOLD + BOLD + ".setapitoken " + GREEN + BOLD + "apitoken" + WHITE + RED + BOLD + ") и перезайти на сервер.");
             return;
         }
 
         CompletableFuture.runAsync(() -> {
             try {
-                netService.downloadSounds();
+                serviceContext.getNetService().downloadSounds();
             } catch (Exception e) {
-                loggerService.printException("Исключение в NetSynchronizerModule/onServerConnect: " + e);
+                serviceContext.getLoggerService().printException("Исключение в NetSynchronizerModule/onServerConnect: " + e);
             }
 
-            Map<String, Object> profile = netService.getJournalProfile();
-            stateService.setJournalProfile(profile);
-            stateService.setJournalStats(netService.getJournalStats());
-            stateService.setRank((int) Double.parseDouble(profile.get("rank").toString()));
-            stateService.setVkUrl("vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()));
-            stateService.setApiInitCompleted(true);
+            Map<String, Object> profile = serviceContext.getNetService().getJournalProfile();
+            serviceContext.getStateService().setJournalProfile(profile);
+            serviceContext.getStateService().setJournalStats(serviceContext.getNetService().getJournalStats());
+            serviceContext.getStateService().setRank((int) Double.parseDouble(profile.get("rank").toString()));
+            serviceContext.getStateService().setVkUrl("vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()));
+            serviceContext.getStateService().setApiInitCompleted(true);
 
-            loggerService.printSuccess("Синхронизация завершена!");
+            serviceContext.getLoggerService().printSuccess("Синхронизация завершена!");
         });
     }
 }
