@@ -25,9 +25,11 @@ public class CheckoutsService extends Service {
         }
 
         serviceContext.getSchedulerService().getInstance().schedule(() -> {
-            for (String text : new String[]{"закончитьчистый", "закончитьбанда " + serviceContext.getStateService().getPlayer(), "закончитьбаннет " + serviceContext.getStateService().getPlayer(), "закончитьавтобай", "закончитьавтоселл"}) {
-                serviceContext.getChatService().clientMessage(text);
-            }
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'чистый'", "Нажмите, чтобы закончить проверку с результатом 'чистый'", "/endcheckout clean"));
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + снести стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш", "/endcheckout ban " + serviceContext.getStateService().getPlayer() + " true"));
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + не сносить стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш", "/endcheckout ban " + serviceContext.getStateService().getPlayer() + " false"));
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автобай'", "Нажмите, чтобы закончить проверку с результатом 'автобай'", "/endcheckout autobuy"));
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автоселл'", "Нажмите, чтобы закончить проверку с результатом 'автоселл'", "/endcheckout autosell"));
             serviceContext.getStateService().setPlayer(StringUtils.EMPTY);
         }, 1, TimeUnit.SECONDS);
     }
@@ -66,9 +68,15 @@ public class CheckoutsService extends Service {
 
         serviceContext.getSchedulerService().getInstance().schedule(() -> {
             if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-                for (String text : new String[]{"внестирепорт", "внестипроверка", "внестиавтобай", "внестиавтоселл", "внестикандидат", "внестикастомка", "внестиперсонал", "внестимногопроверок"}) {
-                    serviceContext.getChatService().clientMessage(text);
-                }
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку по репорту", "Нажмите, чтобы внести проверку по репорту", "/startcheckout " + serviceContext.getStateService().getPlayer() + " report"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести обычную проверку", "Нажмите, чтобы внести обычную проверку", "/startcheckout " + serviceContext.getStateService().getPlayer() + " checkout"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку автобаера", "Нажмите, чтобы внести проверку автобаера", "/startcheckout " + serviceContext.getStateService().getPlayer() + " autobuy"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку автобаера", "Нажмите, чтобы внести проверку автобаера", "/startcheckout " + serviceContext.getStateService().getPlayer() + " autobuy"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку автоселлера", "Нажмите, чтобы внести проверку автоселлера", "/startcheckout " + serviceContext.getStateService().getPlayer() + " autosell"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку кандидата", "Нажмите, чтобы внести проверку кандидата", "/startcheckout " + serviceContext.getStateService().getPlayer() + " candidate"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку кастомки", "Нажмите, чтобы внести проверку кастомки", "/startcheckout " + serviceContext.getStateService().getPlayer() + " customka"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку персонала", "Нажмите, чтобы внести проверку персонала", "/startcheckout " + serviceContext.getStateService().getPlayer() + " personal"));
+                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку игрока, у которого много пройденных проверок", "Нажмите, чтобы внести проверку игрока, у которого много пройденных проверок", "/startcheckout " + serviceContext.getStateService().getPlayer() + " toManyChecks"));
             }
         }, 9, TimeUnit.SECONDS);
     }

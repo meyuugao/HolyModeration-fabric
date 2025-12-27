@@ -1,7 +1,6 @@
 package me.yuugao.holymoderation.client.mixin;
 
 
-import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
@@ -9,7 +8,6 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ServerInfo;
-import net.minecraft.network.packet.s2c.play.GameMessageS2CPacket;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

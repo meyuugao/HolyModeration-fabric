@@ -6,10 +6,10 @@
   "mixins": [
   ],
   "client": [
-    "MessageHandlerMixin",
     "ClientPlayNetworkHandlerMixin",
     "InGameHudMixin",
     "KeyBoardMixin",
+    "MessageHandlerMixin",
     "MinecraftClientMixin"
   ],
   "injectors": {

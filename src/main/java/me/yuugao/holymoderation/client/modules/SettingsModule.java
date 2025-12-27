@@ -6,6 +6,8 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 
+import net.minecraft.text.Text;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
@@ -116,7 +118,10 @@ public class SettingsModule extends Module {
                                 serviceContext.getLoggerService().printSuccess("ИНФОРМАЦИЯ О МОДЕРАТОРЕ");
                                 serviceContext.getChatService().clientMessage(WHITE + BOLD + "Ваш никнейм: " + AQUA + BOLD + profile.get("nickname").toString());
                                 serviceContext.getChatService().clientMessage(WHITE + BOLD + "Ваша должность: " + RANKS.get((int) Double.parseDouble(profile.get("rank").toString())));
-                                serviceContext.getChatService().clientMessage("вк " + profile.get("fullname").toString() + " id" + (long) Double.parseDouble(profile.get("idVk").toString()));
+                                serviceContext.getChatService().clientMessage(serviceContext.getChatService().generateComponent(
+                                        Text.of(WHITE + BOLD + "Ваш вк: " + AQUA + BOLD + profile.get("fullname").toString() + " ("),
+                                        serviceContext.getChatService().openURLTextComponent(WHITE + BOLD + "vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()), "Нажмите, чтобы открыть ссылку на свой вк.", "https://vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString())),
+                                        Text.of(AQUA + BOLD + ")")));
                                 serviceContext.getChatService().clientMessage(WHITE + BOLD + "Ваш баланс: " + GREEN + BOLD + (int) Double.parseDouble(profile.get("neponyatki").toString()));
                                 serviceContext.getChatService().clientMessage(WHITE + BOLD + "Количество выговоров: " + RED + BOLD + (int) Double.parseDouble(profile.get("reprimands").toString()));
                                 serviceContext.getChatService().clientMessage(WHITE + BOLD + "Количество предупреждений: " + GOLD + BOLD + (int) Double.parseDouble(profile.get("warns").toString()));

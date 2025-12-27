@@ -3,13 +3,12 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-
-import com.google.common.eventbus.Subscribe;
 
 public class CheckoutsModule extends Module {
     private final String[] FreezerCommands = {"/sban", "/freezing", "/frz", "/unfreezing", "/unfrz", ".freezing", ".frz", ".sendtexts"};
