@@ -24,6 +24,8 @@ public class ServiceLocator {
     @Getter
     private static NetService netService;
     @Getter
+    private static NotificationService notificationService;
+    @Getter
     private static PunishmentsService punishmentsService;
     @Getter
     private static Render2DService render2DService;
@@ -36,7 +38,7 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, CheckoutsService checkoutsService, KeyBindingService keyBindingService, MinecraftService minecraftService, NetService netService, PunishmentsService punishmentsService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
+    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, CheckoutsService checkoutsService, KeyBindingService keyBindingService, MinecraftService minecraftService, NetService netService, NotificationService notificationService, PunishmentsService punishmentsService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
@@ -44,6 +46,7 @@ public class ServiceLocator {
         ServiceLocator.keyBindingService = keyBindingService;
         ServiceLocator.minecraftService = minecraftService;
         ServiceLocator.netService = netService;
+        ServiceLocator.notificationService = notificationService;
         ServiceLocator.punishmentsService = punishmentsService;
         ServiceLocator.render2DService = render2DService;
         ServiceLocator.schedulerService = schedulerService;
@@ -57,9 +60,12 @@ public class ServiceLocator {
         loggerService = new LoggerService(logger, chatService, soundService);
         eventBus.setLogger(loggerService);
         chatService.setLoggerService(loggerService);
+        checkoutsService.setLoggerService(loggerService);
         keyBindingService.setLoggerService(loggerService);
         minecraftService.setLoggerService(loggerService);
         netService.setLoggerService(loggerService);
+        notificationService.setLoggerService(loggerService);
+        punishmentsService.setLoggerService(loggerService);
         render2DService.setLoggerService(loggerService);
         schedulerService.setLoggerService(loggerService);
         soundService.setLoggerService(loggerService);

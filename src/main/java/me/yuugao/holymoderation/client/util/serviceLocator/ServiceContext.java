@@ -15,6 +15,7 @@ public class ServiceContext {
     private final KeyBindingService keyBindingService;
     private final MinecraftService minecraftService;
     private final NetService netService;
+    private final NotificationService notificationService;
     private final PunishmentsService punishmentsService;
     private final Render2DService render2DService;
     private final SchedulerService schedulerService;
@@ -30,6 +31,7 @@ public class ServiceContext {
         this.keyBindingService = ServiceLocator.getKeyBindingService();
         this.minecraftService = ServiceLocator.getMinecraftService();
         this.netService = ServiceLocator.getNetService();
+        this.notificationService = ServiceLocator.getNotificationService();
         this.punishmentsService = ServiceLocator.getPunishmentsService();
         this.render2DService = ServiceLocator.getRender2DService();
         this.schedulerService = ServiceLocator.getSchedulerService();

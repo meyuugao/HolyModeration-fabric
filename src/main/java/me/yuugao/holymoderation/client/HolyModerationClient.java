@@ -18,7 +18,7 @@ public class HolyModerationClient implements ClientModInitializer {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
-        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(), new KeyBindingService(), new MinecraftService(), new NetService(), new PunishmentsService(), new Render2DService(), new SchedulerService(), new SoundService(), new StateService(), LoggerFactory.getLogger("HolyModeration/Client"));
+        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(), new KeyBindingService(), new MinecraftService(), new NetService(), new NotificationService(), new PunishmentsService(), new Render2DService(), new SchedulerService(), new SoundService(), new StateService(), LoggerFactory.getLogger("HolyModeration/Client"));
         eventBusInitialize();
         ServiceLocator.getLoggerService().getLogger().info("HolyModerationClient has been initialized");
     }
@@ -35,6 +35,7 @@ public class HolyModerationClient implements ClientModInitializer {
         eventBus.register(new KeyBindingModule());
         eventBus.register(new MessageModule());
         eventBus.register(new NetSynchronizerModule());
+        eventBus.register(new NotificationsRenderModule());
         eventBus.register(new PunishmentsModule());
         eventBus.register(new ReportCopyModule());
         eventBus.register(new SettingsModule());

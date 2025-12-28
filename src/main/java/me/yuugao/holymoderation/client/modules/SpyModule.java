@@ -6,7 +6,6 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -144,7 +143,7 @@ public class SpyModule extends Module {
         if (texts[0].isEmpty() && texts[1].isEmpty()) return;
 
         DrawContext drawContext = event.getDrawContext();
-        TextRenderer textRenderer = MinecraftClient.getInstance().textRenderer;
+        TextRenderer textRenderer = serviceContext.getMinecraftService().getClient().textRenderer;
         MatrixStack matrixStack = drawContext.getMatrices();
 
         int textX = drawContext.getScaledWindowWidth() / 2 - textRenderer.getWidth(texts[0]) / 2;

@@ -29,7 +29,8 @@ public class EventBus {
                         int priority = annotation.priority();
                         Subscriber subscriber = new Subscriber(module, method, priority);
 
-                        if (subscribers.values().stream().anyMatch(list -> list.stream().anyMatch(e -> e.method().equals(method)))) return;
+                        if (subscribers.values().stream().anyMatch(list -> list.stream().anyMatch(e -> e.method().equals(method))))
+                            return;
 
                         subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(subscriber);
                         subscribers.get(eventType).sort((s1, s2) -> Integer.compare(s2.priority(), s1.priority()));
