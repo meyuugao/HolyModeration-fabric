@@ -9,12 +9,15 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationT
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import obfuscator.DontObf;
+import obfuscator.ObfRule;
+
+@DontObf(ObfRule.OBF_STRING)
 public class SettingsModule extends Module {
     public static final Map<Integer, String> RANKS = new HashMap<>() {
         {
@@ -59,24 +62,24 @@ public class SettingsModule extends Module {
         String command = commandSplit[1];
 
         if (serviceContext.getChatService().isArrayContains(settingsCommands, command)) {
-            String[] textsArray = serviceContext.getConfigManager().getConfig().getTexts().isEmpty() ? new String[]{} : serviceContext.getConfigManager().getConfig().getTexts().split("%%");
+            List<String> textsList = serviceContext.getConfigManager().getConfig().getTextsList();
             if (serviceContext.getChatService().isArrayContains(settingsWithoutArguments, command)) {
                 switch (command) {
                     case ("textslist"): {
-                        if (serviceContext.getConfigManager().getConfig().getTexts().isEmpty()) {
+                        if (textsList.isEmpty()) {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет настроенных текстов.", 5f);
                         } else {
                             StringBuilder texts = new StringBuilder(StringUtils.EMPTY);
-                            for (int i = 0; i < textsArray.length; i++) {
-                                texts.append(AQUA + BOLD).append(i + 1).append(WHITE).append(". ").append(textsArray[i]);
-                                if (i < textsArray.length - 1) texts.append("\n");
+                            for (int i = 0; i < textsList.size(); i++) {
+                                texts.append(AQUA + BOLD).append(i + 1).append(WHITE).append(". ").append(textsList.get(i));
+                                if (i < textsList.size() - 1) texts.append("\n");
                             }
                             serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Список ваших текстов", texts.toString(), 5f);
                         }
                         break;
                     }
                     case ("textsclear"): {
-                        serviceContext.getConfigManager().getConfig().setTexts(StringUtils.EMPTY);
+                        textsList.clear();
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно очистили все тексты.", 5f);
                         break;
                     }
@@ -145,7 +148,7 @@ public class SettingsModule extends Module {
                                         "\n" +
                                         WHITE + "Режим: " + YELLOW + BOLD + profile.get("anarchyMode");
 
-                                serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "ИНФОРМАЦИЯ О МОДЕРАТОРЕ", texts, 5f);
+                                serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "ИНФОРМАЦИЯ О МОДЕРАТОРЕ", texts, 10f);
                             } catch (Exception e) {
                                 serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в SettingsManager/onMessageSend: " + DARK_RED + e, 5f);
                             }
@@ -207,12 +210,15 @@ public class SettingsModule extends Module {
                                     NotificationType.SUCCESS,
                                     GREEN + BOLD + "СТАТИСТИКА МОДЕРАТОРА",
                                     texts,
-                                    5f
+                                    10f
                             );
                         } catch (Exception e) {
                             serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в SettingsManager/onMessageSend: " + DARK_RED + e, 5f);
                         }
                         break;
+                    }
+                    case ("spyfrz"): {
+
                     }
                     case ("copy"): {
                         serviceContext.getConfigManager().getConfig().setCopyButtonEnabled(!serviceContext.getConfigManager().getConfig().isCopyButtonEnabled());
@@ -234,16 +240,12 @@ public class SettingsModule extends Module {
                             return;
                         }
                         String text = commandSplit[2].replace("&", "§");
-                        if (text.contains("%%")) {
-                            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Текст не должен содержать '%%'.", 5f);
-                            return;
-                        }
-                        serviceContext.getConfigManager().getConfig().setTexts(serviceContext.getConfigManager().getConfig().getTexts().isEmpty() ? text : serviceContext.getConfigManager().getConfig().getTexts() + "%%" + text);
+                        textsList.add(text);
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы добавили новый текст.", 5f);
                         break;
                     }
                     case ("textremove"): {
-                        if (serviceContext.getConfigManager().getConfig().getTexts().isEmpty()) {
+                        if (textsList.isEmpty()) {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет настроенных текстов.", 5f);
                             return;
                         }
@@ -257,16 +259,11 @@ public class SettingsModule extends Module {
                             return;
                         }
                         int intIndex = Integer.parseInt(indexText) - 1;
-                        if (intIndex >= textsArray.length || intIndex < 0) {
+                        if (intIndex >= textsList.size() || intIndex < 0) {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Элемента с таким номером в списке ваших текстов не существует.", 5f);
                             return;
                         }
-                        ArrayList<String> textsArrayList = new ArrayList<>(Arrays.asList(textsArray));
-                        textsArrayList.remove(intIndex);
-                        serviceContext.getConfigManager().getConfig().setTexts(StringUtils.EMPTY);
-                        for (String s : textsArrayList) {
-                            serviceContext.getConfigManager().getConfig().setTexts(serviceContext.getConfigManager().getConfig().getTexts().isEmpty() ? s : serviceContext.getConfigManager().getConfig().getTexts() + "%%" + s);
-                        }
+                        textsList.remove(intIndex);
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы удалили текст номер " + commandSplit[2] + AQUA + BOLD + ".", 5f);
                         break;
                     }
@@ -274,20 +271,20 @@ public class SettingsModule extends Module {
                         if (commandSplit.length == 2) {
                             serviceContext.getConfigManager().getConfig().setCopyButtonText("§f§l[§a§lcopy§f§l]");
                             serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Текст кнопки был сброшен.", 5f);
-                            return;
+                        } else {
+                            serviceContext.getConfigManager().getConfig().setCopyButtonText(commandSplit[2].replace("&", "§"));
+                            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы установили новый текст кнопки копирования.", 5f);
                         }
-                        serviceContext.getConfigManager().getConfig().setCopyButtonText(commandSplit[2].replace("&", "§"));
-                        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы установили новый текст кнопки копирования.", 5f);
                         break;
                     }
                     case ("setmarker"): {
                         if (commandSplit.length == 2) {
                             serviceContext.getConfigManager().getConfig().setPlayerMarker("§d§l[CHECK]");
                             serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Текст метки был сброшен.", 5f);
-                            return;
+                        } else {
+                            serviceContext.getConfigManager().getConfig().setPlayerMarker(commandSplit[2].replace("&", "§"));
+                            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы установили новый текст маркера.", 5f);
                         }
-                        serviceContext.getConfigManager().getConfig().setPlayerMarker(commandSplit[2].replace("&", "§"));
-                        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы установили новый текст маркера.", 5f);
                         break;
                     }
                     case ("setspydelay"): {
@@ -316,7 +313,7 @@ public class SettingsModule extends Module {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Некорректное число.", 5f);
                             return;
                         }
-                        serviceContext.getConfigManager().getConfig().setSpyDelay(Integer.parseInt(valueText));
+                        serviceContext.getConfigManager().getConfig().setSoundsVolume(Integer.parseInt(valueText));
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы установили новую громкость звуков: " + serviceContext.getConfigManager().getConfig().getSoundsVolume() + ".", 5f);
                         break;
                     }
@@ -325,7 +322,7 @@ public class SettingsModule extends Module {
                 commandSplit = eventCommand.split(" ", 4);
                 switch (command) {
                     case ("textedit"): {
-                        if (serviceContext.getConfigManager().getConfig().getTexts().isEmpty()) {
+                        if (textsList.isEmpty()) {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет настроенных текстов.", 5f);
                             return;
                         }
@@ -343,7 +340,7 @@ public class SettingsModule extends Module {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали новый текст.", 5f);
                             return;
                         }
-                        if (index >= textsArray.length || index < 0) {
+                        if (index >= textsList.size() || index < 0) {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Элемента с таким номером в списке ваших текстов не существует.", 5f);
                             return;
                         }
@@ -352,12 +349,7 @@ public class SettingsModule extends Module {
                             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Текст не должен содержать '%%'.", 5f);
                             return;
                         }
-                        String[] textsList = serviceContext.getConfigManager().getConfig().getTexts().split("%%");
-                        textsList[index] = text;
-                        serviceContext.getConfigManager().getConfig().setTexts(StringUtils.EMPTY);
-                        for (String t : textsList) {
-                            serviceContext.getConfigManager().getConfig().setTexts(serviceContext.getConfigManager().getConfig().getTexts().isEmpty() ? t : serviceContext.getConfigManager().getConfig().getTexts() + "%%" + t);
-                        }
+                        textsList.set(index, text);
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы изменили текст номер " + (index + 1) + ".", 5f);
                         break;
                     }

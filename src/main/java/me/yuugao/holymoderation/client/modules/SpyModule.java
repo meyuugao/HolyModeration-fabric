@@ -2,7 +2,6 @@ package me.yuugao.holymoderation.client.modules;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
-
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
@@ -25,6 +24,14 @@ public class SpyModule extends Module {
     private boolean instantUpdate = false;
     private String lastKnownLocation = StringUtils.EMPTY;
 
+    private float anim = 0f;
+    private float animTarget = 0f;
+    private float currentWidth = 1f;
+    private float currentHeight = 1f;
+    private String display0 = StringUtils.EMPTY;
+    private String display1 = StringUtils.EMPTY;
+    private boolean clearDisplayWhenHidden = false;
+
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
         String eventCommand = event.getCommand();
@@ -32,7 +39,6 @@ public class SpyModule extends Module {
         if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
 
         if (commandSplit[1].equals("spy")) {
-
             if (commandSplit.length == 2) {
                 if (!serviceContext.getStateService().getSpyPlayer().isEmpty()) {
                     endSpy();
@@ -53,15 +59,26 @@ public class SpyModule extends Module {
             }
 
             startSpy(commandSplit[2]);
+        } else if (commandSplit[1].equals("spyfrz")) {
+            if (serviceContext.getStateService().isInHub()) {
+                serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "В хабе этого делать нельзя.", 5f);
+                return;
+            }
+
+            if (serviceContext.getStateService().getSpyPlayer().isEmpty()) {
+                serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы ни за кем не следите.", 5f);
+                return;
+            }
+
+            serviceContext.getCheckoutsService().startCheckOut(serviceContext.getStateService().getSpyPlayer(), serviceContext);
+            endSpy();
         }
     }
 
     @Subscribe
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
-        if (receivedText == null) {
-            return;
-        }
+        if (receivedText == null) return;
 
         if (checkingSpy) {
             if (receivedText.startsWith("----------")) {
@@ -69,37 +86,34 @@ public class SpyModule extends Module {
                     checkingSpy = false;
                     shouldUpdate = true;
                     processingPlaytimeInfo = false;
-                } else {
-                    processingPlaytimeInfo = true;
-                }
+                } else processingPlaytimeInfo = true;
             }
 
             if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок " + serviceContext.getStateService().getModerNickname())) {
                 event.setCancelled(true);
-                if (receivedText.equals("Игрок оффлайн")) {
+                if (receivedText.equals("Игрок оффлайн"))
                     serviceContext.getStateService().setSpyPlayerStatus("offline");
-                } else if (receivedText.split("сервере ")[1].startsWith("lobby")) {
+                else if (receivedText.split("сервере ")[1].startsWith("lobby"))
                     serviceContext.getStateService().setSpyPlayerStatus("lobby");
-                } else {
+                else
                     serviceContext.getStateService().setSpyPlayerStatus(serviceContext.getChatService().formatLocation(receivedText.split("сервере ")[1]));
-                }
                 serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
                 checkingSpy = false;
                 shouldUpdate = true;
             }
 
             if (receivedText.startsWith("Текущая")) {
-                String spyPlayerLocation = receivedText.split(": ")[1].substring(1, receivedText.split(": ")[1].length() - 1);
-                if (spyPlayerLocation.equals("Оффлайн")) {
+                String loc = receivedText.split(": ")[1];
+                loc = loc.substring(1, loc.length() - 1);
+                if (loc.equals("Оффлайн")) {
                     serviceContext.getStateService().setSpyPlayerStatus("offline");
                     serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
                     instantUpdate = true;
                 } else {
-                    if (lastKnownLocation.isEmpty()) {
-                        lastKnownLocation = spyPlayerLocation;
-                    } else if (!spyPlayerLocation.equals(lastKnownLocation)) {
+                    if (lastKnownLocation.isEmpty()) lastKnownLocation = loc;
+                    else if (!loc.equals(lastKnownLocation)) {
                         serviceContext.getStateService().setSpyPlayerStatus(StringUtils.EMPTY);
-                        lastKnownLocation = spyPlayerLocation;
+                        lastKnownLocation = loc;
                     }
                 }
             }
@@ -108,18 +122,16 @@ public class SpyModule extends Module {
                 serviceContext.getStateService().setSpyPlayerActivity(receivedText.split(": ")[1]);
             }
 
-            if (receivedText.startsWith("Активность") ||
-                    receivedText.startsWith("Общее время") ||
-                    receivedText.startsWith("Текущая") ||
-                    receivedText.startsWith("Время") ||
-                    receivedText.startsWith("Последняя") ||
-                    receivedText.startsWith("Последний") ||
-                    receivedText.startsWith("----------") ||
-                    receivedText.isEmpty()) {
+            if (receivedText.startsWith("Активность") || receivedText.startsWith("Общее время") ||
+                    receivedText.startsWith("Текущая") || receivedText.startsWith("Время") ||
+                    receivedText.startsWith("Последняя") || receivedText.startsWith("Последний") ||
+                    receivedText.startsWith("----------") || receivedText.isEmpty()) {
                 event.setCancelled(true);
             }
+
             if (shouldUpdate) {
-                instantUpdate = instantUpdate || (serviceContext.getStateService().getModerLocation().equals(serviceContext.getStateService().getSpyPlayerStatus()) && serviceContext.getStateService().getSpyPlayerActivity().isEmpty());
+                instantUpdate |= serviceContext.getStateService().getModerLocation().equals(serviceContext.getStateService().getSpyPlayerStatus())
+                        && serviceContext.getStateService().getSpyPlayerActivity().isEmpty();
                 serviceContext.getSchedulerService().getInstance().schedule(this::update, instantUpdate ? 500 : serviceContext.getConfigManager().getConfig().getSpyDelay(), instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
             }
@@ -140,46 +152,96 @@ public class SpyModule extends Module {
 
     @Subscribe
     public void onHudRender(HudRenderEvent event) {
-        String[] texts = getStringsToRender();
+        anim += (animTarget - anim) * 0.15f;
+        if (anim < 0.01f && display0.isEmpty() && display1.isEmpty()) return;
 
-        if (texts[0].isEmpty() && texts[1].isEmpty()) return;
+        String[] current = getStringsToRender();
+        if (!(current[0].isEmpty() && current[1].isEmpty())) {
+            display0 = current[0];
+            display1 = current[1];
+        }
 
-        DrawContext drawContext = event.getDrawContext();
-        TextRenderer textRenderer = serviceContext.getMinecraftService().getClient().textRenderer;
-        MatrixStack matrixStack = drawContext.getMatrices();
+        DrawContext ctx = event.getDrawContext();
+        TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
+        MatrixStack ms = ctx.getMatrices();
 
-        int textX = drawContext.getScaledWindowWidth() / 2 - textRenderer.getWidth(texts[0]) / 2;
-        int y1 = 20;
-        int y2 = 30;
-        float maxTextWidth = (float) Math.max(textRenderer.getWidth(texts[0]), textRenderer.getWidth(texts[1]));
-        float windowWidth = maxTextWidth + 8;
-        float blockHeight = (float) (textRenderer.fontHeight * 2 + (y2 - y1 - textRenderer.fontHeight));
-        float windowHeight = (float) (blockHeight * 1.3);
-        serviceContext.getRender2DService().renderRoundedRect(matrixStack, (float) (Math.floor((float) drawContext.getScaledWindowWidth() / 2 - windowWidth / 2) - 0.5f), y1 - ((windowHeight - blockHeight) / 2), windowWidth, windowHeight, 5f, new Color(0x4666FFFF));
-        serviceContext.getRender2DService().renderText(textRenderer, texts[0], textX, y1, 0xffffffff, false, drawContext);
-        serviceContext.getRender2DService().renderText(textRenderer, texts[1], textX, y2, 0xffffffff, false, drawContext);
+        int w1 = tr.getWidth(display0);
+        int w2 = tr.getWidth(display1);
+        float targetWidth = Math.max(w1, w2) + 16;
+
+        int lines = display1.isEmpty() ? 1 : 2;
+        int textBlockHeight = lines * tr.fontHeight + (lines == 2 ? 4 : 0);
+        float targetHeight = textBlockHeight + 12;
+
+        currentWidth += (targetWidth - currentWidth) * 0.2f;
+        currentHeight += (targetHeight - currentHeight) * 0.2f;
+
+        float width = Math.max(1f, currentWidth * anim);
+        float height = Math.max(1f, currentHeight * anim);
+
+        float cx = ctx.getScaledWindowWidth() / 2f;
+        float x = cx - width / 2f;
+        float y = 30f;
+
+        Color bg = new Color(12, 18, 38, 220);
+        Color outline = new Color(58, 123, 213);
+
+        serviceContext.getRender2DService().renderSoftRoundedRectOutline(
+                ms, x, y, width, height, 10f, bg, outline, 1.5f, 3
+        );
+
+        ms.push();
+        ms.translate(cx, y + height / 2f, 0);
+        ms.scale(anim, anim, 1f);
+
+        float textY = (float) -textBlockHeight / 2 + 0.5f;
+
+        serviceContext.getRender2DService().renderText(
+                tr,
+                display0,
+                -tr.getWidth(display0) / 2f,
+                textY,
+                0xffffffff,
+                false,
+                ctx
+        );
+
+        if (!display1.isEmpty()) {
+            serviceContext.getRender2DService().renderText(
+                    tr,
+                    display1,
+                    -tr.getWidth(display1) / 2f,
+                    textY + tr.fontHeight + 4,
+                    0xffffffff,
+                    false,
+                    ctx
+            );
+        }
+
+        ms.pop();
+
+        if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
+            display0 = display1 = StringUtils.EMPTY;
+            clearDisplayWhenHidden = false;
+        }
     }
 
     private String @NotNull [] getStringsToRender() {
-        String[] texts = new String[]{"", ""};
-        if (!serviceContext.getStateService().getSpyPlayer().isEmpty()) {
-            if (serviceContext.getStateService().getSpyPlayerStatus().isEmpty()) {
-                texts = new String[]{serviceContext.getStateService().getSpyPlayer(), ""};
-            } else {
-                texts = switch (serviceContext.getStateService().getSpyPlayerStatus()) {
-                    case ("stop") ->
-                            new String[]{"Слежка за игроком " + serviceContext.getStateService().getSpyPlayer() + " была приостановлена", ""};
-                    case ("offline") ->
-                            new String[]{"Игрок " + serviceContext.getStateService().getSpyPlayer() + " оффлайн", ""};
-                    case ("lobby") ->
-                            new String[]{"Игрок " + serviceContext.getStateService().getSpyPlayer() + " находится в лобби", ""};
-                    default ->
-                            new String[]{"Игрок " + serviceContext.getStateService().getSpyPlayer() + " находится на " + serviceContext.getStateService().getSpyPlayerStatus(),
-                                    serviceContext.getStateService().getSpyPlayerActivity() == null ? "" : "Активность: " + serviceContext.getStateService().getSpyPlayerActivity()};
-                };
-            }
-        }
-        return texts;
+        String spyPlayer = serviceContext.getStateService().getSpyPlayer();
+        if (spyPlayer.isEmpty()) return new String[]{"", ""};
+
+        if (serviceContext.getStateService().getSpyPlayerStatus().isEmpty())
+            return new String[]{spyPlayer, ""};
+
+        return switch (serviceContext.getStateService().getSpyPlayerStatus()) {
+            case "stop" -> new String[]{"Слежка приостановлена", ""};
+            case "offline" -> new String[]{"Игрок " + spyPlayer + " оффлайн", ""};
+            case "lobby" -> new String[]{"Игрок " + spyPlayer + " в лобби", ""};
+            default -> new String[]{
+                    "Игрок " + spyPlayer + " находится на " + serviceContext.getStateService().getSpyPlayerStatus(),
+                    serviceContext.getStateService().getSpyPlayerActivity() == null ? "" : "Активность: " + serviceContext.getStateService().getSpyPlayerActivity()
+            };
+        };
     }
 
     private void tryInit() {
@@ -208,40 +270,42 @@ public class SpyModule extends Module {
     private void startSpy(String player) {
         endSpy();
         serviceContext.getStateService().setSpyPlayer(player);
-        serviceContext.getSchedulerService().getInstance().schedule(() -> {
-            enabled = true;
-            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка начата", 5f);
-            update();
-        }, 250, TimeUnit.MILLISECONDS);
-    }
-
-    private void update() {
-        if (enabled) {
-            if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-                endSpy();
-                return;
-            }
-
-            checkingSpy = true;
-            if (!serviceContext.getStateService().isInHub() && serviceContext.getStateService().isGameInitCompleted()) {
-                if (!serviceContext.getStateService().getModerLocation().equals(serviceContext.getStateService().getSpyPlayerStatus())) {
-                    serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
-                    serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getSpyPlayer());
-                } else {
-                    serviceContext.getChatService().chatMessage("/playtime " + serviceContext.getStateService().getSpyPlayer());
-                }
-            }
-        }
+        enabled = true;
+        animTarget = 1f;
+        display0 = getStringsToRender()[0];
+        display1 = getStringsToRender()[1];
+        currentWidth = Math.max(1f, currentWidth);
+        currentHeight = Math.max(1f, currentHeight);
+        serviceContext.getSchedulerService().getInstance().schedule(this::update, 250, TimeUnit.MILLISECONDS);
+        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка начата", 5f);
     }
 
     private void endSpy() {
-        if (!serviceContext.getStateService().getSpyPlayer().isEmpty()) {
-            enabled = false;
-            lastKnownLocation = StringUtils.EMPTY;
-            serviceContext.getStateService().setSpyPlayer(StringUtils.EMPTY);
-            serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
-            serviceContext.getStateService().setSpyPlayerStatus(StringUtils.EMPTY);
-            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка остановлена.", 5f);
+        display0 = getStringsToRender()[0];
+        display1 = getStringsToRender()[1];
+        enabled = false;
+        animTarget = 0f;
+        lastKnownLocation = StringUtils.EMPTY;
+        serviceContext.getStateService().setSpyPlayer(StringUtils.EMPTY);
+        serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
+        serviceContext.getStateService().setSpyPlayerStatus(StringUtils.EMPTY);
+        clearDisplayWhenHidden = true;
+        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка остановлена.", 5f);
+    }
+
+    private void update() {
+        if (!enabled) return;
+        if (!serviceContext.getStateService().getPlayer().isEmpty()) {
+            endSpy();
+            return;
+        }
+
+        checkingSpy = true;
+        if (!serviceContext.getStateService().isInHub() && serviceContext.getStateService().isGameInitCompleted()) {
+            if (!serviceContext.getStateService().getModerLocation().equals(serviceContext.getStateService().getSpyPlayerStatus()))
+                serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getSpyPlayer());
+            else
+                serviceContext.getChatService().chatMessage("/playtime " + serviceContext.getStateService().getSpyPlayer());
         }
     }
 }

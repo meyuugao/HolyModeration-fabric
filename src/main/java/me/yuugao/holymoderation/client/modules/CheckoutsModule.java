@@ -6,6 +6,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class CheckoutsModule extends Module {
     private final String[] FreezerCommands = {
-            "/freezing", "freezing", "frz", "sban", "sendtexts", "unfreezing", "unfrz"
+            "/freezing", "/frz", "freezing", "frz", "sban", "sendtexts", "unfreezing", "unfrz"
     };
 
     private final String[] ApiCommands = {
@@ -36,7 +37,7 @@ public class CheckoutsModule extends Module {
         if (eventCommand.startsWith("hm")) {
             command = commandSplit[1];
         } else {
-            command = commandSplit[0];
+            command = "/" + commandSplit[0];
         }
 
         if (serviceContext.getChatService().isArrayContains(FreezerCommands, command) || serviceContext.getChatService().isArrayContains(ApiCommands, command)) {
@@ -47,16 +48,16 @@ public class CheckoutsModule extends Module {
         }
         if (serviceContext.getChatService().isArrayContains(FreezerCommands, command)) {
             switch (command) {
-                case ("/freezing"): {
+                case ("/freezing"):
+                case ("/frz"): {
+                    event.setCancelled(true);
                     commandSplit = eventCommand.split(" ", 2);
                     if (commandSplit.length < 2) {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
-                        event.setCancelled(true);
                         return;
                     }
                     if (!serviceContext.getStateService().getPlayer().isEmpty()) {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы уже проверяете какого-то игрока. Сначала закончите текущую проверку --> " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
-                        event.setCancelled(true);
                         return;
                     }
                     serviceContext.getCheckoutsService().startCheckOut(commandSplit[1], serviceContext);
@@ -225,9 +226,10 @@ public class CheckoutsModule extends Module {
             String msgText;
             if (receivedText.startsWith("[" + serviceContext.getStateService().getPlayer() + " ->") && serviceContext.getChatService().checkCorrectLong(msgText = receivedText.split("я]", 0)[1].replace(" ", "")) && msgText.length() >= 9 && msgText.length() <= 11) {
                 serviceContext.getChatService().copyToClipboard(msgText);
-            }
-            if (serviceContext.getChatService().checkCorrectLong(chatText = receivedText.split(":")[1].replace(" ", "")) && chatText.length() >= 9 && chatText.length() <= 11) {
+                ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Скопирован анидеск из лс: " + msgText, 5f);
+            } else if (serviceContext.getChatService().checkCorrectLong(chatText = receivedText.split(":")[1].replace(" ", "")) && chatText.length() >= 9 && chatText.length() <= 11) {
                 serviceContext.getChatService().copyToClipboard(chatText);
+                ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Скопирован анидеск из чата: " + chatText, 5f);
             }
         }
 

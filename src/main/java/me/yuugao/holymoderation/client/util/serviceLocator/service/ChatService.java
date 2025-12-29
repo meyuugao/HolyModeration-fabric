@@ -5,7 +5,6 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.ClickEvent;
@@ -19,8 +18,8 @@ public class ChatService extends Service {
     public final Text HMTextComponent = Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
     public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
     public final String[] NoArgCommands = {
-            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha",
-            "autotp", "autovanish", "copy", "disable", "enable", "me", "net", "sounds", "stats", "textsclear", "textslist",
+            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
+            "copy", "disable", "enable", "me", "net", "sounds", "spyfrz", "stats", "textsclear", "textslist",
             "unfreezing", "unfrz", "twinks"
     };
     public final String[] PlayerCommands = {
@@ -37,7 +36,7 @@ public class ChatService extends Service {
     };
 
     public void chatMessage(String message) {
-        ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
+        ClientPlayNetworkHandler networkHandler = ServiceLocator.getMinecraftService().getClient().getNetworkHandler();
         if (networkHandler != null) {
             if (message.startsWith("/")) {
                 networkHandler.sendCommand(message.substring(1));

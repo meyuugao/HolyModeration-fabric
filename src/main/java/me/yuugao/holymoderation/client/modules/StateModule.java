@@ -12,8 +12,6 @@ import net.minecraft.world.GameMode;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.AbstractMap;
-
 public class StateModule extends Module {
     @Subscribe(priority = 100)
     public void onServerConnect(ServerConnectEvent event) {
@@ -66,6 +64,7 @@ public class StateModule extends Module {
 
         if (serviceContext.getStateService().isCheckingTwinks()) {
             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Дождитесь окончания проверки твинков.", 5f);
+            event.setCancelled(true);
             return;
         }
 
@@ -75,6 +74,8 @@ public class StateModule extends Module {
 
         switch (messageSplit[1]) {
             case ("disable"): {
+                event.setCancelled(true);
+
                 serviceContext.getStateService().setEnabled(false);
                 serviceContext.getStateService().block();
                 serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод выключен!", 5f);

@@ -3,10 +3,7 @@ package me.yuugao.holymoderation.client.config;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.glfw.GLFW;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import com.google.gson.annotations.Expose;
 import lombok.Getter;
@@ -32,7 +29,7 @@ public class Config {
     private boolean soundsEnabled = true;
     @Expose
     @DontObf(ObfRule.MAP_FIELD)
-    private int soundsVolume = 50;
+    private int soundsVolume = 70;
     @Expose
     @DontObf(ObfRule.MAP_FIELD)
     private int spyDelay = 1;
@@ -48,7 +45,7 @@ public class Config {
 
     @Expose
     @DontObf(ObfRule.MAP_FIELD)
-    private String texts = StringUtils.EMPTY;
+    private final List<String> textsList = new ArrayList<>();
 
     @Expose
     @DontObf(ObfRule.MAP_FIELD)

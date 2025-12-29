@@ -69,6 +69,7 @@ public class HolyModerationClient implements ClientModInitializer {
             }
 
             dispatcher.register(hm);
+            dispatcher.register(ClientCommandManager.literal("frz").then(ClientCommandManager.argument("player", EntityArgumentType.player())));
         });
     }
 

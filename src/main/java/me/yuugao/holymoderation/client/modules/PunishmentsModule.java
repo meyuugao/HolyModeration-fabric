@@ -45,7 +45,7 @@ public class PunishmentsModule extends Module {
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ", 3);
 
-        String command = commandSplit[0];
+        String command = "/" + commandSplit[0];
 
         if (!eventCommand.equals(StrangeMessage)) {
             StrangePunishmentConfirm = false;

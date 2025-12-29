@@ -6,6 +6,7 @@ import static me.yuugao.holymoderation.client.util.Colors.GREEN;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 public class ReportCopyModule extends Module {
@@ -32,7 +33,8 @@ public class ReportCopyModule extends Module {
 
         if (receivedText.startsWith("▶ [ПКМ]") || receivedText.startsWith("◤          Подано")) {
             messageIsReportInfo = false;
-            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Ник игрока скопирован.", 5f);
+            ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех",
+                    "Ник игрока из репорта скопирован: " + receivedText.split(": ")[1].split(" ")[0], 5f);
         }
     }
 }

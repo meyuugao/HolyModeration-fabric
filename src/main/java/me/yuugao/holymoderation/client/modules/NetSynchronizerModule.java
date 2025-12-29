@@ -74,8 +74,8 @@ public class NetSynchronizerModule extends Module {
                     "Нажмите, чтобы перейти на страницу с новой версией мода.",
                     "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/" + lastVersion));
 
-           serviceContext.getStateService().block();
-           return true;
+            serviceContext.getStateService().block();
+            return true;
         }
 
         return false;
