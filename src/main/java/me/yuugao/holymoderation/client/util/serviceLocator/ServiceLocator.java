@@ -57,7 +57,7 @@ public class ServiceLocator {
     }
 
     private static void initializeLoggerService(Logger logger) {
-        loggerService = new LoggerService(logger, chatService, soundService);
+        loggerService = new LoggerService(logger);
         eventBus.setLogger(loggerService);
         chatService.setLoggerService(loggerService);
         checkoutsService.setLoggerService(loggerService);
@@ -70,6 +70,6 @@ public class ServiceLocator {
         schedulerService.setLoggerService(loggerService);
         soundService.setLoggerService(loggerService);
         stateService.setLoggerService(loggerService);
-        loggerService.getLogger().info("Logger service has been initialized");
+        loggerService.logger().info("Logger service has been initialized");
     }
 }

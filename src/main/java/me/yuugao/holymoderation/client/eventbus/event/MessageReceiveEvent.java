@@ -9,7 +9,6 @@ import lombok.Setter;
 @Setter
 public class MessageReceiveEvent extends Event {
     private Text message;
-    private boolean cancelled = false;
 
     public MessageReceiveEvent(Text message) {
         this.message = message;

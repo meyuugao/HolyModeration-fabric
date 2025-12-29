@@ -1,5 +1,9 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
+import me.yuugao.holymoderation.client.HolyModerationClient;
+import me.yuugao.holymoderation.client.modules.StateModule;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
@@ -11,10 +15,11 @@ import lombok.Setter;
 @Getter
 @Setter
 public class StateService extends Service {
+    private boolean enabled = true;
+    private boolean blocked = false;
     private boolean connected = false;
     private boolean isOnHW = false;
     private boolean gameInitCompleted = false;
-    private boolean apiInitCompleted = false;
     private boolean inHub = false;
     private boolean vanishEnabled = false;
     private boolean flyEnabled = false;
@@ -28,6 +33,7 @@ public class StateService extends Service {
     private String moderNickname = StringUtils.EMPTY;
     private String moderLocation = StringUtils.EMPTY;
     private String vkUrl = StringUtils.EMPTY;
+    private boolean checkingTwinks = false;
     private int rank = 0;
     private Map<String, Object> journalProfile = new HashMap<>();
     private Map<String, Object> journalStats = new HashMap<>();
@@ -36,7 +42,6 @@ public class StateService extends Service {
         this.connected = false;
         this.isOnHW = false;
         this.gameInitCompleted = false;
-        this.apiInitCompleted = false;
         this.inHub = false;
         this.vanishEnabled = false;
         this.flyEnabled = false;
@@ -53,5 +58,16 @@ public class StateService extends Service {
         this.rank = 0;
         journalProfile = new HashMap<>();
         journalStats = new HashMap<>();
+    }
+
+    public void block() {
+        blocked = true;
+        ServiceLocator.getEventBus().clear();
+        ServiceLocator.getEventBus().register(new StateModule());
+    }
+
+    public void unblock() {
+        blocked = false;
+        HolyModerationClient.registerEventListeners(ServiceLocator.getEventBus());
     }
 }

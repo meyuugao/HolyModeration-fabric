@@ -1,5 +1,8 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
+import static me.yuugao.holymoderation.client.util.Colors.*;
+
+
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.font.TextRenderer;
@@ -63,7 +66,7 @@ public class Render2DService extends Service {
                     VertexFormats.POSITION_COLOR_TEXTURE
             );
         } catch (Exception e) {
-            loggerService.printException("Исключение в Render2DService/initializeShaders: " + e);
+            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в Render2DService/initializeShaders: " + DARK_RED + e, 5f);
         }
     }
 

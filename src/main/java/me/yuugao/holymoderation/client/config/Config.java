@@ -32,6 +32,9 @@ public class Config {
     private boolean soundsEnabled = true;
     @Expose
     @DontObf(ObfRule.MAP_FIELD)
+    private int soundsVolume = 50;
+    @Expose
+    @DontObf(ObfRule.MAP_FIELD)
     private int spyDelay = 1;
     @Expose
     @DontObf(ObfRule.MAP_FIELD)

@@ -20,6 +20,6 @@ public class MinecraftClientMixin {
     @Inject(method = "onInitFinished", at = @At("TAIL"))
     private void onInitFinished(CallbackInfo ci) {
         ServiceLocator.getRender2DService().initializeShaders();
-        ServiceLocator.getLoggerService().getLogger().info("Shaders has been initialized");
+        ServiceLocator.getLoggerService().logger().info("Shaders has been initialized");
     }
 }

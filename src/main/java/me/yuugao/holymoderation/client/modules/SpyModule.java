@@ -5,6 +5,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -25,32 +26,33 @@ public class SpyModule extends Module {
     private String lastKnownLocation = StringUtils.EMPTY;
 
     @Subscribe
-    public void onMessageSend(MessageSendEvent event) {
-        String[] messageSplit = event.getContent().split(" ", 2);
+    public void onCommandSend(CommandSendEvent event) {
+        String eventCommand = event.getCommand();
+        String[] commandSplit = eventCommand.split(" ", 3);
+        if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
 
-        if (messageSplit[0].equals(".spy")) {
-            event.setCancelled(true);
+        if (commandSplit[1].equals("spy")) {
 
-            if (messageSplit.length == 1) {
+            if (commandSplit.length == 2) {
                 if (!serviceContext.getStateService().getSpyPlayer().isEmpty()) {
                     endSpy();
                 } else {
-                    serviceContext.getLoggerService().printError("Вы никого не отслеживаете.");
+                    serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы никого не отслеживаете.", 5f);
                 }
                 return;
             }
 
             if (serviceContext.getStateService().isInHub()) {
-                serviceContext.getLoggerService().printError("В хабе этого делать нельзя.");
+                serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "В хабе этого делать нельзя.", 5f);
                 return;
             }
 
             if (!serviceContext.getStateService().getSpyPlayer().isEmpty()) {
-                serviceContext.getLoggerService().printError("Вы уже следите за кем-то --> " + GOLD + BOLD + ".spy" + WHITE + RED + BOLD + ".");
+                serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы уже следите за кем-то --> " + GOLD + BOLD + "/hm spy" + WHITE + RED + BOLD + ".", 5f);
                 return;
             }
 
-            startSpy(messageSplit[1]);
+            startSpy(commandSplit[2]);
         }
     }
 
@@ -187,11 +189,11 @@ public class SpyModule extends Module {
                     if (serviceContext.getStateService().isInHub()) {
                         serviceContext.getStateService().setSpyPlayerActivity(lastKnownLocation = StringUtils.EMPTY);
                         serviceContext.getStateService().setSpyPlayerStatus("stop");
-                        serviceContext.getLoggerService().printSuccess("Слежка приостановлена.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка приостановлена.", 5f);
                     } else {
                         if (!serviceContext.getStateService().getModerLocation().isEmpty()) {
                             update();
-                            serviceContext.getLoggerService().printSuccess("Слежка возобновлена.");
+                            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка возобновлена.", 5f);
                         } else {
                             tryInit();
                         }
@@ -208,7 +210,7 @@ public class SpyModule extends Module {
         serviceContext.getStateService().setSpyPlayer(player);
         serviceContext.getSchedulerService().getInstance().schedule(() -> {
             enabled = true;
-            serviceContext.getLoggerService().printSuccess("Слежка начата");
+            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка начата", 5f);
             update();
         }, 250, TimeUnit.MILLISECONDS);
     }
@@ -239,7 +241,7 @@ public class SpyModule extends Module {
             serviceContext.getStateService().setSpyPlayer(StringUtils.EMPTY);
             serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
             serviceContext.getStateService().setSpyPlayerStatus(StringUtils.EMPTY);
-            serviceContext.getLoggerService().printSuccess("Слежка остановлена.");
+            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка остановлена.", 5f);
         }
     }
 }

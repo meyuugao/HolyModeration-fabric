@@ -18,6 +18,23 @@ import java.util.Arrays;
 public class ChatService extends Service {
     public final Text HMTextComponent = Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
     public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
+    public final String[] NoArgCommands = {
+            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha",
+            "autotp", "autovanish", "copy", "disable", "enable", "me", "net", "sounds", "stats", "textsclear", "textslist",
+            "unfreezing", "unfrz", "twinks"
+    };
+    public final String[] PlayerCommands = {
+            "freezing", "frz", "sendtexts", "spy"
+    };
+    public final String[] OneArgCommands = {
+            "setapitoken", "setcopy", "setmarker", "setspydelay", "textadd", "textremove", "setsoundsvolume"
+    };
+    public final String[] TwoArgCommands = {
+            "sban", "startcheckout", "textedit"
+    };
+    public final String[] FourArgCommands = {
+            "endcheckout"
+    };
 
     public void chatMessage(String message) {
         ClientPlayNetworkHandler networkHandler = MinecraftClient.getInstance().getNetworkHandler();
@@ -27,13 +44,6 @@ public class ChatService extends Service {
             } else {
                 networkHandler.sendChatMessage(message);
             }
-        }
-    }
-
-    public void clientMessage(String message) {
-        ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
-        if (player != null) {
-            player.sendMessage(generateComponent(HMTextComponent, Text.of(message)), false);
         }
     }
 
@@ -101,7 +111,7 @@ public class ChatService extends Service {
                 throw new Exception("Неизвестная OS.");
             }
         } catch (Exception e) {
-            loggerService.printException("Исключение в ChatService/copyToClipboard: " + e);
+            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в ChatService/copyToClipboard: " + DARK_RED + e, 5f);
         }
     }
 

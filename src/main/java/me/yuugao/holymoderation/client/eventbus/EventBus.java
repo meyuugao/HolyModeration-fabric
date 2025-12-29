@@ -35,7 +35,7 @@ public class EventBus {
                         subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(subscriber);
                         subscribers.get(eventType).sort((s1, s2) -> Integer.compare(s2.priority(), s1.priority()));
                         subscriber.target.setLogger(loggerService);
-                        loggerService.getLogger().debug("Eventbus: Registered new subscriber - {}", subscriber);
+                        loggerService.logger().debug("Eventbus: Registered new subscriber - {}", subscriber);
                     }
                 }
             }
@@ -47,13 +47,13 @@ public class EventBus {
             for (List<Subscriber> subscriberList : subscribers.values()) {
                 subscriberList.removeIf(subscriber -> subscriber.target.equals(module));
             }
-            loggerService.getLogger().debug("Eventbus: Unregistered module - {}", module);
+            loggerService.logger().debug("Eventbus: Unregistered module - {}", module);
         }
     }
 
     public void clear() {
         subscribers.clear();
-        loggerService.getLogger().debug("Eventbus: All subscribers cleared");
+        loggerService.logger().debug("Eventbus: All subscribers cleared");
     }
 
     public void invokeEvent(Event event) {
@@ -66,6 +66,10 @@ public class EventBus {
     private void executeSubscribersSync(List<Subscriber> subscribers, Event event) {
         for (Subscriber subscriber : subscribers) {
             try {
+                if (event.isCancelled() || !this.subscribers.get(event.getClass()).contains(subscriber)) {
+                    break;
+                }
+
                 subscriber.invoke(event);
             } catch (Exception e) {
                 loggerService.printException("Error in subscriber " + subscriber + ": " + e);

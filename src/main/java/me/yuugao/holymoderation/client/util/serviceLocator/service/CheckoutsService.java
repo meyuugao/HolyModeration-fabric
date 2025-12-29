@@ -83,7 +83,7 @@ public class CheckoutsService extends Service {
 
     public void sendTexts(String player, ServiceContext serviceContext) {
         if (serviceContext.getConfigManager().getConfig().getTexts().isEmpty()) {
-            serviceContext.getLoggerService().printError("У вас нет настроенных текстов для отправки. Добавить текст --> " + GOLD + GOLD + BOLD + ".textadd" + WHITE);
+            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет настроенных текстов для отправки. Добавить текст --> " + GOLD + GOLD + BOLD + "/hm textadd" + WHITE, 5f);
         } else {
             for (String text : serviceContext.getConfigManager().getConfig().getTexts().split("%%", 0)) {
                 serviceContext.getChatService().chatMessage("/msg " + player + " " + text.replace("§", "&"));

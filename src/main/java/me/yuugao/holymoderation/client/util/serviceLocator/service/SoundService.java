@@ -1,8 +1,5 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
-import static me.yuugao.holymoderation.client.util.Colors.BOLD;
-import static me.yuugao.holymoderation.client.util.Colors.RED;
-
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
@@ -17,7 +14,7 @@ import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 
 public class SoundService extends Service {
-    public void playSound(String soundName, int volume) {
+    public void playSound(String soundName) {
         if (ServiceLocator.getConfigManager().getConfig().isSoundsEnabled()) {
             try {
                 Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
@@ -30,7 +27,7 @@ public class SoundService extends Service {
                     FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
                     float minGain = gainControl.getMinimum();
                     float maxGain = gainControl.getMaximum();
-                    float gain = minGain + (volume / 100.0f) * (maxGain - minGain);
+                    float gain = minGain + (ServiceLocator.getConfigManager().getConfig().getSoundsVolume() / 100.0f) * (maxGain - minGain);
                     gainControl.setValue(gain);
                 }
 
@@ -41,7 +38,7 @@ public class SoundService extends Service {
                     }
                 });
             } catch (Exception e) {
-                ServiceLocator.getChatService().clientMessage(RED + BOLD + "Исключение в SoundService/playSound: " + e);
+                loggerService.printException("Исключение в SoundService/playSound: " + e);
             }
         }
     }

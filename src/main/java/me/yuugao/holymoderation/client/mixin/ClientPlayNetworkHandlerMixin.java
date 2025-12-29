@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.mixin;
 
 
+import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
@@ -30,6 +31,17 @@ public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
     private void sendChatMessage(String content, CallbackInfo ci) {
         MessageSendEvent event = new MessageSendEvent(content);
+
+        ServiceLocator.getEventBus().invokeEvent(event);
+
+        if (event.isCancelled()) {
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "sendChatCommand", at = @At("HEAD"), cancellable = true)
+    private void sendCommand(String command, CallbackInfo ci) {
+        CommandSendEvent event = new CommandSendEvent(command);
 
         ServiceLocator.getEventBus().invokeEvent(event);
 

@@ -4,17 +4,35 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import org.apache.commons.lang3.StringUtils;
 
 public class PunishmentsModule extends Module {
-    private final String[] PunishmentsCommands = {"/mute", "/muteip", "/tempmute", "/tempmuteip", "/ban", "/banip", "/tempban", "/warn"};
-    private final String[] TempPunishments = {"/tempmute", "/tempmuteip", "/tempban"};
-    private final String[] InfinityPunishments = {"/mute", "/muteip", "/ban", "/banip"};
-    private final String[] BanCommands = {"/ban", "/banip", "/tempban"};
-    private final String[] MuteCommands = {"/mute", "/muteip", "/tempmute", "/tempmuteip"};
-    private final String[] VkCommands = {"/mute", "/muteip", "/ban", "/banip", "/tempban"};
+    private final String[] PunishmentsCommands = {
+            "/mute", "/muteip", "/tempmute", "/tempmuteip", "/ban", "/banip", "/tempban", "/warn"
+    };
+
+    private final String[] TempPunishments = {
+            "/tempmute", "/tempmuteip", "/tempban"
+    };
+
+    private final String[] InfinityPunishments = {
+            "/mute", "/muteip", "/ban", "/banip"
+    };
+
+    private final String[] BanCommands = {
+            "/ban", "/banip", "/tempban"
+    };
+
+    private final String[] MuteCommands = {
+            "/mute", "/muteip", "/tempmute", "/tempmuteip"
+    };
+
+    private final String[] VkCommands = {
+            "/mute", "/muteip", "/ban", "/banip", "/tempban"
+    };
 
     private boolean nicknameHasChar = false;
     private boolean StrangePunishmentConfirm = false;
@@ -23,23 +41,24 @@ public class PunishmentsModule extends Module {
     private String StrangeFrzMessage = StringUtils.EMPTY;
 
     @Subscribe
-    public void onMessageSend(MessageSendEvent event) {
-        String message = event.getContent();
-        String[] messageSplit = message.split(" ", 3);
-        String command = messageSplit[0];
+    public void onCommandSend(CommandSendEvent event) {
+        String eventCommand = event.getCommand();
+        String[] commandSplit = eventCommand.split(" ", 3);
 
-        if (!message.equals(StrangeMessage)) {
+        String command = commandSplit[0];
+
+        if (!eventCommand.equals(StrangeMessage)) {
             StrangePunishmentConfirm = false;
         }
 
-        if (!message.equals(StrangeFrzMessage)) {
+        if (!eventCommand.equals(StrangeFrzMessage)) {
             StrangeFrzPunishmentConfirm = false;
         }
 
         if (serviceContext.getChatService().isArrayContains(PunishmentsCommands, command)) {
             event.setCancelled(true);
-            if (messageSplit.length > 1) {
-                String nickname = messageSplit[1];
+            if (commandSplit.length > 1) {
+                String nickname = commandSplit[1];
                 char lastChar = nickname.charAt(nickname.length() - 1);
                 for (char ch : serviceContext.getChatService().Chars) {
                     if (nickname.contains(String.valueOf(ch))) {
@@ -48,14 +67,14 @@ public class PunishmentsModule extends Module {
                     }
                 }
                 if (nicknameHasChar) {
-                    serviceContext.getLoggerService().printError("Некорректный никнейм.");
+                    serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Некорректный никнейм.", 5f);
                     return;
                 }
                 if (!String.valueOf(lastChar).matches("(?i)[smhd]") && serviceContext.getChatService().checkCorrectInt(nickname.substring(0, nickname.length() - 1))) {
                     if (!StrangePunishmentConfirm) {
-                        StrangeMessage = message;
+                        StrangeMessage = eventCommand;
                         StrangePunishmentConfirm = true;
-                        serviceContext.getLoggerService().printError(WHITE + BOLD + "Вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + BOLD + ", что хотите выдать наказание игроку " + GREEN + BOLD + nickname + WHITE + BOLD + "? Если вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + BOLD + ", то введите команду ещё раз.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", WHITE + "Вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + ", что хотите выдать наказание игроку " + GREEN + BOLD + nickname + WHITE + "? Если вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + ", то введите команду ещё раз.", 5f);
                         return;
                     } else {
                         StrangePunishmentConfirm = false;
@@ -64,9 +83,9 @@ public class PunishmentsModule extends Module {
                 }
                 if (nickname.equals(serviceContext.getStateService().getPlayer())) {
                     if (!StrangeFrzPunishmentConfirm) {
-                        StrangeFrzMessage = message;
+                        StrangeFrzMessage = eventCommand;
                         StrangeFrzPunishmentConfirm = true;
-                        serviceContext.getLoggerService().printError(WHITE + BOLD + "Вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + BOLD + ", что хотите выдать наказание игроку, который у вас на проверке? Если вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + BOLD + ", то введите команду ещё раз.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", WHITE + "Вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + ", что хотите выдать наказание игроку, который у вас на проверке? Если вы " + RED + BOLD + "УВЕРЕНЫ" + WHITE + ", то введите команду ещё раз.", 5f);
                         return;
                     } else {
                         StrangeFrzMessage = StringUtils.EMPTY;
@@ -75,21 +94,21 @@ public class PunishmentsModule extends Module {
             }
 
             if (serviceContext.getChatService().isArrayContains(TempPunishments, command)) {
-                messageSplit = message.split(" ", 4);
-                switch (messageSplit.length) {
+                commandSplit = eventCommand.split(" ", 4);
+                switch (commandSplit.length) {
                     case (1):
-                        serviceContext.getLoggerService().printError("Вы не указали ник игрока, время и причину.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока, время и причину.", 5f);
                         return;
                     case (2):
-                        serviceContext.getLoggerService().printError("Вы не указали время и причину.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали время и причину.", 5f);
                         return;
                     case (3):
-                        serviceContext.getLoggerService().printError("Вы не указали причину.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали причину.", 5f);
                         return;
                 }
-                String nick = messageSplit[1];
-                String time = messageSplit[2];
-                String reason = messageSplit[3];
+                String nick = commandSplit[1];
+                String time = commandSplit[2];
+                String reason = commandSplit[3];
                 if (serviceContext.getChatService().isArrayContains(MuteCommands, command)) {
                     if (!serviceContext.getPunishmentsService().punish(command, nick, time, reason, false, serviceContext)) {
                         return;
@@ -101,17 +120,17 @@ public class PunishmentsModule extends Module {
                     }
                 }
             } else if (serviceContext.getChatService().isArrayContains(InfinityPunishments, command) || command.equals("/warn")) {
-                messageSplit = message.split(" ", 3);
-                switch (messageSplit.length) {
+                commandSplit = eventCommand.split(" ", 3);
+                switch (commandSplit.length) {
                     case (1):
-                        serviceContext.getLoggerService().printError("Вы не указали ник игрока и причину.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока и причину.", 5f);
                         return;
                     case (2):
-                        serviceContext.getLoggerService().printError("Вы не указали причину.");
+                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали причину.", 5f);
                         return;
                 }
-                String nick = messageSplit[1];
-                String reason = messageSplit[2];
+                String nick = commandSplit[1];
+                String reason = commandSplit[2];
                 serviceContext.getPunishmentsService().punish(command, nick, reason, serviceContext.getChatService().isArrayContains(VkCommands, command), serviceContext);
             }
 

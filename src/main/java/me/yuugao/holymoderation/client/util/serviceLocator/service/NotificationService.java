@@ -18,6 +18,18 @@ public class NotificationService extends Service {
 
     public void addNotification(NotificationType type, String title, String text, float liveTime) {
         notificationPool.add(new Notification(type, title, text, liveTime));
+        ServiceLocator.getSoundService().playSound(type.getSoundName());
+    }
+
+    public void addNotification(NotificationType type, String title, String text, float liveTime, String soundName) {
+        notificationPool.add(new Notification(type, title, text, liveTime));
+        if (!soundName.isEmpty()) {
+            ServiceLocator.getSoundService().playSound(soundName);
+        }
+    }
+
+    public void clearNotifications() {
+        notificationPool.clear();
     }
 
     public void renderNotifications(DrawContext drawContext) {
@@ -42,8 +54,15 @@ public class NotificationService extends Service {
 
         for (Notification n : notificationPool) {
             int wrap = Math.max(1, (int) (width - padding * 2));
-            n.titleLines = tr.wrapLines(Text.literal(n.title), wrap);
-            n.bodyLines = tr.wrapLines(Text.literal(n.text), wrap);
+            n.titleLines.clear();
+            for (String s : n.title.split("\n")) {
+                n.titleLines.addAll(tr.wrapLines(Text.literal(s), wrap));
+            }
+
+            n.bodyLines.clear();
+            for (String s : n.text.split("\n")) {
+                n.bodyLines.addAll(tr.wrapLines(Text.literal(s), wrap));
+            }
             n.width = width;
             n.height = padding
                     + n.titleLines.size() * tr.fontHeight
@@ -98,8 +117,8 @@ public class NotificationService extends Service {
         for (Notification n : notificationPool) {
             MatrixStack matrices = drawContext.getMatrices();
 
-            Color bg = n.type.bg();
-            Color ol = n.type.outline();
+            Color bg = n.type.getBg();
+            Color ol = n.type.getOutline();
 
             r.renderSoftRoundedRectOutline(
                     matrices,
