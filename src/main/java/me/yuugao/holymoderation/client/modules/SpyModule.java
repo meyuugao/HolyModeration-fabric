@@ -183,8 +183,8 @@ public class SpyModule extends Module {
         float x = cx - width / 2f;
         float y = 30f;
 
-        Color bg = new Color(12, 18, 38, 220);
-        Color outline = new Color(58, 123, 213);
+        Color bg = new Color(10, 20, 40, 220);
+        Color outline = new Color(60, 120, 220);
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
                 ms, x, y, width, height, 10f, bg, outline, 1.5f, 3
@@ -268,7 +268,7 @@ public class SpyModule extends Module {
     }
 
     private void startSpy(String player) {
-        endSpy();
+        resetSpy();
         serviceContext.getStateService().setSpyPlayer(player);
         enabled = true;
         animTarget = 1f;
@@ -281,16 +281,20 @@ public class SpyModule extends Module {
     }
 
     private void endSpy() {
-        display0 = getStringsToRender()[0];
-        display1 = getStringsToRender()[1];
+        resetSpy();
+        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка остановлена.", 5f);
+    }
+
+    private void resetSpy() {
+        serviceContext.getStateService().setSpyPlayer(StringUtils.EMPTY);
         enabled = false;
         animTarget = 0f;
+        display0 = getStringsToRender()[0];
+        display1 = getStringsToRender()[1];
         lastKnownLocation = StringUtils.EMPTY;
-        serviceContext.getStateService().setSpyPlayer(StringUtils.EMPTY);
         serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
         serviceContext.getStateService().setSpyPlayerStatus(StringUtils.EMPTY);
         clearDisplayWhenHidden = true;
-        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка остановлена.", 5f);
     }
 
     private void update() {

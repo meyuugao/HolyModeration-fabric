@@ -210,9 +210,7 @@ public class CheckoutsModule extends Module {
     @Subscribe
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
-        if (receivedText == null) {
-            return;
-        }
+        if (receivedText == null) return;
 
         if (!serviceContext.getStateService().getPlayer().isEmpty() && serviceContext.getConfigManager().getConfig().isAutoBanEnabled()) {
             if (receivedText.startsWith("▶ Замороженный игрок " + serviceContext.getStateService().getPlayer())) {

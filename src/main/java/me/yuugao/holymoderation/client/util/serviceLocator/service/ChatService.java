@@ -15,7 +15,7 @@ import net.minecraft.text.Text;
 import java.util.Arrays;
 
 public class ChatService extends Service {
-    public final Text HMTextComponent = Text.of(YELLOW + BOLD + "[" + DARK_AQUA + BOLD + "HM" + YELLOW + BOLD + "] " + WHITE);
+    public final Text HMTextComponent = Text.of(BLUE + BOLD + "[" + DARK_AQUA + BOLD + "HM" + BLUE + BOLD + "] " + WHITE);
     public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
     public final String[] NoArgCommands = {
             "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",

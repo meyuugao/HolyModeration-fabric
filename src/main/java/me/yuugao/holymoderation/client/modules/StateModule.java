@@ -226,9 +226,7 @@ public class StateModule extends Module {
     @Subscribe(priority = 100)
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
-        if (receivedText == null) {
-            return;
-        }
+        if (receivedText == null) return;
 
         if (receivedText.equals("▶ Ожидайте завершения проверки... Пожалуйста, не двигайтесь.") || receivedText.equals("▶ Введите цифры с картинки в чат! Для открытия чата, нажмите <T>")) {
             serviceContext.getStateService().setInHub(true);

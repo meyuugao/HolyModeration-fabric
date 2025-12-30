@@ -15,9 +15,7 @@ public class ReportCopyModule extends Module {
     @Subscribe
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
-        if (receivedText == null) {
-            return;
-        }
+        if (receivedText == null) return;
 
         if (receivedText.startsWith("▍ Заявитель:")) {
             messageIsReportInfo = true;
