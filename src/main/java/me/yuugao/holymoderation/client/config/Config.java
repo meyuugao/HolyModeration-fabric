@@ -15,69 +15,51 @@ import obfuscator.ObfRule;
 @Setter
 public class Config {
     public Config() {
-        keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
+        //keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
     }
 
     private final String currentVersion = "2.9alphafix"; //tip: ИЗМЕНИ ПЕРЕД РЕЛИЗОМ!
 
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private String apiToken = StringUtils.EMPTY;
 
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean soundsEnabled = true;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private int soundsVolume = 70;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
-    private int spyDelay = 1;
+    private int spyDelay = 2;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean copyButtonEnabled = false;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private String copyButtonText = "§f§l[§a§lcopy§f§l]";
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private String playerMarker = "§d§l[CHECK]";
 
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private final List<String> textsList = new ArrayList<>();
 
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
-    private boolean autoVanishEnabled = false;
+    private boolean autoVanishEnabled = true;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoFlyEnabled = false;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoGm3Enabled = false;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoHacAlertsEnabled = false;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoGodEnabled = false;
 
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean dupeIpEnabled = false;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoAnyDeskEnabled = true;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoTpEnabled = true;
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private boolean autoBanEnabled = true;
 
     @Expose
-    @DontObf(ObfRule.MAP_FIELD)
     private Map<String, KeyBindConfig> keyBinds = new HashMap<>();
 
     public KeyBindConfig getKeyBind(String action) {

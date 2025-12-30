@@ -15,22 +15,26 @@ import org.apache.commons.lang3.StringUtils;
 public class StateModule extends Module {
     @Subscribe(priority = 100)
     public void onServerConnect(ServerConnectEvent event) {
-        if (!event.isSwitch()) {
-            if (serviceContext.getMinecraftService().getPlayer() != null) {
-                serviceContext.getStateService().setModerNickname(serviceContext.getMinecraftService().getPlayer().getName().getString());
-            }
+        if (event.isSwitch()) return; //tip: выполняется только при заходе на сервер, не при свитче
 
-            serviceContext.getStateService().setConnected(true);
-            checkServerAddress(event);
-
-            if (!serviceContext.getStateService().isOnHW()) {
-                serviceContext.getStateService().block();
-                return;
-            } else if (serviceContext.getStateService().isBlocked() && serviceContext.getStateService().isEnabled()) {
-                serviceContext.getStateService().unblock();
-                serviceContext.getEventBus().invokeEvent(event);
-            }
+        if (serviceContext.getMinecraftService().getPlayer() != null) {
+            serviceContext.getStateService().setModerNickname(serviceContext.getMinecraftService().getPlayer().getName().getString());
         }
+
+        serviceContext.getStateService().setConnected(true);
+        checkServerAddress(event);
+
+        if (!serviceContext.getStateService().isOnHW()) {
+            serviceContext.getStateService().block(); //tip: ретурн если дальше будет логика
+        } else if (serviceContext.getStateService().isBlocked() && serviceContext.getStateService().isEnabled()) {
+            serviceContext.getStateService().unblock();
+            serviceContext.getEventBus().invokeEvent(event);
+        }
+    }
+
+    @Subscribe(priority = 98)
+    public void onServerConnectSecond(ServerConnectEvent event) {
+        if (serviceContext.getStateService().isBlocked()) return;
 
         serviceContext.getStateService().setGameInitCompleted(false);
 
@@ -40,6 +44,45 @@ public class StateModule extends Module {
         } else {
             serviceContext.getStateService().setInHub(false);
             serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getModerNickname());
+        }
+
+        if (event.isSwitch() && !serviceContext.getStateService().isInHub()) {
+            if (serviceContext.getStateService().getRank() > 2) {
+                serviceContext.getStateService().setVanishEnabled(true);
+            }
+            serviceContext.getStateService().setGm3Enabled(serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode() == GameMode.SPECTATOR);
+
+            if (serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && !serviceContext.getStateService().isVanishEnabled()
+                    || !serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && serviceContext.getStateService().isVanishEnabled()) {
+                serviceContext.getChatService().chatMessage("/v");
+                serviceContext.getStateService().setVanishEnabled(serviceContext.getStateService().isVanishEnabled());
+            }
+
+            if (serviceContext.getConfigManager().getConfig().isAutoGm3Enabled() && !serviceContext.getStateService().isGm3Enabled()
+                    || !serviceContext.getConfigManager().getConfig().isAutoGm3Enabled() && serviceContext.getStateService().isGm3Enabled()) {
+                serviceContext.getChatService().chatMessage("/gm 3");
+                serviceContext.getStateService().setGm3Enabled(serviceContext.getStateService().isGm3Enabled());
+            }
+
+            if (serviceContext.getConfigManager().getConfig().isAutoFlyEnabled() && !serviceContext.getStateService().isFlyEnabled()
+                    || !serviceContext.getConfigManager().getConfig().isAutoFlyEnabled() && serviceContext.getStateService().isFlyEnabled()) {
+                if (!serviceContext.getStateService().isGm3Enabled()) {
+                    serviceContext.getChatService().chatMessage("/fly");
+                    serviceContext.getStateService().setFlyEnabled(serviceContext.getStateService().isFlyEnabled());
+                }
+            }
+
+            if (serviceContext.getConfigManager().getConfig().isAutoGodEnabled() && !serviceContext.getStateService().isGodEnabled()
+                    || !serviceContext.getConfigManager().getConfig().isAutoGodEnabled() && serviceContext.getStateService().isGodEnabled()) {
+                serviceContext.getChatService().chatMessage("/god");
+                serviceContext.getStateService().setGodEnabled(serviceContext.getStateService().isGodEnabled());
+            }
+
+            if (serviceContext.getConfigManager().getConfig().isAutoHacAlertsEnabled() && !serviceContext.getStateService().isHacAlertsEnabled()
+                    || !serviceContext.getConfigManager().getConfig().isAutoHacAlertsEnabled() && serviceContext.getStateService().isHacAlertsEnabled()) {
+                serviceContext.getChatService().chatMessage("/hac alerts");
+                serviceContext.getStateService().setHacAlertsEnabled(serviceContext.getStateService().isHacAlertsEnabled());
+            }
         }
 
         serviceContext.getStateService().setGameInitCompleted(true);
@@ -69,10 +112,74 @@ public class StateModule extends Module {
         }
 
         String eventCommand = event.getCommand();
-        String[] messageSplit = eventCommand.split(" ", 3);
-        if (!eventCommand.startsWith("hm") || messageSplit.length < 2) return;
+        String[] messageSplit = eventCommand.split(" ");
+        String command = eventCommand.startsWith("hm") ? messageSplit[1] : messageSplit[0];
 
-        switch (messageSplit[1]) {
+        switch (command) {
+            case ("v"): {
+                if (messageSplit.length > 1) {
+                    if (messageSplit[1].equals("enable")) {
+                        serviceContext.getStateService().setVanishEnabled(true);
+                        break;
+                    } else if (messageSplit[1].equals("disable")) {
+                        serviceContext.getStateService().setVanishEnabled(false);
+                        break;
+                    }
+                }
+
+                serviceContext.getStateService().setVanishEnabled(!serviceContext.getStateService().isVanishEnabled());
+                break;
+            }
+
+            case ("gamemode"):
+            case ("gm"): {
+                if (messageSplit[1].equals("3") || messageSplit[1].equals("spectator")) {
+                    serviceContext.getStateService().setGm3Enabled(true);
+                } else if (messageSplit[1].equals("0") || messageSplit[1].equals("1") || messageSplit[1].equals("2")
+                || messageSplit[1].equals("survival") || messageSplit[1].equals("creative") || messageSplit[1].equals("adventure")) {
+                    serviceContext.getStateService().setGm3Enabled(false);
+                }
+                break;
+            }
+
+            case ("fly"): {
+                if (messageSplit.length > 1) {
+                    if (messageSplit[1].equals("enable")) {
+                        serviceContext.getStateService().setFlyEnabled(true);
+                        break;
+                    } else if (messageSplit[1].equals("disable")) {
+                        serviceContext.getStateService().setFlyEnabled(false);
+                        break;
+                    }
+                }
+
+                serviceContext.getStateService().setFlyEnabled(!serviceContext.getStateService().isFlyEnabled());
+                break;
+            }
+
+            case ("god"): {
+                if (messageSplit.length > 1) {
+                    if (messageSplit[1].equals("enable")) {
+                        serviceContext.getStateService().setGodEnabled(true);
+                        break;
+                    } else if (messageSplit[1].equals("disable")) {
+                        serviceContext.getStateService().setGodEnabled(false);
+                        break;
+                    }
+                }
+
+                serviceContext.getStateService().setGodEnabled(!serviceContext.getStateService().isGodEnabled());
+                break;
+            }
+
+            case ("hac"): {
+                if (messageSplit.length > 1 && messageSplit[1].equals("alerts")) {
+                    serviceContext.getStateService().setHacAlertsEnabled(!serviceContext.getStateService().isHacAlertsEnabled());
+                }
+
+                break;
+            }
+
             case ("disable"): {
                 event.setCancelled(true);
 
