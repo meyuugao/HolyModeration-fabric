@@ -25,17 +25,25 @@ public class CheckoutsService extends Service {
             }
         }
 
+        String player = new String(serviceContext.getStateService().getPlayer().toCharArray());
+
         serviceContext.getSchedulerService().getInstance().schedule(() -> {
             serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'чистый'", "Нажмите, чтобы закончить проверку с результатом 'чистый'", "/hm endcheckout clean"));
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + снести стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш", "/hm endcheckout ban " + serviceContext.getStateService().getPlayer() + " true"));
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + не сносить стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш", "/hm endcheckout ban " + serviceContext.getStateService().getPlayer() + " false"));
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + снести стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш", "/hm endcheckout ban " + player + " true"));
+            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + не сносить стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш", "/hm endcheckout ban " + player + " false"));
             serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автобай'", "Нажмите, чтобы закончить проверку с результатом 'автобай'", "/hm endcheckout autobuy"));
             serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автоселл'", "Нажмите, чтобы закончить проверку с результатом 'автоселл'", "/hm endcheckout autosell"));
-            serviceContext.getStateService().setPlayer(StringUtils.EMPTY);
         }, 1, TimeUnit.SECONDS);
+
+        serviceContext.getStateService().setPlayer(StringUtils.EMPTY);
     }
 
-    public void startCheckOut(String player, ServiceContext serviceContext) {
+    public boolean startCheckOut(String player, ServiceContext serviceContext) {
+        if (!serviceContext.getStateService().getPlayer().isEmpty()) {
+            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы уже проверяете какого-то игрока. Сначала закончите текущую проверку --> " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
+            return false;
+        }
+
         serviceContext.getStateService().setPlayer(player);
 
         serviceContext.getChatService().chatMessage("/freezing " + serviceContext.getStateService().getPlayer());
@@ -80,6 +88,8 @@ public class CheckoutsService extends Service {
                 serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку игрока, у которого много пройденных проверок", "Нажмите, чтобы внести проверку игрока, у которого много пройденных проверок", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " toManyChecks"));
             }
         }, 9, TimeUnit.SECONDS);
+
+        return true;
     }
 
     public void sendTexts(String player, ServiceContext serviceContext) {

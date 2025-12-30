@@ -5,10 +5,16 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.util.math.MatrixStack;
+
+import java.awt.Color;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,11 +27,18 @@ public class CheckoutsModule extends Module {
             "endcheckout", "startcheckout"
     };
 
-
     private boolean banChecking = false;
     private boolean destroyStash;
     private boolean messageIsCheckbanInfo;
     private String banReason;
+
+    private float coAnim = 0f;
+    private float coAnimTarget = 0f;
+    private float coCurrentWidth = 1f;
+    private float coCurrentHeight = 1f;
+    private long checkoutStartMillis = 0L;
+    private String coLastPlayer = "";
+    private boolean coClearDisplayWhenHidden = false;
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
@@ -40,13 +53,13 @@ public class CheckoutsModule extends Module {
             command = "/" + commandSplit[0];
         }
 
-        if (serviceContext.getChatService().isArrayContains(FreezerCommands, command) || serviceContext.getChatService().isArrayContains(ApiCommands, command)) {
+        if (ServiceLocator.getChatService().isArrayContains(FreezerCommands, command) || ServiceLocator.getChatService().isArrayContains(ApiCommands, command)) {
             if (serviceContext.getStateService().isInHub()) {
                 serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "В хабе этого делать нельзя.", 5f);
                 return;
             }
         }
-        if (serviceContext.getChatService().isArrayContains(FreezerCommands, command)) {
+        if (ServiceLocator.getChatService().isArrayContains(FreezerCommands, command)) {
             switch (command) {
                 case ("/freezing"):
                 case ("/frz"): {
@@ -56,11 +69,11 @@ public class CheckoutsModule extends Module {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
                         return;
                     }
-                    if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы уже проверяете какого-то игрока. Сначала закончите текущую проверку --> " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
-                        return;
+
+                    if (serviceContext.getCheckoutsService().startCheckOut(commandSplit[1], serviceContext)) {
+                        coStartForLocal(commandSplit[1]);
                     }
-                    serviceContext.getCheckoutsService().startCheckOut(commandSplit[1], serviceContext);
+
                     break;
                 }
 
@@ -123,7 +136,7 @@ public class CheckoutsModule extends Module {
                     break;
                 }
             }
-        } else if (serviceContext.getChatService().isArrayContains(ApiCommands, command)) {
+        } else if (ServiceLocator.getChatService().isArrayContains(ApiCommands, command)) {
             String[] messageSplit;
             switch (command) {
                 case ("startcheckout"): {
@@ -152,6 +165,7 @@ public class CheckoutsModule extends Module {
                             serviceContext.getNetService().startCheckout(player, reason, mode, number, false);
                         }
                     });
+                    coStartForLocal(player);
                     break;
                 }
                 case ("endcheckout"): {
@@ -201,6 +215,7 @@ public class CheckoutsModule extends Module {
                             }
                         }
                     });
+                    coStopLocal();
                     break;
                 }
             }
@@ -256,5 +271,81 @@ public class CheckoutsModule extends Module {
                 CompletableFuture.runAsync(() -> serviceContext.getNetService().endCheckout("ban", banReason, destroyStash));
             }
         }
+    }
+
+    @Subscribe
+    public void onHudRender(HudRenderEvent event) {
+        coAnim += (coAnimTarget - coAnim) * 0.15f;
+
+        String player = serviceContext.getStateService().getPlayer();
+        if (!coLastPlayer.equals(player)) {
+            if (coLastPlayer.isEmpty() && !player.isEmpty()) {
+                checkoutStartMillis = System.currentTimeMillis();
+                coAnimTarget = 1f;
+            } else if (!coLastPlayer.isEmpty() && player.isEmpty()) {
+                coAnimTarget = 0f;
+                coClearDisplayWhenHidden = true;
+            }
+            coLastPlayer = player;
+        }
+
+        if (coAnim < 0.01f && player.isEmpty()) return;
+
+        DrawContext ctx = event.getDrawContext();
+        TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
+        MatrixStack ms = ctx.getMatrices();
+
+        long elapsedSec = checkoutStartMillis == 0L ? 0L : (System.currentTimeMillis() - checkoutStartMillis) / 1000L;
+        long minutes = elapsedSec / 60L;
+        long seconds = elapsedSec % 60L;
+        String timeText = String.format("%d:%02d", minutes, seconds);
+        String display = "Текущая проверка: " + (player.isEmpty() ? coLastPlayer : player) + " | " + timeText;
+
+        int w = tr.getWidth(display);
+        float targetWidth = w + 16f;
+        float targetHeight = tr.fontHeight + 12f;
+
+        coCurrentWidth += (targetWidth - coCurrentWidth) * 0.2f;
+        coCurrentHeight += (targetHeight - coCurrentHeight) * 0.2f;
+
+        float width = Math.max(1f, coCurrentWidth * coAnim);
+        float height = Math.max(1f, coCurrentHeight * coAnim);
+
+        float cx = ctx.getScaledWindowWidth() / 2f;
+        float x = cx - width / 2f;
+        float y = ctx.getScaledWindowHeight() - 90f;
+
+        Color bg = new Color(10, 20, 40, 220);
+        Color outline = new Color(60, 120, 220);
+
+        serviceContext.getRender2DService().renderSoftRoundedRectOutline(ms, x, y, width, height, 10f, bg, outline, 1.5f, 3);
+
+        ms.push();
+        ms.translate(cx, y + height / 2f, 0);
+        ms.scale(coAnim, coAnim, 1f);
+
+        float textBlockHeight = tr.fontHeight;
+        float textY = -textBlockHeight / 2f + 0.5f;
+
+        serviceContext.getRender2DService().renderText(tr, display, -tr.getWidth(display) / 2f, textY, 0xffffffff, false, ctx);
+
+        ms.pop();
+
+        if (coAnim < 0.02f && coAnimTarget == 0f && coClearDisplayWhenHidden) {
+            checkoutStartMillis = 0L;
+            coClearDisplayWhenHidden = false;
+            coLastPlayer = "";
+        }
+    }
+
+    private void coStartForLocal(String player) {
+        checkoutStartMillis = System.currentTimeMillis();
+        coLastPlayer = player;
+        coAnimTarget = 1f;
+    }
+
+    private void coStopLocal() {
+        coAnimTarget = 0f;
+        coClearDisplayWhenHidden = true;
     }
 }

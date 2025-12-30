@@ -54,6 +54,11 @@ public class SpyModule extends Module {
                 return;
             }
 
+            if (!serviceContext.getStateService().getPlayer().isEmpty() && serviceContext.getStateService().getPlayer().equals(commandSplit[2])) {
+                serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы не можете начать следить за игроком на вашей проверке.", 5f);
+                return;
+            }
+
             if (!serviceContext.getStateService().getSpyPlayer().isEmpty()) {
                 serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы уже следите за кем-то --> " + GOLD + BOLD + "/hm spy" + WHITE + RED + BOLD + ".", 5f);
                 return;
@@ -71,8 +76,9 @@ public class SpyModule extends Module {
                 return;
             }
 
-            serviceContext.getCheckoutsService().startCheckOut(serviceContext.getStateService().getSpyPlayer(), serviceContext);
-            endSpy();
+            if (serviceContext.getCheckoutsService().startCheckOut(serviceContext.getStateService().getSpyPlayer(), serviceContext)) {
+                endSpy();
+            }
         }
     }
 
@@ -300,10 +306,6 @@ public class SpyModule extends Module {
 
     private void update() {
         if (!enabled) return;
-        if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-            endSpy();
-            return;
-        }
 
         checkingSpy = true;
         if (!serviceContext.getStateService().isInHub() && serviceContext.getStateService().isGameInitCompleted()) {
