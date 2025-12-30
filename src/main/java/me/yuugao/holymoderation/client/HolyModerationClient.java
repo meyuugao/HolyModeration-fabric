@@ -51,13 +51,13 @@ public class HolyModerationClient implements ClientModInitializer {
 
             for (String cmd : ServiceLocator.getChatService().OneArgCommands) {
                 hm.then(ClientCommandManager.literal(cmd)
-                        .then(ClientCommandManager.argument("arg1", StringArgumentType.string())));
+                        .then(ClientCommandManager.argument("arg1", StringArgumentType.greedyString())));
             }
 
             for (String cmd : ServiceLocator.getChatService().TwoArgCommands) {
                 hm.then(ClientCommandManager.literal(cmd)
                         .then(ClientCommandManager.argument("arg1", StringArgumentType.string())
-                                .then(ClientCommandManager.argument("arg2", StringArgumentType.string()))));
+                                .then(ClientCommandManager.argument("arg2", StringArgumentType.greedyString()))));
             }
 
             for (String cmd : ServiceLocator.getChatService().FourArgCommands) {

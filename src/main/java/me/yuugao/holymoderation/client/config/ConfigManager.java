@@ -2,11 +2,11 @@ package me.yuugao.holymoderation.client.config;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
-import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.google.gson.Gson;
@@ -24,28 +24,33 @@ public class ConfigManager {
     public ConfigManager() {
         gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         config = new Config();
-        createConfigDirectory();
+        ensureConfigDirectory();
         loadConfig();
     }
 
-    private void createConfigDirectory() {
+    private void ensureConfigDirectory() {
         try {
-            File directory = new File(CONFIG_DIRECTORY);
-            if (!directory.exists()) {
-                Files.createDirectory(directory.toPath());
-            }
+            Files.createDirectories(Paths.get(CONFIG_DIRECTORY));
         } catch (Exception e) {
-            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/createConfigDirectory: " + e);
+            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/ensureConfigDirectory: " + e);
         }
     }
 
     public void loadConfig() {
-        File configFile = new File(CONFIG_FILE_PATH);
-        if (configFile.exists()) {
-            try (InputStreamReader reader = new InputStreamReader(Files.newInputStream(configFile.toPath()), StandardCharsets.UTF_8)) {
-                config = gson.fromJson(reader, Config.class);
+        ensureConfigDirectory();
+        Path configPath = Paths.get(CONFIG_FILE_PATH);
+
+        if (Files.exists(configPath)) {
+            try (InputStreamReader reader = new InputStreamReader(Files.newInputStream(configPath), StandardCharsets.UTF_8)) {
+                Config loaded = gson.fromJson(reader, Config.class);
+                if (loaded != null) {
+                    config = loaded;
+                } else {
+                    saveCfg(config);
+                }
             } catch (Exception e) {
                 ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/loadConfig: " + e);
+                saveCfg(config);
             }
         } else {
             saveCfg(config);
@@ -54,7 +59,12 @@ public class ConfigManager {
 
     public void saveCfg(Config config) {
         this.config = config;
-        try (OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(Paths.get(CONFIG_FILE_PATH)), StandardCharsets.UTF_8)) {
+        ensureConfigDirectory();
+
+        try (OutputStreamWriter writer = new OutputStreamWriter(
+                Files.newOutputStream(Paths.get(CONFIG_FILE_PATH)),
+                StandardCharsets.UTF_8
+        )) {
             gson.toJson(this.config, writer);
         } catch (Exception e) {
             ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/saveCfg: " + e);

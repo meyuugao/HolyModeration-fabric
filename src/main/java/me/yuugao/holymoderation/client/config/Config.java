@@ -17,7 +17,7 @@ public class Config {
         //keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
     }
 
-    private final String currentVersion = "2.9alphafix";
+    private final String currentVersion = "2.10alpha";
 
     @Expose
     private String apiToken = StringUtils.EMPTY;
