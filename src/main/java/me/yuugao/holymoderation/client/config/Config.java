@@ -1,7 +1,6 @@
 package me.yuugao.holymoderation.client.config;
 
 import org.apache.commons.lang3.StringUtils;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 
@@ -18,7 +17,7 @@ public class Config {
         //keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
     }
 
-    private final String currentVersion = "2.9alphafix"; //tip: ИЗМЕНИ ПЕРЕД РЕЛИЗОМ!
+    private final String currentVersion = "2.10alpha";
 
     @Expose
     private String apiToken = StringUtils.EMPTY;

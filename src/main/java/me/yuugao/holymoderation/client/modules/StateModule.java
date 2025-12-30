@@ -136,7 +136,7 @@ public class StateModule extends Module {
                 if (messageSplit[1].equals("3") || messageSplit[1].equals("spectator")) {
                     serviceContext.getStateService().setGm3Enabled(true);
                 } else if (messageSplit[1].equals("0") || messageSplit[1].equals("1") || messageSplit[1].equals("2")
-                || messageSplit[1].equals("survival") || messageSplit[1].equals("creative") || messageSplit[1].equals("adventure")) {
+                        || messageSplit[1].equals("survival") || messageSplit[1].equals("creative") || messageSplit[1].equals("adventure")) {
                     serviceContext.getStateService().setGm3Enabled(false);
                 }
                 break;

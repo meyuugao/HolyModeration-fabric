@@ -2,6 +2,7 @@ package me.yuugao.holymoderation.client.modules;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
+
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
