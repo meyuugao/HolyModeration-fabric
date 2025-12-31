@@ -54,15 +54,15 @@ public final class ClassTransformerModule {
             AntiDebugInjectModule.obfuscateClass(cn);
         }
 
-        String decoderMethodName = NameGeneratorModule.generateChineseName();
-        if (!classRules.contains(ObfRule.OBF_STRING)) {
-            StringObfuscationModule.injectDecoder(cn, decoderMethodName);
-            StringObfuscationModule.obfuscateClass(cn, decoderMethodName);
-        }
+        //String decoderMethodName = NameGeneratorModule.generateChineseName();
+        //if (!classRules.contains(ObfRule.OBF_STRING)) { //ОТКЛЮЧИЛ, СИЛЬНО ЖРЁТ ФПС
+        //    StringObfuscationModule.injectDecoder(cn, decoderMethodName);
+        //    StringObfuscationModule.obfuscateClass(cn, decoderMethodName);
+        //}
 
-        if (!classRules.contains(ObfRule.OBF_PRIMITIVES)) {
-            PrimitiveObfuscationModule.obfuscateClass(cn);
-        }
+        //if (!classRules.contains(ObfRule.OBF_PRIMITIVES)) { //ОТКЛЮЧИЛ, СИЛЬНО ЖРЁТ ФПС
+        //    PrimitiveObfuscationModule.obfuscateClass(cn);
+        //}
 
         if (!classRules.contains(ObfRule.OPAQUE_PREDICATE)) {
             OpaquePredicateModule.obfuscateClass(cn);
@@ -86,7 +86,7 @@ public final class ClassTransformerModule {
         }
 
         if (!classRules.contains(ObfRule.GARBAGE_INJECT)) {
-            GarbageInjectorModule.obfuscateClass(cn, ctx);
+            GarbageInjectorModule.obfuscateClass(cn);
         }
 
         if (!classRules.contains(ObfRule.STRUCTURAL)) {
