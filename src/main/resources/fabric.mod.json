@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "holymoderation",
-  "version": "3.0",
+  "version": "2.10alpha",
   "name": "HolyModeration",
   "description": "An auxiliary mod for moderation on HolyWorld | Bugs? @meyuugao",
   "authors": [

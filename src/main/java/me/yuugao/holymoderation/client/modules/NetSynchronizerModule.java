@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class NetSynchronizerModule extends Module {
-    @Subscribe(priority = 99)
+    @Subscribe
     public void onServerConnect(ServerConnectEvent event) {
         if (!event.isSwitch()) refresh();
     }

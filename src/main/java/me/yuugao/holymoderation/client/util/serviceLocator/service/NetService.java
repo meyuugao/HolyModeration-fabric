@@ -125,7 +125,7 @@ public class NetService extends Service {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201)
-                        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно внесли проверку.", 5f);
+                        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно внесли проверку в журнал.", 5f);
                     else
                         ServiceLocator.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Ошибка при внесении проверки. Код: " + RED + connection.getResponseCode(), 5f);
                 }
@@ -156,7 +156,7 @@ public class NetService extends Service {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201)
-                        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно закончили проверку.", 5f);
+                        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно закончили проверку в журнале.", 5f);
                     else
                         ServiceLocator.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Ошибка при завершении проверки. Код: " + RED + connection.getResponseCode(), 5f);
                 }

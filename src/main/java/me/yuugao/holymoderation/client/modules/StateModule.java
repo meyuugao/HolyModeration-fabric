@@ -32,7 +32,7 @@ public class StateModule extends Module {
         }
     }
 
-    @Subscribe(priority = 98)
+    @Subscribe(priority = 99)
     public void onServerConnectSecond(ServerConnectEvent event) {
         if (serviceContext.getStateService().isBlocked()) return;
 
@@ -47,9 +47,7 @@ public class StateModule extends Module {
         }
 
         if (event.isSwitch() && !serviceContext.getStateService().isInHub()) {
-            if (serviceContext.getStateService().getRank() > 2) {
-                serviceContext.getStateService().setVanishEnabled(true);
-            }
+            serviceContext.getStateService().setVanishEnabled(true);
             serviceContext.getStateService().setGm3Enabled(serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode() == GameMode.SPECTATOR);
 
             if (serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && !serviceContext.getStateService().isVanishEnabled()

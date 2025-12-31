@@ -23,6 +23,8 @@ public class ReportCopyModule extends Module {
 
         if (receivedText.contains("Подозреваемый:")) {
             serviceContext.getChatService().copyToClipboard(receivedText.split(": ")[1].split(" ")[0]);
+            ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех",
+                    "Ник игрока из репорта скопирован: " + receivedText.split(": ")[1].split(" ")[0], 5f);
         }
 
         if (messageIsReportInfo) {
@@ -31,8 +33,6 @@ public class ReportCopyModule extends Module {
 
         if (receivedText.startsWith("▶ [ПКМ]") || receivedText.startsWith("◤          Подано")) {
             messageIsReportInfo = false;
-            ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех",
-                    "Ник игрока из репорта скопирован: " + receivedText.split(": ")[1].split(" ")[0], 5f);
         }
     }
 }

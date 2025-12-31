@@ -4,6 +4,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,6 +26,8 @@ public class CheckoutsService extends Service {
             }
         }
 
+        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно закончили проверку.", 5f);
+
         String player = new String(serviceContext.getStateService().getPlayer().toCharArray());
 
         serviceContext.getSchedulerService().getInstance().schedule(() -> {
@@ -43,6 +46,8 @@ public class CheckoutsService extends Service {
             serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы уже проверяете какого-то игрока. Сначала закончите текущую проверку --> " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
             return false;
         }
+
+        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно начали проверку.", 5f);
 
         serviceContext.getStateService().setPlayer(player);
 

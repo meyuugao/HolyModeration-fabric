@@ -65,15 +65,16 @@ public class CheckoutsModule extends Module {
                 case ("/frz"): {
                     event.setCancelled(true);
                     commandSplit = eventCommand.split(" ", 2);
-                    if (commandSplit.length < 2) {
+                    if (commandSplit.length == 1) {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
                         return;
                     }
-
-                    if (serviceContext.getCheckoutsService().startCheckOut(commandSplit[1], serviceContext)) {
-                        coStartForLocal(commandSplit[1]);
+                    String player = commandSplit[1];
+                    if (player.equals(serviceContext.getStateService().getPlayer())) {
+                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Этот игрок находиться у вас на проверке. Для его разморозки используйте " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
+                        return;
                     }
-
+                    serviceContext.getChatService().chatMessage("/freezing " + player);
                     break;
                 }
 
@@ -113,16 +114,15 @@ public class CheckoutsModule extends Module {
                 case ("freezing"):
                 case ("frz"): {
                     commandSplit = eventCommand.split(" ", 3);
-                    if (commandSplit.length == 2) {
+                    if (commandSplit.length < 3) {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
                         return;
                     }
-                    String player = commandSplit[2];
-                    if (player.equals(serviceContext.getStateService().getPlayer())) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Этот игрок находиться у вас на проверке. Для его разморозки используйте " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
-                        return;
+
+                    if (serviceContext.getCheckoutsService().startCheckOut(commandSplit[2], serviceContext)) {
+                        coStartForLocal(commandSplit[2]);
                     }
-                    serviceContext.getChatService().chatMessage("/freezing " + player);
+
                     break;
                 }
 
