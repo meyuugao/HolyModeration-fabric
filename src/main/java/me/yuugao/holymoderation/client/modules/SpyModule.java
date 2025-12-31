@@ -82,7 +82,7 @@ public class SpyModule extends Module {
         }
     }
 
-    @Subscribe
+    @Subscribe(priority = 99)
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;

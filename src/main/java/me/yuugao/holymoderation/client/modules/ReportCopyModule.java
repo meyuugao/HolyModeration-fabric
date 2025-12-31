@@ -12,7 +12,7 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationT
 public class ReportCopyModule extends Module {
     private boolean messageIsReportInfo = false;
 
-    @Subscribe
+    @Subscribe(priority = 97)
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;

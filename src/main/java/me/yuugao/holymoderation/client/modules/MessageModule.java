@@ -7,7 +7,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 public class MessageModule extends Module {
-    @Subscribe
+    @Subscribe(priority = 96)
     public void onMessageReceive(MessageReceiveEvent event) {
         Text component = event.getMessage();
         String message = component.getString().replaceAll("§[0-9a-zA-Z]", "");

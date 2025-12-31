@@ -56,20 +56,21 @@ public class HolyModerationClient implements ClientModInitializer {
 
             for (String cmd : ServiceLocator.getChatService().TwoArgCommands) {
                 hm.then(ClientCommandManager.literal(cmd)
-                        .then(ClientCommandManager.argument("arg1", StringArgumentType.string())
+                        .then(ClientCommandManager.argument("arg1", StringArgumentType.greedyString())
                                 .then(ClientCommandManager.argument("arg2", StringArgumentType.greedyString()))));
             }
 
             for (String cmd : ServiceLocator.getChatService().FourArgCommands) {
                 hm.then(ClientCommandManager.literal(cmd)
-                        .then(ClientCommandManager.argument("arg1", StringArgumentType.string())
-                                .then(ClientCommandManager.argument("arg2", StringArgumentType.string())
-                                        .then(ClientCommandManager.argument("arg3", StringArgumentType.string())
-                                                .then(ClientCommandManager.argument("arg4", StringArgumentType.string()))))));
+                        .then(ClientCommandManager.argument("arg1", StringArgumentType.greedyString())
+                                .then(ClientCommandManager.argument("arg2", StringArgumentType.greedyString())
+                                        .then(ClientCommandManager.argument("arg3", StringArgumentType.greedyString())
+                                                .then(ClientCommandManager.argument("arg4", StringArgumentType.greedyString()))))));
             }
 
             dispatcher.register(hm);
-            dispatcher.register(ClientCommandManager.literal("frz").then(ClientCommandManager.argument("player", EntityArgumentType.player())));
+            dispatcher.register(ClientCommandManager.literal("frz")
+                    .then(ClientCommandManager.argument("player", EntityArgumentType.player())));
         });
     }
 

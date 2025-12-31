@@ -13,7 +13,7 @@ import net.minecraft.world.GameMode;
 import org.apache.commons.lang3.StringUtils;
 
 public class StateModule extends Module {
-    @Subscribe(priority = 100)
+    @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
         if (event.isSwitch()) return; //tip: выполняется только при заходе на сервер, не при свитче
 
@@ -32,7 +32,7 @@ public class StateModule extends Module {
         }
     }
 
-    @Subscribe(priority = 99)
+    @Subscribe(priority = 100)
     public void onServerConnectSecond(ServerConnectEvent event) {
         if (serviceContext.getStateService().isBlocked()) return;
 

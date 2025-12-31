@@ -102,7 +102,7 @@ public class TwinksCheckModule extends Module {
         }
     }
 
-    @Subscribe
+    @Subscribe(priority = 98)
     public void onMessageReceive(MessageReceiveEvent event) {
         String message = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (message == null) {
