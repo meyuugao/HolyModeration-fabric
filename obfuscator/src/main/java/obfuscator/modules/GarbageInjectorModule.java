@@ -64,7 +64,7 @@ public class GarbageInjectorModule {
                         localIndex += 2;
                     }
                     case 2 -> { // String
-                        insnList.add(new LdcInsnNode("garbage"));
+                        insnList.add(new LdcInsnNode("GET OUT!"));
                         insnList.add(new VarInsnNode(Opcodes.ASTORE, localIndex));
                         insnList.add(new VarInsnNode(Opcodes.ALOAD, localIndex));
                         insnList.add(new InsnNode(Opcodes.POP));
