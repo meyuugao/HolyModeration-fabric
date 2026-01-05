@@ -7,6 +7,7 @@ import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
@@ -39,6 +40,10 @@ public class CheckoutsModule extends Module {
     private long checkoutStartMillis = 0L;
     private String coLastPlayer = "";
     private boolean coClearDisplayWhenHidden = false;
+
+    public CheckoutsModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
@@ -155,7 +160,7 @@ public class CheckoutsModule extends Module {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Некорректная причина проверки.", 5f);
                         return;
                     }
-                    String loc = serviceContext.getStateService().getModerLocation();
+                    String loc = serviceContext.getStateService().getUserLocation();
                     String mode = loc.startsWith("lite") ? "lite" : loc.startsWith("lite120") ? "lite120" : loc.startsWith("classic") ? "classic" : "lpvp";
                     CompletableFuture.runAsync(() -> {
                         if (mode.equals("lpvp")) {
@@ -222,7 +227,7 @@ public class CheckoutsModule extends Module {
         }
     }
 
-    @Subscribe
+    @Subscribe(priority = 99)
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
@@ -273,7 +278,7 @@ public class CheckoutsModule extends Module {
         }
     }
 
-    @Subscribe
+    @Subscribe(priority = 100)
     public void onHudRender(HudRenderEvent event) {
         coAnim += (coAnimTarget - coAnim) * 0.15f;
 

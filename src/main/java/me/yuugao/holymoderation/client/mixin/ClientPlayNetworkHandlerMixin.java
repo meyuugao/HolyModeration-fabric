@@ -9,6 +9,8 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ServerInfo;
+import net.minecraft.network.packet.s2c.play.ChatMessageS2CPacket;
+import net.minecraft.server.network.ServerPlayerEntity;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ClientPlayNetworkHandler.class)
 public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "onGameJoin", at = @At("TAIL"))
-    private void onGameJoin(CallbackInfo ci) {
+    public void onGameJoin(CallbackInfo ci) {
         ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
         if (player != null) {
             ServerInfo serverInfo = player.networkHandler.getServerInfo();
@@ -29,7 +31,7 @@ public class ClientPlayNetworkHandlerMixin {
     }
 
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
-    private void sendChatMessage(String content, CallbackInfo ci) {
+    public void sendChatMessage(String content, CallbackInfo ci) {
         MessageSendEvent event = new MessageSendEvent(content);
 
         ServiceLocator.getEventBus().invokeEvent(event);
@@ -40,7 +42,7 @@ public class ClientPlayNetworkHandlerMixin {
     }
 
     @Inject(method = "sendChatCommand", at = @At("HEAD"), cancellable = true)
-    private void sendCommand(String command, CallbackInfo ci) {
+    public void sendCommand(String command, CallbackInfo ci) {
         CommandSendEvent event = new CommandSendEvent(command);
 
         ServiceLocator.getEventBus().invokeEvent(event);

@@ -66,7 +66,7 @@ public class Render2DService extends Service {
                     VertexFormats.POSITION_COLOR_TEXTURE
             );
         } catch (Exception e) {
-            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в Render2DService/initializeShaders: " + DARK_RED + e, 5f);
+            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в Render2DService/initializeShaders: " + DARK_RED + e, 5f);
         }
     }
 

@@ -2,12 +2,10 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.HolyModerationClient;
 import me.yuugao.holymoderation.client.modules.StateModule;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -30,13 +28,11 @@ public class StateService extends Service {
     private String spyPlayer = StringUtils.EMPTY;
     private String spyPlayerStatus = StringUtils.EMPTY;
     private String spyPlayerActivity = StringUtils.EMPTY;
-    private String moderNickname = StringUtils.EMPTY;
-    private String moderLocation = StringUtils.EMPTY;
+    private String userNickname = StringUtils.EMPTY;
+    private String userLocation = StringUtils.EMPTY;
     private String vkUrl = StringUtils.EMPTY;
     private boolean checkingTwinks = false;
     private int rank = 0;
-    private Map<String, Object> journalProfile = new HashMap<>();
-    private Map<String, Object> journalStats = new HashMap<>();
 
     public void reset() {
         this.connected = false;
@@ -52,22 +48,38 @@ public class StateService extends Service {
         this.spyPlayer = StringUtils.EMPTY;
         this.spyPlayerStatus = StringUtils.EMPTY;
         this.spyPlayerActivity = StringUtils.EMPTY;
-        this.moderNickname = StringUtils.EMPTY;
-        this.moderLocation = StringUtils.EMPTY;
+        this.userNickname = StringUtils.EMPTY;
+        this.userLocation = StringUtils.EMPTY;
         this.vkUrl = StringUtils.EMPTY;
         this.rank = 0;
-        journalProfile = new HashMap<>();
-        journalStats = new HashMap<>();
+    }
+
+    public void unregisterEventListeners() {
+        ServiceLocator.getEventBus().clear();
+        ServiceLocator.getEventBus().register(new StateModule(new ServiceContext()));
+    }
+
+    public void registerEventListeners() {
+        HolyModerationClient.registerEventListeners(ServiceLocator.getEventBus());
+    }
+
+    public void disable() {
+        enabled = false;
+        unregisterEventListeners();
+    }
+
+    public void enable() {
+        enabled = true;
+        registerEventListeners();
     }
 
     public void block() {
         blocked = true;
-        ServiceLocator.getEventBus().clear();
-        ServiceLocator.getEventBus().register(new StateModule());
+        unregisterEventListeners();
     }
 
     public void unblock() {
         blocked = false;
-        HolyModerationClient.registerEventListeners(ServiceLocator.getEventBus());
+        registerEventListeners();
     }
 }

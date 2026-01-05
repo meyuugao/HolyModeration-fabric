@@ -5,34 +5,18 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import obfuscator.DontObf;
 import obfuscator.ObfRule;
 
 @DontObf(ObfRule.OBF_STRING)
 public class SettingsModule extends Module {
-    public static final Map<Integer, String> RANKS = new HashMap<>() {
-        {
-            put(1, AQUA + BOLD + "Стажёр");
-            put(2, YELLOW + BOLD + "Мл. Сотрудник");
-            put(3, GOLD + BOLD + "Сотрудник");
-            put(4, GOLD + BOLD + "Сотрудник+");
-            put(5, GOLD + BOLD + "Вед. Сотрудник");
-            put(6, WHITE + BOLD + "Спектатор");
-            put(7, RED + BOLD + "Ст. Сотрудник");
-            put(8, RED + BOLD + "Админ");
-            put(9, RED + BOLD + "Куратор");
-        }
-    };
-
     private final String[] settingsCommands = {
             "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
             "copy", "me", "setcopy", "setmarker", "setspydelay", "setsoundsvolume", "sounds", "stats",
@@ -52,6 +36,9 @@ public class SettingsModule extends Module {
             "textedit"
     };
 
+    public SettingsModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
@@ -127,98 +114,6 @@ public class SettingsModule extends Module {
                         serviceContext.getConfigManager().getConfig().setAutoGodEnabled(!serviceContext.getConfigManager().getConfig().isAutoGodEnabled());
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Автоматический god " + (serviceContext.getConfigManager().getConfig().isAutoGodEnabled() ? "включён" : "выключен") + ".", 5f);
                         break;
-                    }
-                    case ("me"): {
-                        CompletableFuture.runAsync(() -> {
-                            try {
-                                Map<String, Object> profile = serviceContext.getStateService().getJournalProfile();
-
-                                String texts = WHITE + "Ваш никнейм: " + AQUA + BOLD + profile.get("nickname").toString() +
-                                        "\n" +
-                                        WHITE + "Ваша должность: " + RANKS.get((int) Double.parseDouble(profile.get("rank").toString())) +
-                                        "\n" +
-                                        WHITE + "Ваш вк: " + AQUA + BOLD + profile.get("fullname").toString() +
-                                        " (" + WHITE + "vk.com/id" + (long) Double.parseDouble(profile.get("idVk").toString()) + AQUA + BOLD + ")" +
-                                        "\n" +
-                                        WHITE + "Ваш баланс: " + GREEN + BOLD + (int) Double.parseDouble(profile.get("neponyatki").toString()) +
-                                        "\n" +
-                                        WHITE + "Количество выговоров: " + RED + BOLD + (int) Double.parseDouble(profile.get("reprimands").toString()) +
-                                        "\n" +
-                                        WHITE + "Количество предупреждений: " + GOLD + BOLD + (int) Double.parseDouble(profile.get("warns").toString()) +
-                                        "\n" +
-                                        WHITE + "Режим: " + YELLOW + BOLD + profile.get("anarchyMode");
-
-                                serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "ИНФОРМАЦИЯ О МОДЕРАТОРЕ", texts, 10f);
-                            } catch (Exception e) {
-                                serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в SettingsManager/onMessageSend: " + DARK_RED + e, 5f);
-                            }
-                        });
-                        break;
-                    }
-                    case ("stats"): {
-                        try {
-                            Map<String, Object> stats = serviceContext.getStateService().getJournalStats();
-                            Map<String, Object> revisesAll = (Map<String, Object>) stats.get("revisesAll");
-                            Map<String, Object> revisesMonth = (Map<String, Object>) stats.get("revisesMonth");
-                            Map<String, Object> revisesWeek = (Map<String, Object>) stats.get("revisesWeek");
-                            Map<String, Object> revisesToday = (Map<String, Object>) stats.get("revisesToday");
-
-                            String texts = "";
-
-                            if (revisesAll != null && revisesMonth != null && revisesWeek != null && revisesToday != null) {
-                                texts =
-                                        LIGHT_PURPLE + BOLD + "СТАТИСТИКА ПРОВЕРОК" +
-                                                "\n" +
-                                                WHITE + "Проверок за всё время: " + AQUA + BOLD + (int) Double.parseDouble(revisesAll.get("total").toString()) +
-                                                " (лайт: " + (int) Double.parseDouble(revisesAll.get("lite").toString()) +
-                                                ", лайт 1.20: " + (int) Double.parseDouble(revisesAll.get("lite120").toString()) +
-                                                ", классик: " + (int) Double.parseDouble(revisesAll.get("classic").toString()) + ")" +
-                                                "\n" +
-                                                WHITE + "Проверок за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(revisesMonth.get("total").toString()) +
-                                                " (лайт: " + (int) Double.parseDouble(revisesMonth.get("lite").toString()) +
-                                                ", лайт 1.20: " + (int) Double.parseDouble(revisesMonth.get("lite120").toString()) +
-                                                ", классик: " + (int) Double.parseDouble(revisesMonth.get("classic").toString()) + ")" +
-                                                "\n" +
-                                                WHITE + "Проверок за последнюю неделю: " + AQUA + BOLD + (int) Double.parseDouble(revisesWeek.get("total").toString()) +
-                                                " (лайт: " + (int) Double.parseDouble(revisesWeek.get("lite").toString()) +
-                                                ", лайт 1.20: " + (int) Double.parseDouble(revisesWeek.get("lite120").toString()) +
-                                                ", классик: " + (int) Double.parseDouble(revisesWeek.get("classic").toString()) + ")" +
-                                                "\n" +
-                                                WHITE + "Проверок за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(revisesToday.get("total").toString()) +
-                                                " (лайт: " + (int) Double.parseDouble(revisesToday.get("lite").toString()) +
-                                                ", лайт 1.20: " + (int) Double.parseDouble(revisesToday.get("lite120").toString()) +
-                                                ", классик: " + (int) Double.parseDouble(revisesToday.get("classic").toString()) + ")" +
-                                                "\n";
-                            }
-
-                            texts +=
-                                    LIGHT_PURPLE + BOLD + "СТАТИСТИКА МУТОВ И ГАРАНТОВ" +
-                                            "\n" +
-                                            WHITE + "Мутов за всё время: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("mutesAll").toString()) +
-                                            "\n" +
-                                            WHITE + "Мутов за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("mutesMonth").toString()) +
-                                            "\n" +
-                                            WHITE + "Мутов за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("mutesToday").toString()) +
-                                            "\n" +
-                                            WHITE + "Гарантов за всё время: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("gaurantsAll").toString()) +
-                                            "\n" +
-                                            WHITE + "Гарантов за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("gaurantsMonth").toString()) +
-                                            "\n" +
-                                            WHITE + "Гарантов за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(stats.get("gaurantsToday").toString());
-
-                            serviceContext.getNotificationService().addNotification(
-                                    NotificationType.SUCCESS,
-                                    GREEN + BOLD + "СТАТИСТИКА МОДЕРАТОРА",
-                                    texts,
-                                    10f
-                            );
-                        } catch (Exception e) {
-                            serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в SettingsManager/onMessageSend: " + DARK_RED + e, 5f);
-                        }
-                        break;
-                    }
-                    case ("spyfrz"): {
-
                     }
                     case ("copy"): {
                         serviceContext.getConfigManager().getConfig().setCopyButtonEnabled(!serviceContext.getConfigManager().getConfig().isCopyButtonEnabled());

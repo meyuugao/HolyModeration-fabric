@@ -11,7 +11,7 @@
     "tg": "t.me/meyuugao",
     "vk": "vk.com/meyuugao"
   },
-  "icon": "assets/holymoderation/icon.png",
+  "icon": "assets/minecraft/icon.png",
   "environment": "client",
   "entrypoints": {
     "client": [

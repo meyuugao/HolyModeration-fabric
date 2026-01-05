@@ -5,6 +5,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import net.minecraft.text.Text;
@@ -13,12 +14,16 @@ import net.minecraft.world.GameMode;
 import org.apache.commons.lang3.StringUtils;
 
 public class StateModule extends Module {
+    public StateModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
+
     @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
         if (event.isSwitch()) return; //tip: выполняется только при заходе на сервер, не при свитче
 
         if (serviceContext.getMinecraftService().getPlayer() != null) {
-            serviceContext.getStateService().setModerNickname(serviceContext.getMinecraftService().getPlayer().getName().getString());
+            serviceContext.getStateService().setUserNickname(serviceContext.getMinecraftService().getPlayer().getName().getString());
         }
 
         serviceContext.getStateService().setConnected(true);
@@ -40,10 +45,10 @@ public class StateModule extends Module {
 
         if (serviceContext.getMinecraftService().getClient().interactionManager != null && serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode().equals(GameMode.ADVENTURE)) {
             serviceContext.getStateService().setInHub(true);
-            serviceContext.getStateService().setModerLocation(StringUtils.EMPTY);
+            serviceContext.getStateService().setUserLocation(StringUtils.EMPTY);
         } else {
             serviceContext.getStateService().setInHub(false);
-            serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getModerNickname());
+            serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getUserNickname());
         }
 
         if (event.isSwitch() && !serviceContext.getStateService().isInHub()) {
@@ -181,16 +186,18 @@ public class StateModule extends Module {
             case ("disable"): {
                 event.setCancelled(true);
 
-                serviceContext.getStateService().setEnabled(false);
-                serviceContext.getStateService().block();
-                serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод выключен!", 5f);
+                if (!serviceContext.getStateService().isBlocked()) {
+                    serviceContext.getStateService().disable();
+                    serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод выключен!", 5f);
+                }
                 break;
             }
 
             case ("enable"): {
-                serviceContext.getStateService().setEnabled(true);
-                serviceContext.getStateService().unblock();
-                serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод включен!", 5f);
+                if (!serviceContext.getStateService().isBlocked()) {
+                    serviceContext.getStateService().enable();
+                    serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод включен!", 5f);
+                }
                 break;
             }
 
@@ -229,13 +236,13 @@ public class StateModule extends Module {
         if (receivedText.equals("▶ Ожидайте завершения проверки... Пожалуйста, не двигайтесь.") || receivedText.equals("▶ Введите цифры с картинки в чат! Для открытия чата, нажмите <T>")) {
             serviceContext.getStateService().setInHub(true);
             serviceContext.getStateService().setGameInitCompleted(true);
-            serviceContext.getStateService().setModerLocation(StringUtils.EMPTY);
+            serviceContext.getStateService().setUserLocation(StringUtils.EMPTY);
         }
 
-        if (serviceContext.getStateService().getModerLocation().isEmpty()) {
-            if (receivedText.startsWith("Игрок " + serviceContext.getStateService().getModerNickname())) {
+        if (serviceContext.getStateService().getUserLocation().isEmpty()) {
+            if (receivedText.startsWith("Игрок " + serviceContext.getStateService().getUserNickname())) {
                 event.setCancelled(true);
-                serviceContext.getStateService().setModerLocation(serviceContext.getChatService().formatLocation(receivedText.split("сервере ")[1]));
+                serviceContext.getStateService().setUserLocation(serviceContext.getChatService().formatLocation(receivedText.split("сервере ")[1]));
             }
         }
     }

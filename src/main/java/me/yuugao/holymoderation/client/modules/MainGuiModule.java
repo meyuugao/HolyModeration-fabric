@@ -1,14 +1,18 @@
-package me.yuugao.holymoderation.client.gui.main;
+package me.yuugao.holymoderation.client.modules;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
-import me.yuugao.holymoderation.client.modules.Module;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.screen.Screen;
 
 public class MainGuiModule extends Module {
     private final MainGuiScreen mainGuiScreen = new MainGuiScreen(serviceContext);
+
+    public MainGuiModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
 
     @Subscribe
     public void onHudRender(HudRenderEvent event) {

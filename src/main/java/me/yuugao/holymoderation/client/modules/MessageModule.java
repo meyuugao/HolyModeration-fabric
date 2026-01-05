@@ -2,12 +2,17 @@ package me.yuugao.holymoderation.client.modules;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
 public class MessageModule extends Module {
-    @Subscribe(priority = 96)
+    public MessageModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
+
+    @Subscribe(priority = 95)
     public void onMessageReceive(MessageReceiveEvent event) {
         Text component = event.getMessage();
         String message = component.getString().replaceAll("§[0-9a-zA-Z]", "");

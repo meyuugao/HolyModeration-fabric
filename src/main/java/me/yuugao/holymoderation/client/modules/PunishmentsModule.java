@@ -5,6 +5,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import org.apache.commons.lang3.StringUtils;
@@ -39,6 +40,10 @@ public class PunishmentsModule extends Module {
     private boolean StrangeFrzPunishmentConfirm = false;
     private String StrangeMessage = StringUtils.EMPTY;
     private String StrangeFrzMessage = StringUtils.EMPTY;
+
+    public PunishmentsModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {

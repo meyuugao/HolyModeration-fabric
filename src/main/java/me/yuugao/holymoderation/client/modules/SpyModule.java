@@ -5,6 +5,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import net.minecraft.client.font.TextRenderer;
@@ -32,6 +33,10 @@ public class SpyModule extends Module {
     private String display0 = StringUtils.EMPTY;
     private String display1 = StringUtils.EMPTY;
     private boolean clearDisplayWhenHidden = false;
+
+    public SpyModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
@@ -82,7 +87,7 @@ public class SpyModule extends Module {
         }
     }
 
-    @Subscribe(priority = 99)
+    @Subscribe(priority = 98)
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
@@ -96,7 +101,7 @@ public class SpyModule extends Module {
                 } else processingPlaytimeInfo = true;
             }
 
-            if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок " + serviceContext.getStateService().getModerNickname())) {
+            if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок " + serviceContext.getStateService().getUserNickname())) {
                 event.setCancelled(true);
                 if (receivedText.equals("Игрок оффлайн"))
                     serviceContext.getStateService().setSpyPlayerStatus("offline");
@@ -137,7 +142,7 @@ public class SpyModule extends Module {
             }
 
             if (shouldUpdate) {
-                instantUpdate |= serviceContext.getStateService().getModerLocation().equals(serviceContext.getStateService().getSpyPlayerStatus())
+                instantUpdate |= serviceContext.getStateService().getUserLocation().equals(serviceContext.getStateService().getSpyPlayerStatus())
                         && serviceContext.getStateService().getSpyPlayerActivity().isEmpty();
                 serviceContext.getSchedulerService().getInstance().schedule(this::update, instantUpdate ? 500 : serviceContext.getConfigManager().getConfig().getSpyDelay(), instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
@@ -157,7 +162,7 @@ public class SpyModule extends Module {
         }
     }
 
-    @Subscribe
+    @Subscribe(priority = 100)
     public void onHudRender(HudRenderEvent event) {
         anim += (animTarget - anim) * 0.15f;
         if (anim < 0.01f && display0.isEmpty() && display1.isEmpty()) return;
@@ -260,7 +265,7 @@ public class SpyModule extends Module {
                         serviceContext.getStateService().setSpyPlayerStatus("stop");
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка приостановлена.", 5f);
                     } else {
-                        if (!serviceContext.getStateService().getModerLocation().isEmpty()) {
+                        if (!serviceContext.getStateService().getUserLocation().isEmpty()) {
                             update();
                             serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка возобновлена.", 5f);
                         } else {
@@ -309,7 +314,7 @@ public class SpyModule extends Module {
 
         checkingSpy = true;
         if (!serviceContext.getStateService().isInHub() && serviceContext.getStateService().isGameInitCompleted()) {
-            if (!serviceContext.getStateService().getModerLocation().equals(serviceContext.getStateService().getSpyPlayerStatus()))
+            if (!serviceContext.getStateService().getUserLocation().equals(serviceContext.getStateService().getSpyPlayerStatus()))
                 serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getSpyPlayer());
             else
                 serviceContext.getChatService().chatMessage("/playtime " + serviceContext.getStateService().getSpyPlayer());

@@ -6,8 +6,8 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService
 public abstract class Module {
     protected final ServiceContext serviceContext;
 
-    public Module() {
-        serviceContext = new ServiceContext();
+    public Module(ServiceContext serviceContext) {
+        this.serviceContext = serviceContext;
     }
 
     public void setLogger(LoggerService holyLogger) {

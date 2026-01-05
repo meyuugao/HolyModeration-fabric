@@ -6,13 +6,18 @@ import static me.yuugao.holymoderation.client.util.Colors.GREEN;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 public class ReportCopyModule extends Module {
     private boolean messageIsReportInfo = false;
 
-    @Subscribe(priority = 97)
+    public ReportCopyModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
+
+    @Subscribe(priority = 96)
     public void onMessageReceive(MessageReceiveEvent event) {
         String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;

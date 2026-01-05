@@ -12,9 +12,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MessageHandler.class)
-public class MessageHandlerMixin {
+public abstract class MessageHandlerMixin {
     @Inject(method = "onGameMessage", at = @At("HEAD"), cancellable = true)
-    private void onGameMessage(Text message, boolean overlay, CallbackInfo ci) {
+    public void onGameMessage(Text message, boolean overlay, CallbackInfo ci) {
         MessageReceiveEvent event = new MessageReceiveEvent(message);
 
         ServiceLocator.getEventBus().invokeEvent(event);

@@ -2,8 +2,9 @@ package me.yuugao.holymoderation.client;
 
 import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.gui.main.MainGuiModule;
+import me.yuugao.holymoderation.client.modules.MainGuiModule;
 import me.yuugao.holymoderation.client.modules.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
@@ -75,16 +76,18 @@ public class HolyModerationClient implements ClientModInitializer {
     }
 
     public static void registerEventListeners(EventBus eventBus) {
-        eventBus.register(new MainGuiModule());
-        eventBus.register(new CheckoutsModule());
-        eventBus.register(new KeyBindingModule());
-        eventBus.register(new MessageModule());
-        eventBus.register(new NetSynchronizerModule());
-        eventBus.register(new PunishmentsModule());
-        eventBus.register(new ReportCopyModule());
-        eventBus.register(new SettingsModule());
-        eventBus.register(new StateModule());
-        eventBus.register(new SpyModule());
-        eventBus.register(new TwinksCheckModule());
+        ServiceContext serviceContext = new ServiceContext();
+        eventBus.register(new MainGuiModule(serviceContext));
+        eventBus.register(new CheckoutsModule(serviceContext));
+        eventBus.register(new KeyBindingModule(serviceContext));
+        eventBus.register(new MessageModule(serviceContext));
+        eventBus.register(new NetModule(serviceContext));
+        eventBus.register(new PunishmentsModule(serviceContext));
+        eventBus.register(new ReportCopyModule(serviceContext));
+        eventBus.register(new SettingsModule(serviceContext));
+        eventBus.register(new StateModule(serviceContext));
+        eventBus.register(new SpyModule(serviceContext));
+        eventBus.register(new TwinksCheckModule(serviceContext));
+        eventBus.register(new WaterMarkModule(serviceContext));
     }
 }

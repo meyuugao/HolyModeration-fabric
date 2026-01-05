@@ -110,7 +110,7 @@ public class ChatService extends Service {
                 throw new Exception("Неизвестная OS.");
             }
         } catch (Exception e) {
-            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в ChatService/copyToClipboard: " + DARK_RED + e, 5f);
+            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в ChatService/copyToClipboard: " + DARK_RED + e, 5f);
         }
     }
 

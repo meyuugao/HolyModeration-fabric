@@ -6,6 +6,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
 import org.apache.commons.io.FileUtils;
@@ -29,6 +30,10 @@ import java.util.stream.Stream;
 public class TwinksCheckModule extends Module {
     private final Path outputDir = Paths.get("C:\\HolyModeration\\Temp");
     private final File tempFile = new File("C:\\HolyModeration\\Temp\\temp.txt");
+
+    public TwinksCheckModule(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
@@ -102,7 +107,7 @@ public class TwinksCheckModule extends Module {
         }
     }
 
-    @Subscribe(priority = 98)
+    @Subscribe(priority = 97)
     public void onMessageReceive(MessageReceiveEvent event) {
         String message = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
         if (message == null) {
