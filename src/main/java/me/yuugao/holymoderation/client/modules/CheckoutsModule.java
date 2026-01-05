@@ -170,7 +170,6 @@ public class CheckoutsModule extends Module {
                             serviceContext.getNetService().startCheckout(player, reason, mode, number, false);
                         }
                     });
-                    coStartForLocal(player);
                     break;
                 }
                 case ("endcheckout"): {
@@ -220,7 +219,6 @@ public class CheckoutsModule extends Module {
                             }
                         }
                     });
-                    coStopLocal();
                     break;
                 }
             }
