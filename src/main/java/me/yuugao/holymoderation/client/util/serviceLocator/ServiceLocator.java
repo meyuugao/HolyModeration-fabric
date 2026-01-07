@@ -18,7 +18,9 @@ public class ServiceLocator {
     @Getter
     private static CheckoutsService checkoutsService;
     @Getter
-    private static KeyBindingService keyBindingService;
+    private static GuiManagerService guiManagerService;
+    @Getter
+    private static InputService inputService;
     @Getter
     private static MinecraftService minecraftService;
     @Getter
@@ -38,12 +40,13 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, CheckoutsService checkoutsService, KeyBindingService keyBindingService, MinecraftService minecraftService, NetService netService, NotificationService notificationService, PunishmentsService punishmentsService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
+    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, CheckoutsService checkoutsService, GuiManagerService guiManagerService, InputService inputService, MinecraftService minecraftService, NetService netService, NotificationService notificationService, PunishmentsService punishmentsService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
         ServiceLocator.checkoutsService = checkoutsService;
-        ServiceLocator.keyBindingService = keyBindingService;
+        ServiceLocator.guiManagerService = guiManagerService;
+        ServiceLocator.inputService = inputService;
         ServiceLocator.minecraftService = minecraftService;
         ServiceLocator.netService = netService;
         ServiceLocator.notificationService = notificationService;
@@ -61,7 +64,8 @@ public class ServiceLocator {
         eventBus.setLogger(loggerService);
         chatService.setLoggerService(loggerService);
         checkoutsService.setLoggerService(loggerService);
-        keyBindingService.setLoggerService(loggerService);
+        guiManagerService.setLoggerService(loggerService);
+        inputService.setLoggerService(loggerService);
         minecraftService.setLoggerService(loggerService);
         netService.setLoggerService(loggerService);
         notificationService.setLoggerService(loggerService);

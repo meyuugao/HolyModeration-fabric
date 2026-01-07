@@ -21,8 +21,8 @@ public class ColorPickerModule extends GuiModule {
 
     private Color selectedColor;
 
-    public ColorPickerModule(Tab parent, ServiceContext serviceContext) {
-        super(parent, serviceContext);
+    public ColorPickerModule(ServiceContext serviceContext) {
+        super(serviceContext);
 
         this.selectedColor = Color.WHITE;
     }

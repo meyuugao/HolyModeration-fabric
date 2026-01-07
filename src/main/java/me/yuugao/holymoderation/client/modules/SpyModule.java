@@ -5,20 +5,21 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.*;
+import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
+import me.yuugao.holymoderation.client.modules.drawable.element.SpyDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
-
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
-import java.awt.Color;
 import java.util.concurrent.TimeUnit;
 
-public class SpyModule extends Module {
+import lombok.Getter;
+
+public class SpyModule extends DrawableModule<SpyDrawableElement> {
+    @Getter
+    private final int renderPriority = 99;
+
     private boolean enabled = false;
     private boolean checkingSpy = false;
     private boolean processingPlaytimeInfo = false;
@@ -26,16 +27,8 @@ public class SpyModule extends Module {
     private boolean instantUpdate = false;
     private String lastKnownLocation = StringUtils.EMPTY;
 
-    private float anim = 0f;
-    private float animTarget = 0f;
-    private float currentWidth = 1f;
-    private float currentHeight = 1f;
-    private String display0 = StringUtils.EMPTY;
-    private String display1 = StringUtils.EMPTY;
-    private boolean clearDisplayWhenHidden = false;
-
-    public SpyModule(ServiceContext serviceContext) {
-        super(serviceContext);
+    public SpyModule(ServiceContext serviceContext, SpyDrawableElement spyDrawableElement) {
+        super(serviceContext, spyDrawableElement);
     }
 
     @Subscribe
@@ -162,100 +155,6 @@ public class SpyModule extends Module {
         }
     }
 
-    @Subscribe(priority = 100)
-    public void onHudRender(HudRenderEvent event) {
-        anim += (animTarget - anim) * 0.15f;
-        if (anim < 0.01f && display0.isEmpty() && display1.isEmpty()) return;
-
-        String[] current = getStringsToRender();
-        if (!(current[0].isEmpty() && current[1].isEmpty())) {
-            display0 = current[0];
-            display1 = current[1];
-        }
-
-        DrawContext ctx = event.getDrawContext();
-        TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
-
-        int w1 = tr.getWidth(display0);
-        int w2 = tr.getWidth(display1);
-        float targetWidth = Math.max(w1, w2) + 16;
-
-        int lines = display1.isEmpty() ? 1 : 2;
-        int textBlockHeight = lines * tr.fontHeight + (lines == 2 ? 4 : 0);
-        float targetHeight = textBlockHeight + 12;
-
-        currentWidth += (targetWidth - currentWidth) * 0.2f;
-        currentHeight += (targetHeight - currentHeight) * 0.2f;
-
-        float width = Math.max(1f, currentWidth * anim);
-        float height = Math.max(1f, currentHeight * anim);
-
-        float cx = ctx.getScaledWindowWidth() / 2f;
-        float x = cx - width / 2f;
-        float y = 30f;
-
-        Color bg = new Color(10, 20, 40, 220);
-        Color outline = new Color(60, 120, 220);
-
-        serviceContext.getRender2DService().renderSoftRoundedRectOutline(
-                ms, x, y, width, height, 10f, bg, outline, 1.5f, 3
-        );
-
-        ms.push();
-        ms.translate(cx, y + height / 2f, 0);
-        ms.scale(anim, anim, 1f);
-
-        float textY = (float) -textBlockHeight / 2 + 0.5f;
-
-        serviceContext.getRender2DService().renderText(
-                tr,
-                display0,
-                -tr.getWidth(display0) / 2f,
-                textY,
-                0xffffffff,
-                false,
-                ctx
-        );
-
-        if (!display1.isEmpty()) {
-            serviceContext.getRender2DService().renderText(
-                    tr,
-                    display1,
-                    -tr.getWidth(display1) / 2f,
-                    textY + tr.fontHeight + 4,
-                    0xffffffff,
-                    false,
-                    ctx
-            );
-        }
-
-        ms.pop();
-
-        if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
-            display0 = display1 = StringUtils.EMPTY;
-            clearDisplayWhenHidden = false;
-        }
-    }
-
-    private String @NotNull [] getStringsToRender() {
-        String spyPlayer = serviceContext.getStateService().getSpyPlayer();
-        if (spyPlayer.isEmpty()) return new String[]{"", ""};
-
-        if (serviceContext.getStateService().getSpyPlayerStatus().isEmpty())
-            return new String[]{spyPlayer, ""};
-
-        return switch (serviceContext.getStateService().getSpyPlayerStatus()) {
-            case "stop" -> new String[]{"Слежка приостановлена", ""};
-            case "offline" -> new String[]{"Игрок " + spyPlayer + " оффлайн", ""};
-            case "lobby" -> new String[]{"Игрок " + spyPlayer + " в лобби", ""};
-            default -> new String[]{
-                    "Игрок " + spyPlayer + " находится на " + serviceContext.getStateService().getSpyPlayerStatus(),
-                    serviceContext.getStateService().getSpyPlayerActivity() == null ? "" : "Активность: " + serviceContext.getStateService().getSpyPlayerActivity()
-            };
-        };
-    }
-
     private void tryInit() {
         serviceContext.getSchedulerService().getInstance().schedule(() -> {
             if (serviceContext.getStateService().isGameInitCompleted()) {
@@ -283,11 +182,7 @@ public class SpyModule extends Module {
         resetSpy();
         serviceContext.getStateService().setSpyPlayer(player);
         enabled = true;
-        animTarget = 1f;
-        display0 = getStringsToRender()[0];
-        display1 = getStringsToRender()[1];
-        currentWidth = Math.max(1f, currentWidth);
-        currentHeight = Math.max(1f, currentHeight);
+        this.drawableElement.onStartSpy();
         serviceContext.getSchedulerService().getInstance().schedule(this::update, 250, TimeUnit.MILLISECONDS);
         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Слежка начата", 5f);
     }
@@ -300,13 +195,10 @@ public class SpyModule extends Module {
     private void resetSpy() {
         serviceContext.getStateService().setSpyPlayer(StringUtils.EMPTY);
         enabled = false;
-        animTarget = 0f;
-        display0 = getStringsToRender()[0];
-        display1 = getStringsToRender()[1];
+        this.drawableElement.onResetSpy();
         lastKnownLocation = StringUtils.EMPTY;
         serviceContext.getStateService().setSpyPlayerActivity(StringUtils.EMPTY);
         serviceContext.getStateService().setSpyPlayerStatus(StringUtils.EMPTY);
-        clearDisplayWhenHidden = true;
     }
 
     private void update() {

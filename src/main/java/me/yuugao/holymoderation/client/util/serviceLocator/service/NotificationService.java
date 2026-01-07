@@ -63,6 +63,7 @@ public class NotificationService extends Service {
             for (String s : n.text.split("\n")) {
                 n.bodyLines.addAll(tr.wrapLines(Text.literal(s), wrap));
             }
+
             n.width = width;
             n.height = padding
                     + n.titleLines.size() * tr.fontHeight
@@ -74,18 +75,18 @@ public class NotificationService extends Service {
         float yCursor = screenH - margin;
         for (int i = notificationPool.size() - 1; i >= 0; i--) {
             Notification n = notificationPool.get(i);
-            n.targetY = yCursor - n.height;
+            n.targetY = yCursor - n.height / 2f;
             yCursor -= n.height + spacing;
-            n.targetX = screenW - n.width - margin;
+            n.targetX = screenW - margin - n.width / 2f;
             if (n.state == State.HIDING) {
-                n.targetX = screenW + n.width + 40f;
+                n.targetX = screenW + n.width;
             }
         }
 
         for (Notification n : notificationPool) {
             if (n.state == State.SPAWNING && !n.initialized) {
-                n.x = n.targetX + n.width + 20f;
-                n.y = screenH + n.height + 20f;
+                n.x = screenW + n.width;
+                n.y = screenH + n.height;
                 n.initialized = true;
             }
         }
@@ -107,7 +108,7 @@ public class NotificationService extends Service {
                 n.state = State.IDLE;
             }
 
-            if (n.state == State.HIDING && n.x > screenW + n.width * 0.5f) {
+            if (n.state == State.HIDING && n.x > screenW + n.width) {
                 n.remove = true;
             }
         }
@@ -115,13 +116,13 @@ public class NotificationService extends Service {
         notificationPool.removeIf(n -> n.remove);
 
         for (Notification n : notificationPool) {
-            MatrixStack matrices = drawContext.getMatrices();
+            MatrixStack ms = drawContext.getMatrices();
 
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
             r.renderSoftRoundedRectOutline(
-                    matrices,
+                    ms,
                     n.x,
                     n.y,
                     n.width,
@@ -133,28 +134,46 @@ public class NotificationService extends Service {
                     blur
             );
 
-            float tx = n.x + padding;
-            float ty = n.y + padding;
+            ms.push();
+            ms.translate(n.x, n.y, 0);
+
+            float ty = -n.height / 2f + padding;
 
             for (OrderedText line : n.titleLines) {
-                tr.draw(line, tx, ty, 0xFFFFFF, false,
-                        matrices.peek().getPositionMatrix(),
+                tr.draw(
+                        line,
+                        -n.width / 2f + padding,
+                        ty,
+                        0xFFFFFF,
+                        false,
+                        ms.peek().getPositionMatrix(),
                         drawContext.getVertexConsumers(),
                         TextRenderer.TextLayerType.NORMAL,
-                        0, 15728880);
+                        0,
+                        15728880
+                );
                 ty += tr.fontHeight;
             }
 
             ty += 4f;
 
             for (OrderedText line : n.bodyLines) {
-                tr.draw(line, tx, ty, 0xD0D0D0, false,
-                        matrices.peek().getPositionMatrix(),
+                tr.draw(
+                        line,
+                        -n.width / 2f + padding,
+                        ty,
+                        0xD0D0D0,
+                        false,
+                        ms.peek().getPositionMatrix(),
                         drawContext.getVertexConsumers(),
                         TextRenderer.TextLayerType.NORMAL,
-                        0, 15728880);
+                        0,
+                        15728880
+                );
                 ty += tr.fontHeight;
             }
+
+            ms.pop();
         }
     }
 

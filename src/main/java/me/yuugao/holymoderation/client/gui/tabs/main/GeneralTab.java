@@ -13,7 +13,7 @@ public class GeneralTab extends Tab {
     public GeneralTab(MainGuiScreen parent, ServiceContext serviceContext) {
         super(parent, serviceContext);
 
-        modules.put("ColorPicker", new ColorPickerModule(this, serviceContext));
+        modules.put("ColorPicker", new ColorPickerModule(serviceContext));
     }
 
     @Override
@@ -22,7 +22,7 @@ public class GeneralTab extends Tab {
         ColorPickerModule colorPickerModule = (ColorPickerModule) modules.get("ColorPicker");
 
         float radius = 25f;
-        colorPickerModule.render(context.getMatrices(), mainGuiScreen.getX() + mainGuiScreen.getWidth() / 2, mainGuiScreen.getY() + mainGuiScreen.getHeight() / 2, radius * mainGuiScreen.getAnimValue(), new Color(0x000000), 3);
+        colorPickerModule.render(context.getMatrices(), mainGuiScreen.getX(), mainGuiScreen.getY(), radius * mainGuiScreen.getAnimValue(), new Color(0x000000), 3);
         colorPickerModule.updateColorFromMouse(mouseX, mouseY);
     }
 }

@@ -11,6 +11,6 @@ public class KeyBindingModule extends Module {
 
     @Subscribe
     public void onKeyPress(KeyPressEvent event) {
-        serviceContext.getKeyBindingService().updatePressedKeys(event.getKey(), event.getAction());
+        serviceContext.getInputService().updatePressedKeys(event.getKey(), event.getAction());
     }
 }

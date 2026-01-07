@@ -81,10 +81,14 @@ public class NetModule extends Module {
             }
             case ("stats"): {
                 try {
-                    Map<String, Object> revisesAll = (Map<String, Object>) journalStats.get("revisesAll");
-                    Map<String, Object> revisesMonth = (Map<String, Object>) journalStats.get("revisesMonth");
-                    Map<String, Object> revisesWeek = (Map<String, Object>) journalStats.get("revisesWeek");
-                    Map<String, Object> revisesToday = (Map<String, Object>) journalStats.get("revisesToday");
+                    @SuppressWarnings("unchecked")
+                    Map<String, Map<String, Object>> typedJournalStats = (Map<String, Map<String, Object>>) (Map<?, ?>) journalStats;
+
+                    Map<String, Object> revisesAll = typedJournalStats.get("revisesAll");
+                    Map<String, Object> revisesMonth = typedJournalStats.get("revisesMonth");
+                    Map<String, Object> revisesWeek = typedJournalStats.get("revisesWeek");
+                    Map<String, Object> revisesToday = typedJournalStats.get("revisesToday");
+
 
                     String texts = "";
 

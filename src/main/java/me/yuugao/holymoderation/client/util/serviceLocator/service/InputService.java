@@ -10,9 +10,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class KeyBindingService extends Service {
+public class InputService extends Service {
     private final Set<Integer> pressedKeys = new HashSet<>();
     private final Map<String, Boolean> keyStates = new HashMap<>();
+
+    private final Set<Integer> pressedMouseButtons = new HashSet<>();
+    private final Map<Integer, Boolean> mouseButtonStates = new HashMap<>();
+    private double scrollDeltaX = 0;
+    private double scrollDeltaY = 0;
 
     public void updatePressedKeys(int keyCode, int action) {
         if (action == GLFW.GLFW_PRESS) {
@@ -58,5 +63,41 @@ public class KeyBindingService extends Service {
             return true;
         }
         return false;
+    }
+
+    public void updateMouseButton(int button, int action) {
+        if (action == GLFW.GLFW_PRESS) {
+            pressedMouseButtons.add(button);
+            mouseButtonStates.put(button, true);
+        } else if (action == GLFW.GLFW_RELEASE) {
+            pressedMouseButtons.remove(button);
+        }
+    }
+
+    public boolean isMouseButtonHeld(int button) {
+        return pressedMouseButtons.contains(button);
+    }
+
+    public boolean wasMouseButtonPressed(int button) {
+        boolean wasPressed = mouseButtonStates.getOrDefault(button, false);
+        if (wasPressed) mouseButtonStates.put(button, false);
+        return wasPressed;
+    }
+
+    public void updateScroll(double dx, double dy) {
+        scrollDeltaX += dx;
+        scrollDeltaY += dy;
+    }
+
+    public double getScrollDeltaX() {
+        double dx = scrollDeltaX;
+        scrollDeltaX = 0;
+        return dx;
+    }
+
+    public double getScrollDeltaY() {
+        double dy = scrollDeltaY;
+        scrollDeltaY = 0;
+        return dy;
     }
 }

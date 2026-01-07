@@ -1,8 +1,5 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
-import static me.yuugao.holymoderation.client.util.Colors.*;
-
-
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.font.TextRenderer;
@@ -30,47 +27,25 @@ public class Render2DService extends Service {
 
     public void initializeShaders() {
         try {
-            RECT = new ShaderProgram(
-                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
-                    "rect",
-                    VertexFormats.POSITION_COLOR
-            );
+            var rm = ServiceLocator.getMinecraftService().getClient().getResourceManager();
 
-            ROUNDED_RECT = new ShaderProgram(
-                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
-                    "rounded_rect",
-                    VertexFormats.POSITION_COLOR_TEXTURE
-            );
-
-            SOFT_ROUNDED_RECT = new ShaderProgram(
-                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
-                    "soft_rounded_rect",
-                    VertexFormats.POSITION_COLOR_TEXTURE
-            );
-
-            ROUNDED_RECT_OUTLINE = new ShaderProgram(
-                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
-                    "rounded_rect_outline",
-                    VertexFormats.POSITION_COLOR_TEXTURE
-            );
-
-            SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(
-                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
-                    "soft_rounded_rect_outline",
-                    VertexFormats.POSITION_COLOR_TEXTURE
-            );
-
-            RGB_PALETTE = new ShaderProgram(
-                    ServiceLocator.getMinecraftService().getClient().getResourceManager(),
-                    "rgb_palette",
-                    VertexFormats.POSITION_COLOR_TEXTURE
-            );
+            RECT = new ShaderProgram(rm, "rect", VertexFormats.POSITION_COLOR);
+            ROUNDED_RECT = new ShaderProgram(rm, "rounded_rect", VertexFormats.POSITION_COLOR_TEXTURE);
+            SOFT_ROUNDED_RECT = new ShaderProgram(rm, "soft_rounded_rect", VertexFormats.POSITION_COLOR_TEXTURE);
+            ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
+            SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "soft_rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
+            RGB_PALETTE = new ShaderProgram(rm, "rgb_palette", VertexFormats.POSITION_COLOR_TEXTURE);
         } catch (Exception e) {
-            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в Render2DService/initializeShaders: " + DARK_RED + e, 5f);
+            ServiceLocator.getNotificationService().addNotification(
+                    NotificationType.EXCEPTION,
+                    "Исключение",
+                    "Render2DService: " + e,
+                    5f
+            );
         }
     }
 
-    public void renderRect(MatrixStack matrices, float x, float y, float width, float height, Color color) {
+    public void renderRect(MatrixStack matrices, float cx, float cy, float w, float h, Color color) {
         setupRender();
         RECT.getUniformOrDefault("Color").set(
                 color.getRed() / 255f,
@@ -79,29 +54,14 @@ public class Render2DService extends Service {
                 color.getAlpha() / 255f
         );
         RenderSystem.setShader(() -> RECT);
-
-        Tessellator tessellator = Tessellator.getInstance();
-        BufferBuilder buffer = tessellator.getBuffer();
-
-        matrices.push();
-        matrices.translate(x, y, 0);
-        Matrix4f matrix = matrices.peek().getPositionMatrix();
-
-        buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR);
-        buffer.vertex(matrix, 0, height, 0).color(1f, 1f, 1f, 1f).next();
-        buffer.vertex(matrix, width, height, 0).color(1f, 1f, 1f, 1f).next();
-        buffer.vertex(matrix, width, 0, 0).color(1f, 1f, 1f, 1f).next();
-        buffer.vertex(matrix, 0, 0, 0).color(1f, 1f, 1f, 1f).next();
-        tessellator.draw();
-
-        matrices.pop();
+        renderQuad(matrices, cx, cy, w, h);
         endRender();
     }
 
-    public void renderRoundedRect(MatrixStack matrices, float x, float y, float width, float height, float radius, Color color) {
+    public void renderRoundedRect(MatrixStack matrices, float cx, float cy, float w, float h, float radius, Color color) {
         setupRender();
         ROUNDED_RECT.getUniformOrDefault("radius").set(radius);
-        ROUNDED_RECT.getUniformOrDefault("size").set(width, height);
+        ROUNDED_RECT.getUniformOrDefault("size").set(w, h);
         ROUNDED_RECT.getUniformOrDefault("color").set(
                 color.getRed() / 255f,
                 color.getGreen() / 255f,
@@ -109,11 +69,11 @@ public class Render2DService extends Service {
                 color.getAlpha() / 255f
         );
         RenderSystem.setShader(() -> ROUNDED_RECT);
-        renderQuad(matrices, x, y, width, height);
+        renderQuad(matrices, cx, cy, w, h);
         endRender();
     }
 
-    public void renderSoftRoundedRect(MatrixStack matrices, float x, float y, float w, float h, float radius, Color color, int blurWidth) {
+    public void renderSoftRoundedRect(MatrixStack matrices, float cx, float cy, float w, float h, float radius, Color color, int blurWidth) {
         setupRender();
 
         SOFT_ROUNDED_RECT.getUniformOrDefault("Radius").set(radius);
@@ -128,18 +88,18 @@ public class Render2DService extends Service {
 
         RenderSystem.setShader(() -> SOFT_ROUNDED_RECT);
 
-        float totalWidth = w + 2 * blurWidth;
-        float totalHeight = h + 2 * blurWidth;
-        renderQuad(matrices, x - blurWidth, y - blurWidth, totalWidth, totalHeight);
+        float tw = w + blurWidth * 2f;
+        float th = h + blurWidth * 2f;
+        renderQuad(matrices, cx, cy, tw, th);
 
         endRender();
     }
 
-
-    public void renderRoundedRectOutline(MatrixStack matrices, float x, float y, float width, float height, float radius, Color color, Color outlineColor, float outlineWidth) {
+    public void renderRoundedRectOutline(MatrixStack matrices, float cx, float cy, float w, float h, float radius, Color color, Color outlineColor, float outlineWidth) {
         setupRender();
+
         ROUNDED_RECT_OUTLINE.getUniformOrDefault("radius").set(radius);
-        ROUNDED_RECT_OUTLINE.getUniformOrDefault("size").set(width, height);
+        ROUNDED_RECT_OUTLINE.getUniformOrDefault("size").set(w, h);
         ROUNDED_RECT_OUTLINE.getUniformOrDefault("color").set(
                 color.getRed() / 255f,
                 color.getGreen() / 255f,
@@ -155,11 +115,11 @@ public class Render2DService extends Service {
         ROUNDED_RECT_OUTLINE.getUniformOrDefault("OutlineWidth").set(outlineWidth);
 
         RenderSystem.setShader(() -> ROUNDED_RECT_OUTLINE);
-        renderQuad(matrices, x, y, width, height);
+        renderQuad(matrices, cx, cy, w, h);
         endRender();
     }
 
-    public void renderSoftRoundedRectOutline(MatrixStack matrices, float x, float y, float w, float h, float radius, Color color, Color outlineColor, float outlineWidth, float blurWidth) {
+    public void renderSoftRoundedRectOutline(MatrixStack matrices, float cx, float cy, float w, float h, float radius, Color color, Color outlineColor, float outlineWidth, float blurWidth) {
         setupRender();
 
         SOFT_ROUNDED_RECT_OUTLINE.getUniformOrDefault("Radius").set(radius);
@@ -181,17 +141,17 @@ public class Render2DService extends Service {
 
         RenderSystem.setShader(() -> SOFT_ROUNDED_RECT_OUTLINE);
 
-        float totalWidth = w + 2 * blurWidth;
-        float totalHeight = h + 2 * blurWidth;
-        renderQuad(matrices, x - blurWidth, y - blurWidth, totalWidth, totalHeight);
+        float tw = w + blurWidth * 2f;
+        float th = h + blurWidth * 2f;
+        renderQuad(matrices, cx, cy, tw, th);
 
         endRender();
     }
 
-    public void renderRGBPalette(MatrixStack matrices, float centerX, float centerY, float radius, Color outlineColor, float outlineWidth) {
+    public void renderRGBPalette(MatrixStack matrices, float cx, float cy, float radius, Color outlineColor, float outlineWidth) {
         setupRender();
 
-        float size = (radius + outlineWidth) * 2;
+        float size = (radius + outlineWidth) * 2f;
 
         RGB_PALETTE.getUniformOrDefault("Radius").set(radius);
         RGB_PALETTE.getUniformOrDefault("OutlineColor").set(
@@ -204,42 +164,43 @@ public class Render2DService extends Service {
         RGB_PALETTE.getUniformOrDefault("Size").set(size, size);
 
         RenderSystem.setShader(() -> RGB_PALETTE);
-
-        float x = centerX - radius - outlineWidth;
-        float y = centerY - radius - outlineWidth;
-        renderQuad(matrices, x, y, size, size);
-
+        renderQuad(matrices, cx, cy, size, size);
         endRender();
     }
 
-    private void renderQuad(MatrixStack matrices, float x, float y, float w, float h) {
+    private void renderQuad(MatrixStack matrices, float cx, float cy, float w, float h) {
         Tessellator t = Tessellator.getInstance();
         BufferBuilder b = t.getBuffer();
+
         matrices.push();
-        matrices.translate(x, y, 0);
+        matrices.translate(cx - w / 2f, cy - h / 2f, 0);
+
         Matrix4f m = matrices.peek().getPositionMatrix();
+
         b.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
         b.vertex(m, 0, h, 0).color(1f, 1f, 1f, 1f).texture(0, h).next();
         b.vertex(m, w, h, 0).color(1f, 1f, 1f, 1f).texture(w, h).next();
         b.vertex(m, w, 0, 0).color(1f, 1f, 1f, 1f).texture(w, 0).next();
         b.vertex(m, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0, 0).next();
         t.draw();
+
         matrices.pop();
     }
 
-    public void renderText(TextRenderer textRenderer, String text, float x, float y, int color, boolean shadow, DrawContext drawContext) {
-        textRenderer.draw(
+    public void renderText(TextRenderer tr, String text, float cx, float cy, int color, boolean shadow, DrawContext ctx) {
+        float w = tr.getWidth(text);
+        tr.draw(
                 text,
-                x,
-                y,
+                cx - w / 2f,
+                cy,
                 color,
                 shadow,
-                drawContext.getMatrices().peek().getPositionMatrix(),
-                drawContext.getVertexConsumers(),
+                ctx.getMatrices().peek().getPositionMatrix(),
+                ctx.getVertexConsumers(),
                 TextRenderer.TextLayerType.NORMAL,
                 0,
                 15728880,
-                textRenderer.isRightToLeft()
+                tr.isRightToLeft()
         );
     }
 

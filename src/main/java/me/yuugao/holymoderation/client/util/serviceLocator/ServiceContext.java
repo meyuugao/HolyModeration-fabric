@@ -12,7 +12,8 @@ public class ServiceContext {
     private final EventBus eventBus;
     private final ChatService chatService;
     private final CheckoutsService checkoutsService;
-    private final KeyBindingService keyBindingService;
+    private final GuiManagerService guiManagerService;
+    private final InputService inputService;
     private final MinecraftService minecraftService;
     private final NetService netService;
     private final NotificationService notificationService;
@@ -28,7 +29,8 @@ public class ServiceContext {
         this.eventBus = ServiceLocator.getEventBus();
         this.chatService = ServiceLocator.getChatService();
         this.checkoutsService = ServiceLocator.getCheckoutsService();
-        this.keyBindingService = ServiceLocator.getKeyBindingService();
+        this.guiManagerService = ServiceLocator.getGuiManagerService();
+        this.inputService = ServiceLocator.getInputService();
         this.minecraftService = ServiceLocator.getMinecraftService();
         this.netService = ServiceLocator.getNetService();
         this.notificationService = ServiceLocator.getNotificationService();

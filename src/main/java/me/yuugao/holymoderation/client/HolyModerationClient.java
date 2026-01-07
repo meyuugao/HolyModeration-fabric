@@ -4,6 +4,9 @@ import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.modules.MainGuiModule;
 import me.yuugao.holymoderation.client.modules.*;
+import me.yuugao.holymoderation.client.modules.drawable.element.CheckoutsDrawableElement;
+import me.yuugao.holymoderation.client.modules.drawable.element.SpyDrawableElement;
+import me.yuugao.holymoderation.client.modules.drawable.element.WatermarkDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
@@ -25,7 +28,7 @@ public class HolyModerationClient implements ClientModInitializer {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
-        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(), new KeyBindingService(), new MinecraftService(), new NetService(), new NotificationService(), new PunishmentsService(), new Render2DService(), new SchedulerService(), new SoundService(), new StateService(), LoggerFactory.getLogger("HolyModeration/Client"));
+        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(), new GuiManagerService(), new InputService(), new MinecraftService(), new NetService(), new NotificationService(), new PunishmentsService(), new Render2DService(), new SchedulerService(), new SoundService(), new StateService(), LoggerFactory.getLogger("HolyModeration/Client"));
         eventBusInitialize();
         commandsInitialize();
         ServiceLocator.getLoggerService().logger().info("HolyModerationClient has been initialized");
@@ -78,7 +81,8 @@ public class HolyModerationClient implements ClientModInitializer {
     public static void registerEventListeners(EventBus eventBus) {
         ServiceContext serviceContext = new ServiceContext();
         eventBus.register(new MainGuiModule(serviceContext));
-        eventBus.register(new CheckoutsModule(serviceContext));
+        eventBus.register(new CheckoutsModule(serviceContext, new CheckoutsDrawableElement(serviceContext)));
+        eventBus.register(new GuiManagerModule(serviceContext));
         eventBus.register(new KeyBindingModule(serviceContext));
         eventBus.register(new MessageModule(serviceContext));
         eventBus.register(new NetModule(serviceContext));
@@ -86,8 +90,8 @@ public class HolyModerationClient implements ClientModInitializer {
         eventBus.register(new ReportCopyModule(serviceContext));
         eventBus.register(new SettingsModule(serviceContext));
         eventBus.register(new StateModule(serviceContext));
-        eventBus.register(new SpyModule(serviceContext));
+        eventBus.register(new SpyModule(serviceContext, new SpyDrawableElement(serviceContext)));
         eventBus.register(new TwinksCheckModule(serviceContext));
-        eventBus.register(new WaterMarkModule(serviceContext));
+        eventBus.register(new WaterMarkModule(serviceContext, new WatermarkDrawableElement(serviceContext)));
     }
 }

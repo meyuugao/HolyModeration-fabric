@@ -1,0 +1,112 @@
+package me.yuugao.holymoderation.client.modules.drawable.element;
+
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.util.math.MatrixStack;
+
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+
+import java.awt.Color;
+
+public class SpyDrawableElement extends DrawableElement {
+    private float anim = 0f;
+    private float animTarget = 0f;
+    private float currentWidth = 1f;
+    private float currentHeight = 1f;
+    private String display0 = StringUtils.EMPTY;
+    private String display1 = StringUtils.EMPTY;
+    private boolean clearDisplayWhenHidden = false;
+
+    public SpyDrawableElement(ServiceContext serviceContext) {
+        super(serviceContext);
+    }
+
+    @Override
+    public void render(DrawContext ctx) {
+        anim += (animTarget - anim) * 0.15f;
+        if (anim < 0.01f && display0.isEmpty() && display1.isEmpty()) return;
+
+        String[] current = getStringsToRender();
+        if (!(current[0].isEmpty() && current[1].isEmpty())) {
+            display0 = current[0];
+            display1 = current[1];
+        }
+
+        TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
+        MatrixStack ms = ctx.getMatrices();
+
+        float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
+        int lines = display1.isEmpty() ? 1 : 2;
+        float textBlockHeight = lines * tr.fontHeight + (lines == 2 ? 4 : 0);
+        float targetHeight = textBlockHeight + 12f;
+
+        currentWidth += (targetWidth - currentWidth) * 0.2f;
+        currentHeight += (targetHeight - currentHeight) * 0.2f;
+
+        width = Math.max(1f, currentWidth * anim) * widthScale;
+        height = Math.max(1f, currentHeight * anim) * heightScale;
+
+        Color bg = new Color(10, 20, 40, 220);
+        Color outline = new Color(60, 120, 220);
+
+        ms.push();
+        ms.translate(0, 0, 0);
+
+        serviceContext.getRender2DService().renderSoftRoundedRectOutline(
+                ms, x, y, width, height, 10f, bg, outline, 1.5f, 3
+        );
+
+        ms.pop();
+
+        ms.push();
+        ms.translate(x, y, 0);
+        ms.scale(anim, anim, 1f);
+
+        float baseY = -textBlockHeight / 2f + 0.5f;
+        serviceContext.getRender2DService().renderText(tr, display0, 0, baseY, 0xffffffff, false, ctx);
+        if (!display1.isEmpty()) {
+            serviceContext.getRender2DService().renderText(tr, display1, 0, baseY + tr.fontHeight + 4, 0xffffffff, false, ctx);
+        }
+
+        ms.pop();
+
+        if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
+            display0 = display1 = "";
+            clearDisplayWhenHidden = false;
+        }
+    }
+
+    public void onStartSpy() {
+        animTarget = 1f;
+        String[] s = getStringsToRender();
+        display0 = s[0];
+        display1 = s[1];
+        clearDisplayWhenHidden = true;
+    }
+
+    public void onResetSpy() {
+        animTarget = 0f;
+    }
+
+    private String @NotNull [] getStringsToRender() {
+        String spyPlayer = serviceContext.getStateService().getSpyPlayer();
+        if (spyPlayer.isEmpty()) return new String[]{"", ""};
+
+        if (serviceContext.getStateService().getSpyPlayerStatus().isEmpty())
+            return new String[]{spyPlayer, ""};
+
+        return switch (serviceContext.getStateService().getSpyPlayerStatus()) {
+            case "stop" -> new String[]{"Слежка приостановлена", ""};
+            case "offline" -> new String[]{"Игрок " + spyPlayer + " оффлайн", ""};
+            case "lobby" -> new String[]{"Игрок " + spyPlayer + " в лобби", ""};
+            default -> new String[]{
+                    "Игрок " + spyPlayer + " находится на " + serviceContext.getStateService().getSpyPlayerStatus(),
+                    serviceContext.getStateService().getSpyPlayerActivity() == null ? "" :
+                            "Активность: " + serviceContext.getStateService().getSpyPlayerActivity()
+            };
+        };
+    }
+}

@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.config;
 
 import org.apache.commons.lang3.StringUtils;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 
@@ -14,10 +15,10 @@ import obfuscator.ObfRule;
 @Setter
 public class Config {
     public Config() {
-        //keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
+        keyBinds.put("open_main_gui", new KeyBindConfig(KeyBindType.SINGLE_PRESS, GLFW.GLFW_KEY_RIGHT_SHIFT));
     }
 
-    private final String currentVersion = "2.10alpha";
+    private final String currentVersion = "2.10alpha"; //tip: измени перед релизом если нужно
 
     @Expose
     private String apiToken = StringUtils.EMPTY;
