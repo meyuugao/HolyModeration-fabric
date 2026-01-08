@@ -2,7 +2,6 @@ package me.yuugao.holymoderation.client.modules.drawable;
 
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.modules.WaterMarkModule;
 import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
@@ -27,6 +26,6 @@ public abstract class DrawableModule<T extends DrawableElement> extends Module {
     public abstract int getRenderPriority();
 
     public void render(HudRenderEvent event) {
-        this.drawableElement.render(event.getDrawContext());
+        this.drawableElement.render(event.getDrawContext(), getRenderPriority());
     }
 }

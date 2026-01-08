@@ -5,7 +5,6 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.modules.drawable.element.CheckoutsDrawableElement;
@@ -16,12 +15,7 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationT
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
-import lombok.Getter;
-
 public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
-    @Getter
-    private final int renderPriority = 100;
-
     private final String[] FreezerCommands = {
             "/freezing", "/frz", "freezing", "frz", "sban", "sendtexts", "unfreezing", "unfrz"
     };
@@ -268,5 +262,10 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                 CompletableFuture.runAsync(() -> serviceContext.getNetService().endCheckout("ban", banReason, destroyStash));
             }
         }
+    }
+
+    @Override
+    public int getRenderPriority() {
+        return 1002;
     }
 }

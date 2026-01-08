@@ -40,7 +40,7 @@ public class NetModule extends Module {
     public void onServerConnect(ServerConnectEvent event) {
         if (!event.isSwitch()) refresh();
     }
-    
+
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
         String eventCommand = event.getCommand();
@@ -48,7 +48,7 @@ public class NetModule extends Module {
         if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
 
         String command = commandSplit[1];
-        
+
         switch (command) {
             case ("net"): {
                 refresh();

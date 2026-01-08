@@ -4,7 +4,10 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.*;
+import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
+import me.yuugao.holymoderation.client.eventbus.event.ServerDisconnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
 
@@ -245,11 +248,6 @@ public class StateModule extends Module {
                 serviceContext.getStateService().setUserLocation(serviceContext.getChatService().formatLocation(receivedText.split("сервере ")[1]));
             }
         }
-    }
-
-    @Subscribe(priority = 100)
-    public void onHudRender(HudRenderEvent event) {
-        serviceContext.getNotificationService().renderNotifications(event.getDrawContext());
     }
 
     private void checkServerAddress(ServerConnectEvent event) {

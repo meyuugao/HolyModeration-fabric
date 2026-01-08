@@ -9,10 +9,13 @@ import net.minecraft.text.Text;
 
 import java.awt.Color;
 
+import lombok.Getter;
 import obfuscator.DontObf;
 import obfuscator.ObfRule;
 
 public class MainGuiScreen extends AnimatedGuiScreen {
+    @Getter
+    private final int renderPriority = 200;
     private final Color outlineColor = Color.WHITE;
     private DrawableModule<?> dragging;
     private float dragOffsetX;
@@ -42,7 +45,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
                 context.getMatrices(),
-                this.x, this.y, Math.max(1, this.width), Math.max(1, this.height),
+                this.x, this.y, Math.max(1, this.width), Math.max(1, this.height), renderPriority,
                 10f,
                 new Color(0x002AFF),
                 outlineColor,

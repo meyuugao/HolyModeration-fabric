@@ -11,12 +11,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Mouse.class)
 public class MouseMixin {
-    @Inject(method = "onMouseButton", at=@At("HEAD"))
+    @Inject(method = "onMouseButton", at = @At("HEAD"))
     private void onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
         ServiceLocator.getInputService().updateMouseButton(button, action);
     }
 
-    @Inject(method = "onMouseScroll", at=@At("HEAD"))
+    @Inject(method = "onMouseScroll", at = @At("HEAD"))
     private void onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         ServiceLocator.getInputService().updateScroll(horizontal, vertical);
     }

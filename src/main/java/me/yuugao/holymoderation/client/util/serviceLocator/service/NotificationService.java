@@ -32,13 +32,12 @@ public class NotificationService extends Service {
         notificationPool.clear();
     }
 
-    public void renderNotifications(DrawContext drawContext) {
-        Render2DService r = ServiceLocator.getRender2DService();
-        var mc = ServiceLocator.getMinecraftService().getClient();
-        TextRenderer tr = mc.textRenderer;
+    public void renderNotifications(DrawContext ctx, int z) {
+        Render2DService render2DService = ServiceLocator.getRender2DService();
+        TextRenderer tr = ServiceLocator.getMinecraftService().getClient().textRenderer;
 
-        float screenW = drawContext.getScaledWindowWidth();
-        float screenH = drawContext.getScaledWindowHeight();
+        float screenW = ctx.getScaledWindowWidth();
+        float screenH = ctx.getScaledWindowHeight();
 
         long now = System.nanoTime();
         float delta = (now - lastNano) / 1_000_000_000f;
@@ -116,17 +115,18 @@ public class NotificationService extends Service {
         notificationPool.removeIf(n -> n.remove);
 
         for (Notification n : notificationPool) {
-            MatrixStack ms = drawContext.getMatrices();
+            MatrixStack ms = ctx.getMatrices();
 
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
-            r.renderSoftRoundedRectOutline(
+            render2DService.renderSoftRoundedRectOutline(
                     ms,
                     n.x,
                     n.y,
                     n.width,
                     n.height,
+                    z,
                     radius,
                     bg,
                     ol,
@@ -140,17 +140,15 @@ public class NotificationService extends Service {
             float ty = -n.height / 2f + padding;
 
             for (OrderedText line : n.titleLines) {
-                tr.draw(
+                render2DService.renderText(
+                        tr,
                         line,
                         -n.width / 2f + padding,
                         ty,
+                        z,
                         0xFFFFFF,
                         false,
-                        ms.peek().getPositionMatrix(),
-                        drawContext.getVertexConsumers(),
-                        TextRenderer.TextLayerType.NORMAL,
-                        0,
-                        15728880
+                        ctx
                 );
                 ty += tr.fontHeight;
             }
@@ -158,17 +156,15 @@ public class NotificationService extends Service {
             ty += 4f;
 
             for (OrderedText line : n.bodyLines) {
-                tr.draw(
+                render2DService.renderText(
+                        tr,
                         line,
                         -n.width / 2f + padding,
                         ty,
-                        0xD0D0D0,
+                        z,
+                        0xFFFFFF,
                         false,
-                        ms.peek().getPositionMatrix(),
-                        drawContext.getVertexConsumers(),
-                        TextRenderer.TextLayerType.NORMAL,
-                        0,
-                        15728880
+                        ctx
                 );
                 ty += tr.fontHeight;
             }

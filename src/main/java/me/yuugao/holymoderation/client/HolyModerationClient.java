@@ -2,9 +2,9 @@ package me.yuugao.holymoderation.client;
 
 import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.modules.MainGuiModule;
 import me.yuugao.holymoderation.client.modules.*;
 import me.yuugao.holymoderation.client.modules.drawable.element.CheckoutsDrawableElement;
+import me.yuugao.holymoderation.client.modules.drawable.element.NotificationsDrawableElement;
 import me.yuugao.holymoderation.client.modules.drawable.element.SpyDrawableElement;
 import me.yuugao.holymoderation.client.modules.drawable.element.WatermarkDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -86,6 +86,7 @@ public class HolyModerationClient implements ClientModInitializer {
         eventBus.register(new KeyBindingModule(serviceContext));
         eventBus.register(new MessageModule(serviceContext));
         eventBus.register(new NetModule(serviceContext));
+        eventBus.register(new NotificationsModule(serviceContext, new NotificationsDrawableElement(serviceContext)));
         eventBus.register(new PunishmentsModule(serviceContext));
         eventBus.register(new ReportCopyModule(serviceContext));
         eventBus.register(new SettingsModule(serviceContext));

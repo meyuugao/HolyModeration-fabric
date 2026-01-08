@@ -9,7 +9,7 @@ import net.minecraft.client.gui.DrawContext;
 
 import java.awt.Color;
 
-public class GeneralTab extends Tab {
+public class GeneralTab extends Tab<MainGuiScreen> {
     public GeneralTab(MainGuiScreen parent, ServiceContext serviceContext) {
         super(parent, serviceContext);
 
@@ -18,11 +18,11 @@ public class GeneralTab extends Tab {
 
     @Override
     public void onRender(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-        MainGuiScreen mainGuiScreen = (MainGuiScreen) parent;
+        MainGuiScreen mainGuiScreen = parent;
         ColorPickerModule colorPickerModule = (ColorPickerModule) modules.get("ColorPicker");
 
         float radius = 25f;
-        colorPickerModule.render(context.getMatrices(), mainGuiScreen.getX(), mainGuiScreen.getY(), radius * mainGuiScreen.getAnimValue(), new Color(0x000000), 3);
+        colorPickerModule.render(context.getMatrices(), mainGuiScreen.getX(), mainGuiScreen.getY(),parent.getRenderPriority(), radius * mainGuiScreen.getAnimValue(), new Color(0x000000), 3);
         colorPickerModule.updateColorFromMouse(mouseX, mouseY);
     }
 }

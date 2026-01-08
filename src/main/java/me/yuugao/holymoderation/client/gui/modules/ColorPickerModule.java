@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.gui.modules;
 
-import me.yuugao.holymoderation.client.gui.tabs.Tab;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.util.math.MatrixStack;
@@ -27,13 +26,13 @@ public class ColorPickerModule extends GuiModule {
         this.selectedColor = Color.WHITE;
     }
 
-    public void render(MatrixStack matrices, float centerX, float centerY, float radius, Color outlineColor, float outlineWidth) {
+    public void render(MatrixStack matrices, float centerX, float centerY, int z, float radius, Color outlineColor, float outlineWidth) {
         this.centerX = centerX;
         this.centerY = centerY;
         this.radius = radius;
         this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
-        serviceContext.getRender2DService().renderRGBPalette(matrices, centerX, centerY, radius, outlineColor, outlineWidth);
+        serviceContext.getRender2DService().renderRGBPalette(matrices, centerX, centerY, z, radius, outlineColor, outlineWidth);
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {

@@ -4,7 +4,10 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.*;
+import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
+import me.yuugao.holymoderation.client.eventbus.event.ServerDisconnectEvent;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.modules.drawable.element.SpyDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -14,12 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
-import lombok.Getter;
-
 public class SpyModule extends DrawableModule<SpyDrawableElement> {
-    @Getter
-    private final int renderPriority = 99;
-
     private boolean enabled = false;
     private boolean checkingSpy = false;
     private boolean processingPlaytimeInfo = false;
@@ -211,5 +209,10 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
             else
                 serviceContext.getChatService().chatMessage("/playtime " + serviceContext.getStateService().getSpyPlayer());
         }
+    }
+
+    @Override
+    public int getRenderPriority() {
+        return 1001;
     }
 }

@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
-import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.font.TextRenderer;
@@ -23,7 +22,8 @@ public class CheckoutsDrawableElement extends DrawableElement {
     }
 
     @Override
-    public void render(DrawContext ctx) {
+    public void renderContent(DrawContext ctx, int z) {
+        MatrixStack ms = ctx.getMatrices();
         coAnim += (coAnimTarget - coAnim) * 0.15f;
 
         String player = serviceContext.getStateService().getPlayer();
@@ -41,7 +41,6 @@ public class CheckoutsDrawableElement extends DrawableElement {
         if (coAnim < 0.01f && player.isEmpty()) return;
 
         TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
 
         long elapsed = checkoutStartMillis == 0L ? 0L : (System.currentTimeMillis() - checkoutStartMillis) / 1000L;
         String display = "Текущая проверка: " + (player.isEmpty() ? coLastPlayer : player) + " | " +
@@ -59,24 +58,22 @@ public class CheckoutsDrawableElement extends DrawableElement {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        ms.push();
-        ms.translate(0, 0, 0);
+        serviceContext.getRender2DService().setupRender();
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
-                ms, x, y, width, height, 10f, bg, outline, 1.5f, 3
+                ms, 0f, 0f, width, height, z, 10f, bg, outline, 1.5f, 3
         );
 
-        ms.pop();
-
         ms.push();
-        ms.translate(x, y, 0);
         ms.scale(coAnim, coAnim, 1f);
 
         serviceContext.getRender2DService().renderText(
-                tr, display, 0, -tr.fontHeight / 2f + 0.5f, 0x555555ff, false, ctx
+                tr, display, 0f, -tr.fontHeight / 2f + 0.5f, z, 0xff0000ff, false, ctx
         );
 
         ms.pop();
+
+        serviceContext.getRender2DService().endRender();
 
         if (coAnim < 0.02f && coAnimTarget == 0f && coClearDisplayWhenHidden) {
             checkoutStartMillis = 0L;

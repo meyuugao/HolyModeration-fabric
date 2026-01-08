@@ -26,7 +26,8 @@ public class WatermarkDrawableElement extends DrawableElement {
     }
 
     @Override
-    public void render(DrawContext ctx) {
+    public void renderContent(DrawContext ctx, int z) {
+        MatrixStack ms = ctx.getMatrices();
         tickCounter++;
         if (tickCounter % 18 == 0) updateAnimText();
 
@@ -35,7 +36,6 @@ public class WatermarkDrawableElement extends DrawableElement {
                 + " | " + new String(animBuffer);
 
         TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
 
         width = (tr.getWidth(text) + 12f) * widthScale;
         height = (tr.fontHeight + 8f) * heightScale;
@@ -43,18 +43,17 @@ public class WatermarkDrawableElement extends DrawableElement {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        ms.push();
-        ms.translate(0, 0, 0);
+        serviceContext.getRender2DService().setupRender();
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
-                ms, x, y, width, height, 8f, bg, outline, 1.2f, 3
+                ms, 0f, 0f, width, height, z, 8f, bg, outline, 1.2f, 3
         );
 
         serviceContext.getRender2DService().renderText(
-                tr, text, x, y - tr.fontHeight / 2f + 0.5f, 0xaaaaaaff, false, ctx
+                tr, text, 0f, -tr.fontHeight / 2f + 0.5f, z, 0x00ff00ff, false, ctx
         );
 
-        ms.pop();
+        serviceContext.getRender2DService().endRender();
     }
 
     private void updateAnimText() {

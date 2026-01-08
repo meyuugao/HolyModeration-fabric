@@ -25,7 +25,8 @@ public class SpyDrawableElement extends DrawableElement {
     }
 
     @Override
-    public void render(DrawContext ctx) {
+    public void renderContent(DrawContext ctx, int z) {
+        MatrixStack ms = ctx.getMatrices();
         anim += (animTarget - anim) * 0.15f;
         if (anim < 0.01f && display0.isEmpty() && display1.isEmpty()) return;
 
@@ -36,7 +37,6 @@ public class SpyDrawableElement extends DrawableElement {
         }
 
         TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;
@@ -52,26 +52,24 @@ public class SpyDrawableElement extends DrawableElement {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        ms.push();
-        ms.translate(0, 0, 0);
+        serviceContext.getRender2DService().setupRender();
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
-                ms, x, y, width, height, 10f, bg, outline, 1.5f, 3
+                ms, 0f, 0f, width, height, z, 10f, bg, outline, 1.5f, 3
         );
 
-        ms.pop();
-
         ms.push();
-        ms.translate(x, y, 0);
         ms.scale(anim, anim, 1f);
 
         float baseY = -textBlockHeight / 2f + 0.5f;
-        serviceContext.getRender2DService().renderText(tr, display0, 0, baseY, 0xffffffff, false, ctx);
+        serviceContext.getRender2DService().renderText(tr, display0, 0f, baseY, z, 0xffffffff, false, ctx);
         if (!display1.isEmpty()) {
-            serviceContext.getRender2DService().renderText(tr, display1, 0, baseY + tr.fontHeight + 4, 0xffffffff, false, ctx);
+            serviceContext.getRender2DService().renderText(tr, display1, 0f, baseY + tr.fontHeight + 4, z, 0xffffffff, false, ctx);
         }
 
         ms.pop();
+
+        serviceContext.getRender2DService().endRender();
 
         if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
             display0 = display1 = "";

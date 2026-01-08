@@ -1,11 +1,10 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-
-import net.minecraft.client.gui.DrawContext;
-
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.util.math.MatrixStack;
 
 public abstract class DrawableElement {
     protected final ServiceContext serviceContext;
@@ -20,5 +19,16 @@ public abstract class DrawableElement {
         this.serviceContext = serviceContext;
     }
 
-    abstract public void render(DrawContext ctx);
+    protected abstract void renderContent(DrawContext ctx, int z);
+
+    public final void render(DrawContext ctx, int z) {
+        MatrixStack ms = ctx.getMatrices();
+        ms.push();
+        ms.translate(x, y, 0f);
+        try {
+            renderContent(ctx, z);
+        } finally {
+            ms.pop();
+        }
+    }
 }
