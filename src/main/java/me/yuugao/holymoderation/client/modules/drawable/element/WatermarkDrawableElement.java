@@ -49,9 +49,8 @@ public class WatermarkDrawableElement extends DrawableElement {
                 ms, 0f, 0f, width, height, z, 8f, bg, outline, 1.2f, 3
         );
 
-        serviceContext.getRender2DService().renderText(
-                tr, text, 0f, -tr.fontHeight / 2f + 0.5f, z, 0x00ff00ff, false, ctx
-        );
+        serviceContext.getRender2DService().renderText(tr, text, (int) (-tr.getWidth(text) / 2f),
+                (int) (-tr.fontHeight / 2f + 0.5f), z, 0x00ff00ff, false, ctx);
 
         serviceContext.getRender2DService().endRender();
     }

@@ -120,19 +120,9 @@ public class NotificationService extends Service {
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
-            render2DService.renderSoftRoundedRectOutline(
-                    ms,
-                    n.x,
-                    n.y,
-                    n.width,
-                    n.height,
-                    z,
-                    radius,
-                    bg,
-                    ol,
-                    outline,
-                    blur
-            );
+            render2DService.setupRender();
+
+            render2DService.renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
 
             ms.push();
             ms.translate(n.x, n.y, 0);
@@ -140,36 +130,22 @@ public class NotificationService extends Service {
             float ty = -n.height / 2f + padding;
 
             for (OrderedText line : n.titleLines) {
-                render2DService.renderText(
-                        tr,
-                        line,
-                        -n.width / 2f + padding,
-                        ty,
-                        z,
-                        0xFFFFFF,
-                        false,
-                        ctx
-                );
+                render2DService.renderText(tr, line, (int) (-n.width / 2f + padding),
+                        (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
 
             ty += 4f;
 
             for (OrderedText line : n.bodyLines) {
-                render2DService.renderText(
-                        tr,
-                        line,
-                        -n.width / 2f + padding,
-                        ty,
-                        z,
-                        0xFFFFFF,
-                        false,
-                        ctx
-                );
+                render2DService.renderText(tr, line, (int) (-n.width / 2f + padding),
+                        (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
 
             ms.pop();
+
+            render2DService.endRender();
         }
     }
 

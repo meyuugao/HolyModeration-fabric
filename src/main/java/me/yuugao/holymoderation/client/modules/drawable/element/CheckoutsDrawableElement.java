@@ -60,16 +60,14 @@ public class CheckoutsDrawableElement extends DrawableElement {
 
         serviceContext.getRender2DService().setupRender();
 
-        serviceContext.getRender2DService().renderSoftRoundedRectOutline(
-                ms, 0f, 0f, width, height, z, 10f, bg, outline, 1.5f, 3
-        );
+        serviceContext.getRender2DService().renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z,
+                10f, bg, outline, 1.5f, 3);
 
         ms.push();
         ms.scale(coAnim, coAnim, 1f);
 
-        serviceContext.getRender2DService().renderText(
-                tr, display, 0f, -tr.fontHeight / 2f + 0.5f, z, 0xff0000ff, false, ctx
-        );
+        serviceContext.getRender2DService().renderText(tr, display, (int) (-tr.getWidth(display) / 2f),
+                (int) (-tr.fontHeight / 2f + 0.5f), z, 0xff0000ff, false, ctx);
 
         ms.pop();
 

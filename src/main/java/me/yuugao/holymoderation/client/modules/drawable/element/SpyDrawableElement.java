@@ -62,9 +62,11 @@ public class SpyDrawableElement extends DrawableElement {
         ms.scale(anim, anim, 1f);
 
         float baseY = -textBlockHeight / 2f + 0.5f;
-        serviceContext.getRender2DService().renderText(tr, display0, 0f, baseY, z, 0xffffffff, false, ctx);
+        serviceContext.getRender2DService().renderText(tr, display0, (int) (-tr.getWidth(display0) / 2f),
+                (int) baseY, z, 0xffffffff, false, ctx);
         if (!display1.isEmpty()) {
-            serviceContext.getRender2DService().renderText(tr, display1, 0f, baseY + tr.fontHeight + 4, z, 0xffffffff, false, ctx);
+            serviceContext.getRender2DService().renderText(tr, display1, (int) (-tr.getWidth(display1) / 2f),
+                    (int) (baseY + tr.fontHeight + 4), z, 0xffffffff, false, ctx);
         }
 
         ms.pop();

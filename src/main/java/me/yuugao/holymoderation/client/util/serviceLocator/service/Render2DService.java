@@ -4,11 +4,15 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.render.item.ItemRenderer;
+import net.minecraft.client.render.model.json.JsonUnbakedModel;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.OrderedText;
 
 import org.joml.Matrix4f;
@@ -27,7 +31,7 @@ public class Render2DService extends Service {
 
     public void initializeShaders() {
         try {
-            var rm = ServiceLocator.getMinecraftService().getClient().getResourceManager();
+            ResourceManager rm = ServiceLocator.getMinecraftService().getClient().getResourceManager();
             RECT = new ShaderProgram(rm, "rect", VertexFormats.POSITION_COLOR);
             ROUNDED_RECT = new ShaderProgram(rm, "rounded_rect", VertexFormats.POSITION_COLOR_TEXTURE);
             SOFT_ROUNDED_RECT = new ShaderProgram(rm, "soft_rounded_rect", VertexFormats.POSITION_COLOR_TEXTURE);
@@ -159,59 +163,34 @@ public class Render2DService extends Service {
         matrices.pop();
     }
 
-    public void renderText(TextRenderer tr, String text, float cx, float cy, int z, int color, boolean shadow, DrawContext ctx) {
+    public void renderText(TextRenderer tr, String text, int x, int y, int z, int color, boolean shadow, DrawContext ctx) {
         ctx.getMatrices().push();
         ctx.getMatrices().translate(0f, 0f, z);
 
-        float w = tr.getWidth(text);
-        tr.draw(
-                text,
-                cx - w / 2f,
-                cy,
-                color,
-                shadow,
-                ctx.getMatrices().peek().getPositionMatrix(),
-                ctx.getVertexConsumers(),
-                TextRenderer.TextLayerType.NORMAL,
-                0,
-                15728880,
-                tr.isRightToLeft()
-        );
+        ctx.drawText(tr, text, x, y, color, shadow);
 
         ctx.getMatrices().pop();
     }
 
-    public void renderText(TextRenderer tr, OrderedText text, float x, float y, int z, int color, boolean shadow, DrawContext ctx) {
+    public void renderText(TextRenderer tr, OrderedText text, int x, int y, int z, int color, boolean shadow, DrawContext ctx) {
         ctx.getMatrices().push();
         ctx.getMatrices().translate(0f, 0f, z);
 
-        tr.draw(
-                text,
-                x,
-                y,
-                color,
-                shadow,
-                ctx.getMatrices().peek().getPositionMatrix(),
-                ctx.getVertexConsumers(),
-                TextRenderer.TextLayerType.NORMAL,
-                0,
-                15728880
-        );
+        ctx.drawText(tr, text, x, y, color, shadow);
 
         ctx.getMatrices().pop();
     }
 
     public void setupRender() {
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        RenderSystem.enableBlend();
-        RenderSystem.enableDepthTest();
         RenderSystem.depthMask(true);
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+        RenderSystem.enableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
     }
 
     public void endRender() {
-        RenderSystem.depthMask(true);
-        RenderSystem.disableBlend();
         RenderSystem.disableDepthTest();
+        RenderSystem.disableBlend();
     }
 }

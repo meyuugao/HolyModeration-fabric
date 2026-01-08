@@ -11,10 +11,6 @@ public class NotificationsDrawableElement extends DrawableElement {
 
     @Override
     public void renderContent(DrawContext ctx, int z) {
-        serviceContext.getRender2DService().setupRender();
-
         serviceContext.getNotificationService().renderNotifications(ctx, z);
-
-        serviceContext.getRender2DService().endRender();
     }
 }
