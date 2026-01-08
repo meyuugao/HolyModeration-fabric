@@ -28,15 +28,16 @@ public class PunishmentsService extends Service {
             return false;
         }
 
-        if (reason.contains(" | Вопросы")) {
-            serviceContext.getChatService().chatMessage(punishCommand + " " + player + " " + time + " " + reason + " -s");
+        String r = reason.replace("-s", "").trim();
+        if (r.endsWith("-v")) {
+            serviceContext.getChatService().chatMessage(punishCommand + " " + player + " " + time + " " + r.replace("-v", "").trim() + " -s");
             return true;
         }
         if (serviceContext.getStateService().getVkUrl().isEmpty() && !punishCommand.equals("/tempmute") && !punishCommand.equals("/tempmuteip")) {
             ServiceLocator.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Не удалось наказать игрока, т.к. не установлена ссылка на вк. Добавьте ссылку на вк в бан самостоятельно в формате ' | Вопросы? vk.com/id' или попробуйте перезайти на сервер.", 5f);
             return false;
         }
-        serviceContext.getChatService().chatMessage(punishCommand + " " + player + " " + time + " " + reason + (addVk ? " | Вопросы? " + serviceContext.getStateService().getVkUrl() + " -s" : " -s"));
+        serviceContext.getChatService().chatMessage(punishCommand + " " + player + " " + time + " " + r + (addVk ? " | Вопросы? " + serviceContext.getStateService().getVkUrl() + " -s" : " -s"));
         return true;
     }
 }

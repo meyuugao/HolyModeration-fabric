@@ -43,6 +43,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         float scaleFactor = Math.min(this.width, this.height) / 100f;
         float scaledOutline = baseOutline * scaleFactor;
 
+        serviceContext.getRender2DService().setupRender();
+
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
                 context.getMatrices(),
                 this.x, this.y, Math.max(1, this.width), Math.max(1, this.height), renderPriority,
@@ -51,6 +53,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 outlineColor,
                 scaledOutline, 3
         );
+
+        serviceContext.getRender2DService().endRender();
 
         boolean mouseHeld = serviceContext.getInputService().isMouseButtonHeld(0);
 

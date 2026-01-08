@@ -149,12 +149,14 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         return;
                     }
                     String loc = serviceContext.getStateService().getUserLocation();
-                    String mode = loc.startsWith("lite") ? "lite" : loc.startsWith("lite120") ? "lite120" : loc.startsWith("classic") ? "classic" : "lpvp";
+                    String mode = loc.startsWith("lite120") ? "lite120" : loc.startsWith("lite") ? "lite" : loc.startsWith("classic") ? "classic" : "lpvp";
+                    System.out.println(mode);
                     CompletableFuture.runAsync(() -> {
                         if (mode.equals("lpvp")) {
                             serviceContext.getNetService().startCheckout(player, reason, "lite", 1, true);
                         } else {
                             int number = Integer.parseInt(loc.split(mode + "-")[1]);
+                            System.out.println(player + " " + reason + " " + mode + " " + number + " " + false);
                             serviceContext.getNetService().startCheckout(player, reason, mode, number, false);
                         }
                     });
