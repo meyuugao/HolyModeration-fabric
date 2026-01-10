@@ -12,6 +12,8 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+
 public class NotificationService extends Service {
     private final List<Notification> notificationPool = new ArrayList<>();
     private long lastNano = System.nanoTime();
@@ -33,7 +35,6 @@ public class NotificationService extends Service {
     }
 
     public void renderNotifications(DrawContext ctx, int z) {
-        Render2DService render2DService = ServiceLocator.getRender2DService();
         TextRenderer tr = ServiceLocator.getMinecraftService().getClient().textRenderer;
 
         float screenW = ctx.getScaledWindowWidth();
@@ -107,7 +108,7 @@ public class NotificationService extends Service {
                 n.state = State.IDLE;
             }
 
-            if (n.state == State.HIDING && n.x > screenW + n.width) {
+            if (n.state == State.HIDING && n.x > screenW + n.width / 2f) {
                 n.remove = true;
             }
         }
@@ -120,9 +121,9 @@ public class NotificationService extends Service {
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
-            render2DService.setupRender();
+            ServiceLocator.getRender2DService().setupRender();
 
-            render2DService.renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
+            ServiceLocator.getRender2DService().renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
 
             ms.push();
             ms.translate(n.x, n.y, 0);
@@ -130,7 +131,7 @@ public class NotificationService extends Service {
             float ty = -n.height / 2f + padding;
 
             for (OrderedText line : n.titleLines) {
-                render2DService.renderText(tr, line, (int) (-n.width / 2f + padding),
+                ServiceLocator.getRender2DService().renderText(tr, line, (int) (-n.width / 2f + padding),
                         (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
@@ -138,14 +139,14 @@ public class NotificationService extends Service {
             ty += 4f;
 
             for (OrderedText line : n.bodyLines) {
-                render2DService.renderText(tr, line, (int) (-n.width / 2f + padding),
+                ServiceLocator.getRender2DService().renderText(tr, line, (int) (-n.width / 2f + padding),
                         (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
 
             ms.pop();
 
-            render2DService.endRender();
+            ServiceLocator.getRender2DService().endRender();
         }
     }
 

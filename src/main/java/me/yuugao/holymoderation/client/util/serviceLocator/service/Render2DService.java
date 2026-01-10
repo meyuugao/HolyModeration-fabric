@@ -1,16 +1,14 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.render.item.ItemRenderer;
-import net.minecraft.client.render.model.json.JsonUnbakedModel;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.OrderedText;
@@ -19,6 +17,7 @@ import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class Render2DService extends Service {
@@ -57,7 +56,7 @@ public class Render2DService extends Service {
         );
         RenderSystem.setShader(() -> RECT);
         renderQuad(matrices, cx, cy, w, h, z);
-        }
+    }
 
     public void renderRoundedRect(MatrixStack matrices, float cx, float cy, float w, float h, int z, float radius, Color color) {
         ROUNDED_RECT.getUniformOrDefault("radius").set(radius);
@@ -70,7 +69,7 @@ public class Render2DService extends Service {
         );
         RenderSystem.setShader(() -> ROUNDED_RECT);
         renderQuad(matrices, cx, cy, w, h, z);
-        }
+    }
 
     public void renderSoftRoundedRect(MatrixStack matrices, float cx, float cy, float w, float h, int z, float radius, Color color, int blurWidth) {
         SOFT_ROUNDED_RECT.getUniformOrDefault("Radius").set(radius);
@@ -86,7 +85,7 @@ public class Render2DService extends Service {
         float tw = w + blurWidth * 2f;
         float th = h + blurWidth * 2f;
         renderQuad(matrices, cx, cy, tw, th, z);
-        }
+    }
 
     public void renderRoundedRectOutline(MatrixStack matrices, float cx, float cy, float w, float h, int z, float radius, Color color, Color outlineColor, float outlineWidth) {
         ROUNDED_RECT_OUTLINE.getUniformOrDefault("radius").set(radius);
@@ -106,9 +105,9 @@ public class Render2DService extends Service {
         ROUNDED_RECT_OUTLINE.getUniformOrDefault("OutlineWidth").set(outlineWidth);
         RenderSystem.setShader(() -> ROUNDED_RECT_OUTLINE);
         renderQuad(matrices, cx, cy, w, h, z);
-        }
+    }
 
-    public void renderSoftRoundedRectOutline(MatrixStack matrices, float cx, float cy, float w, float h, int z, float radius, Color color, Color outlineColor, float outlineWidth, float blurWidth) {
+    public void renderSoftRoundedRectOutline(MatrixStack matrices, float x, float y, float w, float h, int z, float radius, Color color, Color outlineColor, float outlineWidth, float blurWidth) {
         SOFT_ROUNDED_RECT_OUTLINE.getUniformOrDefault("Radius").set(radius);
         SOFT_ROUNDED_RECT_OUTLINE.getUniformOrDefault("Size").set(w, h);
         SOFT_ROUNDED_RECT_OUTLINE.getUniformOrDefault("Color").set(
@@ -128,8 +127,8 @@ public class Render2DService extends Service {
         RenderSystem.setShader(() -> SOFT_ROUNDED_RECT_OUTLINE);
         float tw = w + blurWidth * 2f;
         float th = h + blurWidth * 2f;
-        renderQuad(matrices, cx, cy, tw, th, z);
-        }
+        renderQuad(matrices, x, y, tw, th, z);
+    }
 
     public void renderRGBPalette(MatrixStack matrices, float cx, float cy, int z, float radius, Color outlineColor, float outlineWidth) {
         float size = (radius + outlineWidth) * 2f;
@@ -144,7 +143,7 @@ public class Render2DService extends Service {
         RGB_PALETTE.getUniformOrDefault("Size").set(size, size);
         RenderSystem.setShader(() -> RGB_PALETTE);
         renderQuad(matrices, cx, cy, size, size, z);
-        }
+    }
 
     private void renderQuad(MatrixStack matrices, float cx, float cy, float w, float h, int z) {
         Tessellator t = Tessellator.getInstance();
@@ -182,15 +181,18 @@ public class Render2DService extends Service {
     }
 
     public void setupRender() {
-        RenderSystem.depthMask(true);
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        RenderSystem.enableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
+
+        RenderSystem.enableDepthTest();
+        RenderSystem.depthFunc(GL11.GL_LEQUAL);
+
+        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
     }
 
     public void endRender() {
-        RenderSystem.disableDepthTest();
         RenderSystem.disableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.disableDepthTest();
     }
 }

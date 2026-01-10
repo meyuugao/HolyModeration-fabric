@@ -9,11 +9,11 @@ import lombok.Getter;
 
 @Getter
 public class GuiManagerService extends Service {
-    private final List<DrawableModule<?>> drawableModules = new ArrayList<>();
+    private final ArrayList<DrawableModule<?>> drawableModules = new ArrayList<>();
 
     public void addDrawableModule(DrawableModule<?> drawableModule) {
         for (int i = 0; i < drawableModules.size(); i++) {
-            if (drawableModule.getRenderPriority() > drawableModules.get(i).getRenderPriority()) {
+            if (drawableModule.getRenderPriority() < drawableModules.get(i).getRenderPriority()) {
                 drawableModules.add(i, drawableModule);
                 return;
             }

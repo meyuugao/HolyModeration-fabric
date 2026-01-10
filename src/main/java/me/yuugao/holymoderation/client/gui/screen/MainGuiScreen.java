@@ -8,6 +8,9 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
 import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import lombok.Getter;
 import obfuscator.DontObf;
@@ -15,7 +18,7 @@ import obfuscator.ObfRule;
 
 public class MainGuiScreen extends AnimatedGuiScreen {
     @Getter
-    private final int renderPriority = 200;
+    private final int renderPriority = 2000;
     private final Color outlineColor = Color.WHITE;
     private DrawableModule<?> dragging;
     private float dragOffsetX;
@@ -29,15 +32,15 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
     @Override
     @DontObf(ObfRule.MAP_METHOD)
-    public void render(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-        float targetW = (float) context.getScaledWindowWidth() / 2.2f;
-        float targetH = (float) context.getScaledWindowHeight() / 1.8f;
+    public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
+        float targetW = (float) ctx.getScaledWindowWidth() / 2.2f;
+        float targetH = (float) ctx.getScaledWindowHeight() / 1.8f;
 
         this.width = targetW * getAnimValue();
         this.height = targetH * getAnimValue();
 
-        this.x = (float) context.getScaledWindowWidth() / 2;
-        this.y = (float) context.getScaledWindowHeight() / 2;
+        this.x = (float) ctx.getScaledWindowWidth() / 2;
+        this.y = (float) ctx.getScaledWindowHeight() / 2;
 
         float baseOutline = 1f;
         float scaleFactor = Math.min(this.width, this.height) / 100f;
@@ -46,10 +49,10 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         serviceContext.getRender2DService().setupRender();
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
-                context.getMatrices(),
+                ctx.getMatrices(),
                 this.x, this.y, Math.max(1, this.width), Math.max(1, this.height), renderPriority,
                 10f,
-                new Color(0x002AFF),
+                new Color(0xB3002AFF, true),
                 outlineColor,
                 scaledOutline, 3
         );
@@ -60,7 +63,9 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         if (mouseHeld) {
             if (dragging == null) {
-                for (DrawableModule<?> d : serviceContext.getGuiManagerService().getDrawableModules()) {
+                ArrayList<DrawableModule<?>> drawableModules = new ArrayList<>(serviceContext.getGuiManagerService().getDrawableModules());
+                Collections.reverse(drawableModules);
+                for (DrawableModule<?> d : drawableModules) {
                     if (d.isMouseOver(mouseX, mouseY)) {
                         dragging = d;
                         dragOffsetX = mouseX - d.getDrawableElement().getX();
@@ -78,6 +83,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
             dragging = null;
         }
 
-        super.render(context, mouseX, mouseY, tickDelta);
+        super.render(ctx, mouseX, mouseY, tickDelta);
     }
 }
