@@ -27,8 +27,8 @@ public abstract class DrawableModule<T extends DrawableElement> extends Module {
 
         float left = x + tl[0];
         float top = y + tl[1];
-        float right = left + drawableElement.getWidth();
-        float bottom = top + drawableElement.getHeight();
+        float right = left + drawableElement.getWidth() * drawableElement.getWidthScale();
+        float bottom = top + drawableElement.getHeight() * drawableElement.getHeightScale();
 
         return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
     }
