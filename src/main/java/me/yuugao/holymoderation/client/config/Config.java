@@ -60,6 +60,9 @@ public class Config {
     private boolean autoBanEnabled = true;
 
     @Expose
+    private boolean watermarkEnabled = true;
+
+    @Expose
     private Map<String, KeyBindConfig> keyBinds = new HashMap<>();
 
     public KeyBindConfig getKeyBind(String action) {

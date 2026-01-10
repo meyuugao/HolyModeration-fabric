@@ -1,17 +1,14 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class NotificationService extends Service {
@@ -58,26 +55,20 @@ public class NotificationService extends Service {
             for (String s : n.title.split("\n")) {
                 n.titleLines.addAll(tr.wrapLines(Text.literal(s), wrap));
             }
-
             n.bodyLines.clear();
             for (String s : n.text.split("\n")) {
                 n.bodyLines.addAll(tr.wrapLines(Text.literal(s), wrap));
             }
-
             n.width = width;
-            n.height = padding
-                    + n.titleLines.size() * tr.fontHeight
-                    + 4f
-                    + n.bodyLines.size() * tr.fontHeight
-                    + padding;
+            n.height = padding + n.titleLines.size() * tr.fontHeight + 4f + n.bodyLines.size() * tr.fontHeight + padding;
         }
 
         float yCursor = screenH - margin;
         for (int i = notificationPool.size() - 1; i >= 0; i--) {
             Notification n = notificationPool.get(i);
-            n.targetY = yCursor - n.height / 2f;
+            n.targetY = yCursor - n.height;
             yCursor -= n.height + spacing;
-            n.targetX = screenW - margin - n.width / 2f;
+            n.targetX = screenW - margin - n.width;
             if (n.state == State.HIDING) {
                 n.targetX = screenW + n.width;
             }
@@ -93,22 +84,17 @@ public class NotificationService extends Service {
 
         for (Notification n : notificationPool) {
             n.elapsed += delta;
-
             if (n.state == State.IDLE && n.elapsed >= n.liveTime) {
                 n.state = State.HIDING;
             }
-
             float speedY = n.state == State.SPAWNING ? 14f : 8f;
             n.y += (n.targetY - n.y) * Math.min(1f, speedY * delta);
-
             float speedX = n.state == State.HIDING ? 12f : 10f;
             n.x += (n.targetX - n.x) * Math.min(1f, speedX * delta);
-
             if (n.state == State.SPAWNING && Math.abs(n.y - n.targetY) < 0.5f) {
                 n.state = State.IDLE;
             }
-
-            if (n.state == State.HIDING && n.x > screenW + n.width / 2f) {
+            if (n.state == State.HIDING && n.x > screenW + n.width) {
                 n.remove = true;
             }
         }
@@ -117,7 +103,6 @@ public class NotificationService extends Service {
 
         for (Notification n : notificationPool) {
             MatrixStack ms = ctx.getMatrices();
-
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
@@ -128,22 +113,16 @@ public class NotificationService extends Service {
             ms.push();
             ms.translate(n.x, n.y, 0);
 
-            float ty = -n.height / 2f + padding;
-
+            float ty = padding;
             for (OrderedText line : n.titleLines) {
-                ServiceLocator.getRender2DService().renderText(tr, line, (int) (-n.width / 2f + padding),
-                        (int) ty, z, 0xFFFFFF, false, ctx);
+                ServiceLocator.getRender2DService().renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
-
             ty += 4f;
-
             for (OrderedText line : n.bodyLines) {
-                ServiceLocator.getRender2DService().renderText(tr, line, (int) (-n.width / 2f + padding),
-                        (int) ty, z, 0xFFFFFF, false, ctx);
+                ServiceLocator.getRender2DService().renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
-
             ms.pop();
 
             ServiceLocator.getRender2DService().endRender();

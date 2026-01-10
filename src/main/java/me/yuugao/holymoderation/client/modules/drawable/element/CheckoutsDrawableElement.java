@@ -1,11 +1,9 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
-
 import java.awt.Color;
 
 public class CheckoutsDrawableElement extends DrawableElement {
@@ -17,12 +15,18 @@ public class CheckoutsDrawableElement extends DrawableElement {
     private String coLastPlayer = "";
     private boolean coClearDisplayWhenHidden = false;
 
-    public CheckoutsDrawableElement(ServiceContext serviceContext) {
-        super(serviceContext);
+    public CheckoutsDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
+        super(serviceContext, positionMode);
     }
 
     @Override
-    public void renderContent(DrawContext ctx, int z) {
+    protected void initPosition(DrawContext ctx) {
+        this.relX = 0.5f;
+        this.relY = 0.9f;
+    }
+
+    @Override
+    protected void renderContent(DrawContext ctx, int z) {
         MatrixStack ms = ctx.getMatrices();
         coAnim += (coAnimTarget - coAnim) * 0.15f;
 
@@ -43,8 +47,7 @@ public class CheckoutsDrawableElement extends DrawableElement {
         TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
 
         long elapsed = checkoutStartMillis == 0L ? 0L : (System.currentTimeMillis() - checkoutStartMillis) / 1000L;
-        String display = "Текущая проверка: " + (player.isEmpty() ? coLastPlayer : player) + " | " +
-                elapsed / 60 + ":" + String.format("%02d", elapsed % 60);
+        String display = "Текущая проверка: " + (player.isEmpty() ? coLastPlayer : player) + " | " + elapsed / 60 + ":" + String.format("%02d", elapsed % 60);
 
         float targetWidth = tr.getWidth(display) + 16f;
         float targetHeight = tr.fontHeight + 12f;
@@ -52,22 +55,30 @@ public class CheckoutsDrawableElement extends DrawableElement {
         coCurrentWidth += (targetWidth - coCurrentWidth) * 0.2f;
         coCurrentHeight += (targetHeight - coCurrentHeight) * 0.2f;
 
-        width = Math.max(1f, coCurrentWidth * coAnim) * widthScale;
-        height = Math.max(1f, coCurrentHeight * coAnim) * heightScale;
+        width = Math.max(1f, coCurrentWidth);
+        height = Math.max(1f, coCurrentHeight);
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
         serviceContext.getRender2DService().setupRender();
 
-        serviceContext.getRender2DService().renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z,
-                10f, bg, outline, 1.5f, 3);
+        float[] tl = topLeftLocal();
+        float[] pv = scalePivotLocal();
+        float tlx = tl[0];
+        float tly = tl[1];
+        float px = pv[0];
+        float py = pv[1];
 
         ms.push();
+        ms.translate(tlx, tly, 0f);
+        ms.translate(px, py, 0f);
         ms.scale(coAnim, coAnim, 1f);
+        ms.translate(-px, -py, 0f);
 
-        serviceContext.getRender2DService().renderText(tr, display, (int) (-tr.getWidth(display) / 2f),
-                (int) (-tr.fontHeight / 2f + 0.5f), z, 0xff0000ff, false, ctx);
+        serviceContext.getRender2DService().renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z, 10f, bg, outline, 1.5f, 3);
+
+        serviceContext.getRender2DService().renderText(tr, display, (int) (width / 2f - tr.getWidth(display) / 2f), (int) (height / 2f - tr.fontHeight / 2f + 0.5f), z, 0xffffffff, false, ctx);
 
         ms.pop();
 

@@ -26,13 +26,13 @@ public class ColorPickerModule extends GuiModule {
         this.selectedColor = Color.WHITE;
     }
 
-    public void render(MatrixStack matrices, float centerX, float centerY, int z, float radius, Color outlineColor, float outlineWidth) {
-        this.centerX = centerX;
-        this.centerY = centerY;
+    public void render(MatrixStack matrices, float x, float y, int z, float radius, Color outlineColor, float outlineWidth) {
+        this.centerX = x;
+        this.centerY = y;
         this.radius = radius;
         this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
-        serviceContext.getRender2DService().renderRGBPalette(matrices, centerX, centerY, z, radius, outlineColor, outlineWidth);
+        serviceContext.getRender2DService().renderRGBPalette(matrices, x, y, z, radius, outlineColor, outlineWidth);
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {

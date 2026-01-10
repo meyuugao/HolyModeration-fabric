@@ -3,15 +3,11 @@ package me.yuugao.holymoderation.client.gui.screen;
 import me.yuugao.holymoderation.client.gui.tabs.main.GeneralTab;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
-
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
-
 import lombok.Getter;
 import obfuscator.DontObf;
 import obfuscator.ObfRule;
@@ -26,7 +22,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
     public MainGuiScreen(ServiceContext serviceContext) {
         super(Text.of("HolyModeration Main Gui Screen"), serviceContext);
-
         this.tabs.put("General", new GeneralTab(this, serviceContext));
     }
 
@@ -39,8 +34,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         this.width = targetW * getAnimValue();
         this.height = targetH * getAnimValue();
 
-        this.x = (float) ctx.getScaledWindowWidth() / 2;
-        this.y = (float) ctx.getScaledWindowHeight() / 2;
+        this.x = (float) ctx.getScaledWindowWidth() / 2 - this.width / 2f;
+        this.y = (float) ctx.getScaledWindowHeight() / 2 - this.height / 2f;
 
         float baseOutline = 1f;
         float scaleFactor = Math.min(this.width, this.height) / 100f;
@@ -50,7 +45,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         serviceContext.getRender2DService().renderSoftRoundedRectOutline(
                 ctx.getMatrices(),
-                this.x, this.y, Math.max(1, this.width), Math.max(1, this.height), renderPriority,
+                this.x, this.y, Math.max(1, this.width), Math.max(1, this.height),
+                renderPriority,
                 10f,
                 new Color(0xB3002AFF, true),
                 outlineColor,
@@ -63,25 +59,26 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         if (mouseHeld) {
             if (dragging == null) {
-                ArrayList<DrawableModule<?>> drawableModules = new ArrayList<>(serviceContext.getGuiManagerService().getDrawableModules());
-                Collections.reverse(drawableModules);
-                for (DrawableModule<?> d : drawableModules) {
-                    if (d.isMouseOver(mouseX, mouseY)) {
+                ArrayList<DrawableModule<?>> list = new ArrayList<>(serviceContext.getGuiManagerService().getDrawableModules());
+                Collections.reverse(list);
+                for (DrawableModule<?> d : list) {
+                    if (d.isMouseOver(mouseX, mouseY, ctx)) {
                         dragging = d;
-                        dragOffsetX = mouseX - d.getDrawableElement().getX();
-                        dragOffsetY = mouseY - d.getDrawableElement().getY();
+                        dragOffsetX = mouseX - d.getDrawableElement().getX(ctx);
+                        dragOffsetY = mouseY - d.getDrawableElement().getY(ctx);
                         break;
                     }
                 }
             }
 
             if (dragging != null) {
-                dragging.getDrawableElement().setX(mouseX - dragOffsetX);
-                dragging.getDrawableElement().setY(mouseY - dragOffsetY);
+                dragging.getDrawableElement().setX(mouseX - dragOffsetX, ctx);
+                dragging.getDrawableElement().setY(mouseY - dragOffsetY, ctx);
             }
         } else {
             dragging = null;
         }
+
 
         super.render(ctx, mouseX, mouseY, tickDelta);
     }

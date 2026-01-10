@@ -11,6 +11,6 @@ public class GuiManagerModule extends Module {
 
     @Subscribe
     public void onHudRender(HudRenderEvent event) {
-        serviceContext.getGuiManagerService().getDrawableModules().forEach((drawableModule) -> drawableModule.render(event));
+        serviceContext.getGuiManagerService().getDrawableModules().forEach((drawableModule) -> drawableModule.render(event.getDrawContext()));
     }
 }
