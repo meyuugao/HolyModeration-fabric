@@ -135,6 +135,10 @@ public class SettingsModule extends Module {
                             return;
                         }
                         String text = commandSplit[2].replace("&", "§");
+                        if (text.length() > 200) {
+                            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Текст слишком длинный! Длина текста: " + text.length() + " (максимум 200)", 5f);
+                            return;
+                        }
                         textsList.add(text);
                         serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы добавили новый текст.", 5f);
                         break;
