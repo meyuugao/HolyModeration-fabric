@@ -13,8 +13,11 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationT
 
 import net.minecraft.text.Text;
 import net.minecraft.world.GameMode;
+import net.minecraft.world.biome.Biome;
 
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 public class StateModule extends Module {
     public StateModule(ServiceContext serviceContext) {
@@ -55,7 +58,10 @@ public class StateModule extends Module {
         }
 
         if (event.isSwitch() && !serviceContext.getStateService().isInHub()) {
-            serviceContext.getStateService().setVanishEnabled(true);
+            if (serviceContext.getMinecraftService().getWorld() != null && serviceContext.getMinecraftService().getWorld().getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
+                serviceContext.getStateService().setVanishEnabled(true);
+            }
+
             serviceContext.getStateService().setGm3Enabled(serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode() == GameMode.SPECTATOR);
 
             if (serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && !serviceContext.getStateService().isVanishEnabled()
@@ -123,17 +129,19 @@ public class StateModule extends Module {
 
         switch (command) {
             case ("v"): {
-                if (messageSplit.length > 1) {
-                    if (messageSplit[1].equals("enable")) {
-                        serviceContext.getStateService().setVanishEnabled(true);
-                        break;
-                    } else if (messageSplit[1].equals("disable")) {
-                        serviceContext.getStateService().setVanishEnabled(false);
-                        break;
+                if (serviceContext.getMinecraftService().getWorld() != null && serviceContext.getMinecraftService().getWorld().getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
+                    if (messageSplit.length > 1) {
+                        if (messageSplit[1].equals("enable")) {
+                            serviceContext.getStateService().setVanishEnabled(true);
+                            break;
+                        } else if (messageSplit[1].equals("disable")) {
+                            serviceContext.getStateService().setVanishEnabled(false);
+                            break;
+                        }
                     }
-                }
 
-                serviceContext.getStateService().setVanishEnabled(!serviceContext.getStateService().isVanishEnabled());
+                    serviceContext.getStateService().setVanishEnabled(!serviceContext.getStateService().isVanishEnabled());
+                }
                 break;
             }
 
