@@ -25,13 +25,9 @@ public class WatermarkDrawableElement extends DrawableElement {
     @Override
     protected void initPosition(DrawContext ctx) {
         float rel = 0.01f;
-        if (Math.min(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight()) == ctx.getScaledWindowHeight()) {
-            this.relY = rel;
-            this.relX = rel / ((float) ctx.getScaledWindowWidth() / ctx.getScaledWindowHeight());
-        } else {
-            this.relX = rel;
-            this.relY = rel / ((float) ctx.getScaledWindowHeight() / ctx.getScaledWindowWidth());
-        }
+        float minSide = Math.min(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
+        this.relX = rel * minSide / ctx.getScaledWindowWidth();
+        this.relY = rel * minSide / ctx.getScaledWindowHeight();
     }
 
     @Override

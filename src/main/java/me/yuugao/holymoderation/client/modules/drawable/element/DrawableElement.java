@@ -15,7 +15,7 @@ public abstract class DrawableElement {
     protected float width, height;
 
     @Getter
-    protected float widthScale = 2f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
+    protected float widthScale = 1f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
     protected PositionMode positionMode;
     protected boolean positioned = false;
 

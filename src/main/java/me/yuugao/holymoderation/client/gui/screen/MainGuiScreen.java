@@ -58,7 +58,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         boolean mouseHeld = serviceContext.getInputService().isMouseButtonHeld(0);
 
         if (mouseHeld) {
-            if (dragging == null) {
+            if (dragging == null && serviceContext.getInputService().wasMouseButtonPressed(0)) {
                 ArrayList<DrawableModule<?>> list = new ArrayList<>(serviceContext.getGuiManagerService().getDrawableModules());
                 Collections.reverse(list);
                 for (DrawableModule<?> d : list) {
@@ -78,7 +78,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         } else {
             dragging = null;
         }
-
 
         super.render(ctx, mouseX, mouseY, tickDelta);
     }
