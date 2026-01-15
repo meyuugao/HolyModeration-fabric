@@ -15,13 +15,16 @@ import com.llamalad7.mixinextras.sugar.Local;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
-    @Inject(method = "render",
+    @Inject(
+            method = "render",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/hud/InGameHud;render(Lnet/minecraft/client/gui/DrawContext;F)V",
-                    shift = At.Shift.AFTER
-            ))
-    public void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
+                    target = "Lcom/mojang/blaze3d/systems/RenderSystem;clear(IZ)V",
+                    shift = At.Shift.AFTER,
+                    ordinal = 1
+            )
+    )
+    private void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
         ServiceLocator.getEventBus().invokeEvent(new HudRenderEvent(drawContext, tickDelta));
     }
 }

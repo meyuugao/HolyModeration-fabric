@@ -52,6 +52,7 @@ public class StateService extends Service {
         this.userLocation = StringUtils.EMPTY;
         this.vkUrl = StringUtils.EMPTY;
         this.rank = 0;
+        ServiceLocator.getGuiManagerService().clearDrawableModules();
     }
 
     public void unregisterEventListeners() {

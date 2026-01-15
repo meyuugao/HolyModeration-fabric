@@ -1,8 +1,6 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.Service;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.ShaderProgram;
@@ -14,9 +12,12 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.OrderedText;
+
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+
 import java.awt.Color;
+
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class Render2DService extends Service {

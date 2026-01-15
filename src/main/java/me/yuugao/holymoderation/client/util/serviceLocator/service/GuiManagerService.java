@@ -20,4 +20,8 @@ public class GuiManagerService extends Service {
         }
         drawableModules.add(drawableModule);
     }
+
+    public void clearDrawableModules() {
+        drawableModules.clear();
+    }
 }
