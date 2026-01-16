@@ -16,7 +16,7 @@ public class MainGuiModule extends Module {
 
     @Subscribe
     public void onHudRender(HudRenderEvent event) {
-        if (serviceContext.getInputService().wasKeyPressed("open_main_gui")) {
+        if (serviceContext.getInputService().wasKeyBindPressed("open_main_gui")) {
             Screen currentScreen = serviceContext.getMinecraftService().getClient().currentScreen;
             if (currentScreen == null) {
                 serviceContext.getMinecraftService().getClient().setScreen(mainGuiScreen);

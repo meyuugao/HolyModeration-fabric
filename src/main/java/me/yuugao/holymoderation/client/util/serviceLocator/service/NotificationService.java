@@ -17,14 +17,18 @@ public class NotificationService extends Service {
     private long lastNano = System.nanoTime();
 
     public void addNotification(NotificationType type, String title, String text, float liveTime) {
+        SoundService soundService = ServiceLocator.getSoundService();
+
         notificationPool.add(new Notification(type, title, text, liveTime));
-        ServiceLocator.getSoundService().playSound(type.getSoundName());
+        soundService.playSound(type.getSoundName());
     }
 
     public void addNotification(NotificationType type, String title, String text, float liveTime, String soundName) {
+        SoundService soundService = ServiceLocator.getSoundService();
+
         notificationPool.add(new Notification(type, title, text, liveTime));
         if (!soundName.isEmpty()) {
-            ServiceLocator.getSoundService().playSound(soundName);
+            soundService.playSound(soundName);
         }
     }
 
@@ -33,7 +37,8 @@ public class NotificationService extends Service {
     }
 
     public void renderNotifications(DrawContext ctx, int z) {
-        TextRenderer tr = ServiceLocator.getMinecraftService().getClient().textRenderer;
+        MinecraftService minecraftService = ServiceLocator.getMinecraftService();
+        TextRenderer tr = minecraftService.getClient().textRenderer;
 
         float screenW = ctx.getScaledWindowWidth();
         float screenH = ctx.getScaledWindowHeight();
@@ -102,31 +107,33 @@ public class NotificationService extends Service {
 
         notificationPool.removeIf(n -> n.remove);
 
+        Render2DService render2DService = ServiceLocator.getRender2DService();
+
         for (Notification n : notificationPool) {
             MatrixStack ms = ctx.getMatrices();
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
-            ServiceLocator.getRender2DService().setupRender();
+            render2DService.setupRender();
 
-            ServiceLocator.getRender2DService().renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
+            render2DService.renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
 
             ms.push();
             ms.translate(n.x, n.y, 0);
 
             float ty = padding;
             for (OrderedText line : n.titleLines) {
-                ServiceLocator.getRender2DService().renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
+                render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
             ty += 4f;
             for (OrderedText line : n.bodyLines) {
-                ServiceLocator.getRender2DService().renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
+                render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
             ms.pop();
 
-            ServiceLocator.getRender2DService().endRender();
+           render2DService.endRender();
         }
     }
 

@@ -77,7 +77,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы никого не проверяете.", 5f);
                         return;
                     }
-                    serviceContext.getCheckoutsService().endCheckOut(serviceContext);
+                    serviceContext.getCheckoutsService().endCheckOut();
                     break;
                 }
 
@@ -97,10 +97,10 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     }
                     String time = commandSplit[2];
                     String reason = commandSplit[3];
-                    if (!serviceContext.getPunishmentsService().punish("/banip", serviceContext.getStateService().getPlayer(), time, "2.4 (" + reason + ")", true, serviceContext)) {
+                    if (!serviceContext.getPunishmentsService().punish("/banip", serviceContext.getStateService().getPlayer(), time, "2.4 (" + reason + ")", true)) {
                         return;
                     }
-                    serviceContext.getCheckoutsService().endCheckOut(serviceContext);
+                    serviceContext.getCheckoutsService().endCheckOut();
                     break;
                 }
 
@@ -112,7 +112,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         return;
                     }
 
-                    if (serviceContext.getCheckoutsService().startCheckOut(commandSplit[2], serviceContext)) {
+                    if (serviceContext.getCheckoutsService().startCheckOut(commandSplit[2])) {
                         this.drawableElement.coStartForLocal(commandSplit[2]);
                     }
 
@@ -125,7 +125,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
                         return;
                     }
-                    serviceContext.getCheckoutsService().sendTexts(commandSplit[2], serviceContext);
+                    serviceContext.getCheckoutsService().sendTexts(commandSplit[2]);
                     break;
                 }
             }
@@ -222,8 +222,8 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
 
         if (!serviceContext.getStateService().getPlayer().isEmpty() && serviceContext.getConfigManager().getConfig().isAutoBanEnabled()) {
             if (receivedText.startsWith("▶ Замороженный игрок " + serviceContext.getStateService().getPlayer())) {
-                serviceContext.getPunishmentsService().punish("/banip", serviceContext.getStateService().getPlayer(), "30d", "2.4 (Лив с проверки)", true, serviceContext);
-                serviceContext.getCheckoutsService().endCheckOut(serviceContext);
+                serviceContext.getPunishmentsService().punish("/banip", serviceContext.getStateService().getPlayer(), "30d", "2.4 (Лив с проверки)", true);
+                serviceContext.getCheckoutsService().endCheckOut();
             }
         }
 

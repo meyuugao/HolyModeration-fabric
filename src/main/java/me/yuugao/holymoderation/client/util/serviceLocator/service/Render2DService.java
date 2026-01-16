@@ -2,6 +2,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gui.DrawContext;
@@ -29,8 +30,10 @@ public class Render2DService extends Service {
     private ShaderProgram RGB_PALETTE;
 
     public void initializeShaders() {
+        MinecraftClient mc = ServiceLocator.getMinecraftService().getClient();
+        NotificationService notificationService = ServiceLocator.getNotificationService();
         try {
-            ResourceManager rm = ServiceLocator.getMinecraftService().getClient().getResourceManager();
+            ResourceManager rm = mc.getResourceManager();
             RECT = new ShaderProgram(rm, "rect", VertexFormats.POSITION_COLOR);
             ROUNDED_RECT = new ShaderProgram(rm, "rounded_rect", VertexFormats.POSITION_COLOR_TEXTURE);
             SOFT_ROUNDED_RECT = new ShaderProgram(rm, "soft_rounded_rect", VertexFormats.POSITION_COLOR_TEXTURE);
@@ -38,7 +41,7 @@ public class Render2DService extends Service {
             SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "soft_rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
             RGB_PALETTE = new ShaderProgram(rm, "rgb_palette", VertexFormats.POSITION_COLOR_TEXTURE);
         } catch (Exception e) {
-            ServiceLocator.getNotificationService().addNotification(
+            notificationService.addNotification(
                     NotificationType.EXCEPTION,
                     "Исключение",
                     "Render2DService: " + e,
@@ -67,9 +70,9 @@ public class Render2DService extends Service {
         SOFT_ROUNDED_RECT.getUniformOrDefault("Color").set(color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
         SOFT_ROUNDED_RECT.getUniformOrDefault("BlurWidth").set((float) blurWidth);
         RenderSystem.setShader(() -> SOFT_ROUNDED_RECT);
-        float tw = w + blurWidth * 2f;
-        float th = h + blurWidth * 2f;
-        renderQuad(matrices, x - blurWidth, y - blurWidth, tw, th, z);
+        float qw = w + blurWidth * 2f;
+        float qh = h + blurWidth * 2f;
+        renderQuad(matrices, x - blurWidth, y - blurWidth, qw, qh, z);
     }
 
     public void renderRoundedRectOutline(MatrixStack matrices, float x, float y, float w, float h, int z, float radius, Color color, Color outlineColor, float outlineWidth) {
@@ -90,9 +93,9 @@ public class Render2DService extends Service {
         SOFT_ROUNDED_RECT_OUTLINE.getUniformOrDefault("OutlineWidth").set(outlineWidth);
         SOFT_ROUNDED_RECT_OUTLINE.getUniformOrDefault("BlurWidth").set(blurWidth);
         RenderSystem.setShader(() -> SOFT_ROUNDED_RECT_OUTLINE);
-        float tw = w + blurWidth * 2f;
-        float th = h + blurWidth * 2f;
-        renderQuad(matrices, x - blurWidth, y - blurWidth, tw, th, z);
+        float qw = w + blurWidth * 2f;
+        float qh = h + blurWidth * 2f;
+        renderQuad(matrices, x - blurWidth, y - blurWidth, qw, qh, z);
     }
 
     public void renderRGBPalette(MatrixStack matrices, float x, float y, int z, float radius, Color outlineColor, float outlineWidth) {

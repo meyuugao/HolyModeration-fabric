@@ -115,12 +115,12 @@ public class PunishmentsModule extends Module {
                 String time = commandSplit[2];
                 String reason = commandSplit[3];
                 if (serviceContext.getChatService().isArrayContains(MuteCommands, command)) {
-                    if (!serviceContext.getPunishmentsService().punish(command, nick, time, reason, false, serviceContext)) {
+                    if (!serviceContext.getPunishmentsService().punish(command, nick, time, reason, false)) {
                         return;
                     }
                 }
                 if (serviceContext.getChatService().isArrayContains(BanCommands, command)) {
-                    if (!serviceContext.getPunishmentsService().punish(command, nick, time, reason, true, serviceContext)) {
+                    if (!serviceContext.getPunishmentsService().punish(command, nick, time, reason, true)) {
                         return;
                     }
                 }
@@ -136,7 +136,7 @@ public class PunishmentsModule extends Module {
                 }
                 String nick = commandSplit[1];
                 String reason = commandSplit[2];
-                serviceContext.getPunishmentsService().punish(command, nick, reason, serviceContext.getChatService().isArrayContains(VkCommands, command), serviceContext);
+                serviceContext.getPunishmentsService().punish(command, nick, reason, serviceContext.getChatService().isArrayContains(VkCommands, command));
             }
 
             if (serviceContext.getChatService().isArrayContains(BanCommands, command) || command.equals("/warn")) {

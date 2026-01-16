@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.config.Config;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -54,13 +55,15 @@ public class ChatService extends Service {
     }
 
     public String formatReceivedText(String text) {
+        Config config = ServiceLocator.getConfigManager().getConfig();
+
         text = text.replaceAll("§[0-9a-zA-Z]", "");
         for (String ignoredString : new String[]{"[ALL] ʟ", "[Тихий] ❖", "SC |", "HW >", " ▬▬▬", "▬▬▬", "[PMS]:", "◀", "[HM]", "[HAC]", "[я"}) {
             if (text.startsWith(ignoredString)) {
                 return null;
             }
         }
-        text = text.replace(ServiceLocator.getConfigManager().getConfig().getCopyButtonText().replaceAll("§[0-9a-zA-Z]", ""), "");
+        text = text.replace(config.getCopyButtonText().replaceAll("§[0-9a-zA-Z]", ""), "");
         return text;
     }
 
@@ -97,6 +100,8 @@ public class ChatService extends Service {
     }
 
     public void copyToClipboard(String text) {
+        NotificationService notificationService = ServiceLocator.getNotificationService();
+
         try {
             String osName = System.getProperty("os.name").toLowerCase();
 
@@ -110,7 +115,7 @@ public class ChatService extends Service {
                 throw new Exception("Неизвестная OS.");
             }
         } catch (Exception e) {
-            ServiceLocator.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в ChatService/copyToClipboard: " + DARK_RED + e, 5f);
+            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в ChatService/copyToClipboard: " + DARK_RED + e, 5f);
         }
     }
 

@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.HolyModerationClient;
+import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.modules.GuiManagerModule;
 import me.yuugao.holymoderation.client.modules.StateModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -57,10 +58,11 @@ public class StateService extends Service {
     }
 
     public void unregisterEventListeners() {
-        ServiceLocator.getEventBus().clear();
+        EventBus eventBus = ServiceLocator.getEventBus();
         ServiceContext ctx = new ServiceContext();
-        ServiceLocator.getEventBus().register(new StateModule(ctx));
-        ServiceLocator.getEventBus().register(new GuiManagerModule(ctx));
+        eventBus.clear();
+        eventBus.register(new StateModule(ctx));
+        eventBus.register(new GuiManagerModule(ctx));
     }
 
     public void registerEventListeners() {

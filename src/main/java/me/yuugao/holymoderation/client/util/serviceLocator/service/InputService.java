@@ -49,18 +49,29 @@ public class InputService extends Service {
         }
     }
 
-    public boolean isKeyHeld(String actionName) {
-        Config.KeyBindConfig keyBind = ServiceLocator.getConfigManager().getConfig().getKeyBind(actionName);
-        return keyBind != null &&
-                keyBind.getType() == Config.KeyBindType.HOLD &&
-                keyStates.getOrDefault(actionName, false);
+    public boolean isKeyBindHeld(String actionName) {
+        Config config = ServiceLocator.getConfigManager().getConfig();
+        Config.KeyBindConfig keyBind = config.getKeyBind(actionName);
+        if (keyBind == null) return false;
+        if (keyBind.getType() != Config.KeyBindType.HOLD) return false;
+
+        boolean mainKeyPressed = pressedKeys.contains(keyBind.getMainKey());
+        boolean modifiersPressed = keyBind.getModifierKeys() != null && pressedKeys.containsAll(keyBind.getModifierKeys());
+
+        return mainKeyPressed && modifiersPressed;
     }
 
-    public boolean wasKeyPressed(String actionName) {
-        boolean wasPressed = keyStates.getOrDefault(actionName, false);
-        if (wasPressed) {
-            keyStates.put(actionName, false);
-            return true;
+    public boolean wasKeyBindPressed(String actionName) {
+        Config config = ServiceLocator.getConfigManager().getConfig();
+        Config.KeyBindConfig keyBind = config.getKeyBind(actionName);
+        if (keyBind == null) return false;
+
+        if (keyBind.getType() == Config.KeyBindType.SINGLE_PRESS) {
+            boolean pressed = keyStates.getOrDefault(actionName, false);
+            if (pressed) keyStates.put(actionName, false);
+            return pressed;
+        } else if (keyBind.getType() == Config.KeyBindType.HOLD) {
+            return isKeyBindHeld(actionName);
         }
         return false;
     }

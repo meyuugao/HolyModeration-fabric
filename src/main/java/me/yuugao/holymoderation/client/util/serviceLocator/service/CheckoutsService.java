@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.config.Config;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
@@ -12,99 +13,117 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class CheckoutsService extends Service {
-    public void endCheckOut(ServiceContext serviceContext) {
-        if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-            serviceContext.getChatService().chatMessage("/freezing " + serviceContext.getStateService().getPlayer());
-            serviceContext.getChatService().chatMessage("/prova");
-            if (serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && !serviceContext.getStateService().isVanishEnabled()) {
-                serviceContext.getChatService().chatMessage("/v");
-                serviceContext.getStateService().setVanishEnabled(true);
+
+    public void endCheckOut() {
+        StateService stateService = ServiceLocator.getStateService();
+        ChatService chatService = ServiceLocator.getChatService();
+        Config config = ServiceLocator.getConfigManager().getConfig();
+        NotificationService notificationService = ServiceLocator.getNotificationService();
+        SchedulerService schedulerService = ServiceLocator.getSchedulerService();
+
+        if (!stateService.getPlayer().isEmpty()) {
+            chatService.chatMessage("/freezing " + stateService.getPlayer());
+            chatService.chatMessage("/prova");
+            if (config.isAutoVanishEnabled() && !stateService.isVanishEnabled()) {
+                chatService.chatMessage("/v");
+                stateService.setVanishEnabled(true);
             }
-            if (serviceContext.getConfigManager().getConfig().isAutoGm3Enabled() && !serviceContext.getStateService().isGm3Enabled()) {
-                serviceContext.getChatService().chatMessage("/gm 3");
-                serviceContext.getStateService().setGm3Enabled(true);
+            if (config.isAutoGm3Enabled() && !stateService.isGm3Enabled()) {
+                chatService.chatMessage("/gm 3");
+                stateService.setGm3Enabled(true);
             }
         }
 
-        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно закончили проверку.", 5f);
+        notificationService.addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно закончили проверку.", 5f);
 
-        String player = new String(serviceContext.getStateService().getPlayer().toCharArray());
+        String player = new String(stateService.getPlayer().toCharArray());
 
-        serviceContext.getSchedulerService().getInstance().schedule(() -> {
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'чистый'", "Нажмите, чтобы закончить проверку с результатом 'чистый'", "/hm endcheckout clean"));
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + снести стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш", "/hm endcheckout ban " + player + " true"));
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + не сносить стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш", "/hm endcheckout ban " + player + " false"));
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автобай'", "Нажмите, чтобы закончить проверку с результатом 'автобай'", "/hm endcheckout autobuy"));
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автоселл'", "Нажмите, чтобы закончить проверку с результатом 'автоселл'", "/hm endcheckout autosell"));
+        schedulerService.getInstance().schedule(() -> {
+            chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'чистый'", "Нажмите, чтобы закончить проверку с результатом 'чистый'", "/hm endcheckout clean"));
+            chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + снести стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш", "/hm endcheckout ban " + player + " true"));
+            chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'бан' + не сносить стеш", "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш", "/hm endcheckout ban " + player + " false"));
+            chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автобай'", "Нажмите, чтобы закончить проверку с результатом 'автобай'", "/hm endcheckout autobuy"));
+            chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Закончить проверку с результатом 'автоселл'", "Нажмите, чтобы закончить проверку с результатом 'автоселл'", "/hm endcheckout autosell"));
         }, 1, TimeUnit.SECONDS);
 
-        serviceContext.getStateService().setPlayer(StringUtils.EMPTY);
+        stateService.setPlayer(StringUtils.EMPTY);
     }
 
-    public boolean startCheckOut(String player, ServiceContext serviceContext) {
-        if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы уже проверяете какого-то игрока. Сначала закончите текущую проверку --> " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
+    public boolean startCheckOut(String player) {
+        StateService stateService = ServiceLocator.getStateService();
+        ChatService chatService = ServiceLocator.getChatService();
+        Config config = ServiceLocator.getConfigManager().getConfig();
+        NotificationService notificationService = ServiceLocator.getNotificationService();
+        SchedulerService schedulerService = ServiceLocator.getSchedulerService();
+
+        if (!stateService.getPlayer().isEmpty()) {
+            notificationService.addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы уже проверяете какого-то игрока. Сначала закончите текущую проверку --> " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
             return false;
         }
 
-        ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно начали проверку.", 5f);
+        notificationService.addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно начали проверку.", 5f);
 
-        serviceContext.getStateService().setPlayer(player);
+        stateService.setPlayer(player);
 
-        serviceContext.getChatService().chatMessage("/freezing " + serviceContext.getStateService().getPlayer());
-        if (serviceContext.getConfigManager().getConfig().isAutoTpEnabled()) {
-            serviceContext.getChatService().chatMessage("/warp logo");
+        chatService.chatMessage("/freezing " + stateService.getPlayer());
+        if (config.isAutoTpEnabled()) {
+            chatService.chatMessage("/warp logo");
         }
-        serviceContext.getChatService().chatMessage("/prova");
+        chatService.chatMessage("/prova");
 
-        serviceContext.getSchedulerService().getInstance().schedule(() -> {
-            if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-                sendTexts(serviceContext.getStateService().getPlayer(), serviceContext);
+        schedulerService.getInstance().schedule(() -> {
+            if (!stateService.getPlayer().isEmpty()) {
+                sendTexts(stateService.getPlayer());
             }
         }, 5, TimeUnit.SECONDS);
 
-        serviceContext.getSchedulerService().getInstance().schedule(() -> {
-            if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-                if (serviceContext.getConfigManager().getConfig().isDupeIpEnabled()) {
-                    serviceContext.getChatService().chatMessage("/dupeip " + serviceContext.getStateService().getPlayer());
+        schedulerService.getInstance().schedule(() -> {
+            if (!stateService.getPlayer().isEmpty()) {
+                if (config.isDupeIpEnabled()) {
+                    chatService.chatMessage("/dupeip " + stateService.getPlayer());
                 }
-                serviceContext.getChatService().chatMessage("/checkmute " + serviceContext.getStateService().getPlayer());
-                if (serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && serviceContext.getStateService().isVanishEnabled()) {
-                    serviceContext.getChatService().chatMessage("/v");
-                    serviceContext.getStateService().setVanishEnabled(false);
+                chatService.chatMessage("/checkmute " + stateService.getPlayer());
+                if (config.isAutoVanishEnabled() && stateService.isVanishEnabled()) {
+                    chatService.chatMessage("/v");
+                    stateService.setVanishEnabled(false);
                 }
-                if (serviceContext.getConfigManager().getConfig().isAutoGm3Enabled() && serviceContext.getStateService().isGm3Enabled()) {
-                    serviceContext.getChatService().chatMessage("/gm 0");
-                    serviceContext.getStateService().setGm3Enabled(false);
+                if (config.isAutoGm3Enabled() && stateService.isGm3Enabled()) {
+                    chatService.chatMessage("/gm 0");
+                    stateService.setGm3Enabled(false);
                 }
             }
         }, 8, TimeUnit.SECONDS);
 
-        serviceContext.getSchedulerService().getInstance().schedule(() -> {
-            if (!serviceContext.getStateService().getPlayer().isEmpty()) {
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку по репорту", "Нажмите, чтобы внести проверку по репорту", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " report"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести обычную проверку", "Нажмите, чтобы внести обычную проверку", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " checkout"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку автобаера", "Нажмите, чтобы внести проверку автобаера", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " autobuy"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку автобаера", "Нажмите, чтобы внести проверку автобаера", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " autobuy"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку автоселлера", "Нажмите, чтобы внести проверку автоселлера", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " autosell"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку кандидата", "Нажмите, чтобы внести проверку кандидата", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " candidate"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку кастомки", "Нажмите, чтобы внести проверку кастомки", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " customka"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку персонала", "Нажмите, чтобы внести проверку персонала", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " personal"));
-                serviceContext.getChatService().clientMessage(serviceContext.getChatService().suggestTextComponent(AQUA + BOLD + "Внести проверку игрока, у которого много пройденных проверок", "Нажмите, чтобы внести проверку игрока, у которого много пройденных проверок", "/hm startcheckout " + serviceContext.getStateService().getPlayer() + " toManyChecks"));
+        schedulerService.getInstance().schedule(() -> {
+            if (!stateService.getPlayer().isEmpty()) {
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку по репорту", "Нажмите, чтобы внести проверку по репорту", "/hm startcheckout " + stateService.getPlayer() + " report"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести обычную проверку", "Нажмите, чтобы внести обычную проверку", "/hm startcheckout " + stateService.getPlayer() + " checkout"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку автобаера", "Нажмите, чтобы внести проверку автобаера", "/hm startcheckout " + stateService.getPlayer() + " autobuy"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку автобаера", "Нажмите, чтобы внести проверку автобаера", "/hm startcheckout " + stateService.getPlayer() + " autobuy"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку автоселлера", "Нажмите, чтобы внести проверку автоселлера", "/hm startcheckout " + stateService.getPlayer() + " autosell"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку кандидата", "Нажмите, чтобы внести проверку кандидата", "/hm startcheckout " + stateService.getPlayer() + " candidate"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку кастомки", "Нажмите, чтобы внести проверку кастомки", "/hm startcheckout " + stateService.getPlayer() + " customka"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку персонала", "Нажмите, чтобы внести проверку персонала", "/hm startcheckout " + stateService.getPlayer() + " personal"));
+                chatService.clientMessage(chatService.suggestTextComponent(AQUA + BOLD + "Внести проверку игрока, у которого много пройденных проверок", "Нажмите, чтобы внести проверку игрока, у которого много пройденных проверок", "/hm startcheckout " + stateService.getPlayer() + " toManyChecks"));
             }
         }, 9, TimeUnit.SECONDS);
 
         return true;
     }
 
-    public void sendTexts(String player, ServiceContext serviceContext) {
-        List<String> textsList = serviceContext.getConfigManager().getConfig().getTextsList();
+    public void sendTexts(String player) {
+        ChatService chatService = ServiceLocator.getChatService();
+        Config config = ServiceLocator.getConfigManager().getConfig();
+        NotificationService notificationService = ServiceLocator.getNotificationService();
+        SchedulerService schedulerService = ServiceLocator.getSchedulerService();
+
+        List<String> textsList = config.getTextsList();
         if (textsList.isEmpty()) {
-            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет настроенных текстов для отправки. Добавить текст --> " + GOLD + GOLD + BOLD + "/hm textadd" + WHITE, 5f);
+            notificationService.addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет настроенных текстов для отправки. Добавить текст --> " + GOLD + GOLD + BOLD + "/hm textadd" + WHITE, 5f);
         } else {
             for (int i = 0; i < textsList.size(); i++) {
                 String text = textsList.get(i);
-                serviceContext.getSchedulerService().getInstance().schedule(() -> serviceContext.getChatService().chatMessage("/msg " + player + " " + text.replace("§", "&")), i * 100L, TimeUnit.MILLISECONDS);
+                schedulerService.getInstance().schedule(() -> chatService.chatMessage("/msg " + player + " " + text.replace("§", "&")), i * 100L, TimeUnit.MILLISECONDS);
             }
         }
     }
