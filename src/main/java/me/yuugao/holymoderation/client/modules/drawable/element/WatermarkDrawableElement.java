@@ -1,9 +1,11 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
+
 import java.awt.Color;
 import java.util.Random;
 
@@ -70,8 +72,8 @@ public class WatermarkDrawableElement extends DrawableElement {
         serviceContext.getRender2DService().renderText(
                 tr,
                 text,
-                (int)(width / 2f - tr.getWidth(text) / 2f),
-                (int)(height / 2f - tr.fontHeight / 2f + 0.5f),
+                (int) (width / 2f - tr.getWidth(text) / 2f),
+                (int) (height / 2f - tr.fontHeight / 2f + 0.5f),
                 z,
                 0xffffffff,
                 false,

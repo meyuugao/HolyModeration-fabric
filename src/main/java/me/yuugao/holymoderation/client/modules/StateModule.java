@@ -13,11 +13,8 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationT
 
 import net.minecraft.text.Text;
 import net.minecraft.world.GameMode;
-import net.minecraft.world.biome.Biome;
 
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.Objects;
 
 public class StateModule extends Module {
     public StateModule(ServiceContext serviceContext) {

@@ -3,7 +3,6 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import lombok.Getter;
 

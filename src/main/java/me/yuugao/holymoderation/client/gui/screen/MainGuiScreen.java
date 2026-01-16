@@ -3,11 +3,14 @@ package me.yuugao.holymoderation.client.gui.screen;
 import me.yuugao.holymoderation.client.gui.tabs.main.GeneralTab;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
+
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
+
 import lombok.Getter;
 import obfuscator.DontObf;
 import obfuscator.ObfRule;

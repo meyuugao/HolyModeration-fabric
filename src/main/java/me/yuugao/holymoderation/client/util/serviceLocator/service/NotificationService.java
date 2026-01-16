@@ -1,15 +1,16 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import com.mojang.blaze3d.systems.RenderSystem;
 
 public class NotificationService extends Service {
     private final List<Notification> notificationPool = new ArrayList<>();

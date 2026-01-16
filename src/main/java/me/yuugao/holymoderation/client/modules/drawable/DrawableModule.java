@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.modules.drawable;
 
-import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
