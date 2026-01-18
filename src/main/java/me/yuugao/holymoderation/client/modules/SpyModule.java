@@ -72,7 +72,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
                 return;
             }
 
-            if (serviceContext.getCheckoutsService().startCheckOut(serviceContext.getStateService().getSpyPlayer(), serviceContext)) {
+            if (serviceContext.getCheckoutsService().startCheckOut(serviceContext.getStateService().getSpyPlayer())) {
                 endSpy();
             }
         }
