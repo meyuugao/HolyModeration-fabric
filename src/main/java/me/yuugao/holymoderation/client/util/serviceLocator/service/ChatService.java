@@ -4,6 +4,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -13,15 +14,18 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Arrays;
 
 public class ChatService extends Service {
-    public final Text HMTextComponent = Text.of(BLUE + BOLD + "[" + DARK_AQUA + BOLD + "HM" + BLUE + BOLD + "] " + WHITE);
-    public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<', '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
+    public final Text HMTextComponent = Text.of("%s%s[%s%sHM%s%s]%s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
+    public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<',
+            '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
     public final String[] NoArgCommands = {
             "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
-            "copy", "disable", "enable", "me", "net", "sounds", "spyfrz", "stats", "textsclear", "textslist",
-            "unfreezing", "unfrz", "twinks"
+            "copy", "enableDebug", "disableDebug", "enable", "disable", "me", "net", "sounds", "spyfrz", "stats",
+            "textsclear", "textslist", "unfreezing", "unfrz", "twinks"
     };
     public final String[] PlayerCommands = {
             "freezing", "frz", "sendtexts", "spy"
@@ -37,7 +41,9 @@ public class ChatService extends Service {
     };
 
     public void chatMessage(String message) {
-        ClientPlayNetworkHandler networkHandler = ServiceLocator.getMinecraftService().getClient().getNetworkHandler();
+        MinecraftService minecraftService = ServiceLocator.getMinecraftService();
+
+        ClientPlayNetworkHandler networkHandler = minecraftService.getClient().getNetworkHandler();
         if (networkHandler != null) {
             if (message.startsWith("/")) {
                 networkHandler.sendCommand(message.substring(1));
@@ -48,22 +54,29 @@ public class ChatService extends Service {
     }
 
     public void clientMessage(Text text) {
-        ClientPlayerEntity player = ServiceLocator.getMinecraftService().getPlayer();
+        MinecraftService minecraftService = ServiceLocator.getMinecraftService();
+
+        ClientPlayerEntity player = minecraftService.getPlayer();
+
         if (player != null) {
             player.sendMessage(generateComponent(HMTextComponent, text), false);
         }
     }
 
     public String formatReceivedText(String text) {
-        Config config = ServiceLocator.getConfigManager().getConfig();
+        ConfigManager configManager = ServiceLocator.getConfigManager();
 
-        text = text.replaceAll("§[0-9a-zA-Z]", "");
-        for (String ignoredString : new String[]{"[ALL] ʟ", "[Тихий] ❖", "SC |", "HW >", " ▬▬▬", "▬▬▬", "[PMS]:", "◀", "[HM]", "[HAC]", "[я"}) {
+        Config config = configManager.getConfig();
+
+        text = text.replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY);
+        for (String ignoredString : new String[]{"[ALL] ʟ", "[Тихий] ❖", "SC |",
+                "HW >", " ▬▬▬", "▬▬▬", "[PMS]:", "◀", "[HM]", "[HAC]", "[я"}) {
             if (text.startsWith(ignoredString)) {
                 return null;
             }
         }
-        text = text.replace(config.getCopyButtonText().replaceAll("§[0-9a-zA-Z]", ""), "");
+        text = text.replace(config.getCopyButtonText().replaceAll(
+                "§[0-9a-zA-Z]", StringUtils.EMPTY), StringUtils.EMPTY);
         return text;
     }
 
@@ -72,9 +85,9 @@ public class ChatService extends Service {
                 : location.equals("lanarchy") ? "lite-1"
                 : location.equals("anarchy") ? "classic-1"
                 : location.equals("lpvp") ? "lpvp"
-                : location.startsWith("l2") ? "lite120-" + location.split("anarchy")[1]
-                : location.startsWith("l") ? "lite-" + location.split("anarchy")[1]
-                : "classic-" + location.split("anarchy")[1];
+                : location.startsWith("l2") ? "lite120-%s".formatted(location.split("anarchy")[1])
+                : location.startsWith("l") ? "lite-%s".formatted(location.split("anarchy")[1])
+                : "classic-%s".formatted(location.split("anarchy")[1]);
     }
 
     public boolean isArrayContains(String[] array, String value) {
@@ -100,22 +113,23 @@ public class ChatService extends Service {
     }
 
     public void copyToClipboard(String text) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             String osName = System.getProperty("os.name").toLowerCase();
 
             if (osName.contains("win")) {
-                Runtime.getRuntime().exec(new String[]{"powershell", "-command", "Set-Clipboard -Value '" + text + "'"});
+                Runtime.getRuntime().exec(new String[]{"powershell", "-command", "Set-Clipboard -Value '%s'".formatted(text)});
             } else if (osName.contains("mac")) {
-                Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo \"" + text + "\" | pbcopy"});
+                Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo \"%s\" | pbcopy".formatted(text)});
             } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
-                Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo \"" + text + "\" | xclip -selection clipboard"});
+                Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo \"%s\" | xclip -selection clipboard".formatted(text)});
             } else {
                 throw new Exception("Неизвестная OS.");
             }
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в ChatService/copyToClipboard: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в ChatService/copyToClipboard: %s%s".formatted(DARK_RED, e), 5f);
         }
     }
 
@@ -126,7 +140,7 @@ public class ChatService extends Service {
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                                 Text.of("Нажмите, чтобы подставить команду.")))
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
-                                componentText.replaceAll("§[0-9a-zA-Z]", ""))));
+                                componentText.replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY))));
     }
 
     public MutableText suggestTextComponent(String componentText, String hint, String toSuggestText) {

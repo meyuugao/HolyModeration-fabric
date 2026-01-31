@@ -29,13 +29,16 @@ public class EventBus {
                         int priority = annotation.priority();
                         Subscriber subscriber = new Subscriber(module, method, priority);
 
-                        if (subscribers.values().stream().anyMatch(list -> list.stream().anyMatch(e -> e.method().equals(method))))
+                        if (subscribers.values().stream().anyMatch(list ->
+                                list.stream().anyMatch(e -> e.method().equals(method))))
                             return;
 
-                        subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>()).add(subscriber);
-                        subscribers.get(eventType).sort((s1, s2) -> Integer.compare(s2.priority(), s1.priority()));
+                        subscribers.computeIfAbsent(eventType, k ->
+                                new CopyOnWriteArrayList<>()).add(subscriber);
+                        subscribers.get(eventType).sort((s1, s2) ->
+                                Integer.compare(s2.priority(), s1.priority()));
                         subscriber.target.setLogger(loggerService);
-                        loggerService.logger().debug("Eventbus: Registered new subscriber - {}", subscriber);
+                        loggerService.debug("Registered new subscriber: %s.".formatted(subscriber));
                     }
                 }
             }
@@ -47,13 +50,13 @@ public class EventBus {
             for (List<Subscriber> subscriberList : subscribers.values()) {
                 subscriberList.removeIf(subscriber -> subscriber.target.equals(module));
             }
-            loggerService.logger().debug("Eventbus: Unregistered module - {}", module);
+            loggerService.debug("Unregistered module: %s.".formatted(module));
         }
     }
 
     public void clear() {
         subscribers.clear();
-        loggerService.logger().debug("Eventbus: All subscribers cleared");
+        loggerService.debug("All subscribers cleared.");
     }
 
     public void invokeEvent(Event event) {
@@ -72,7 +75,7 @@ public class EventBus {
 
                 subscriber.invoke(event);
             } catch (Exception e) {
-                loggerService.printException("Error in subscriber " + subscriber + ": " + e);
+                loggerService.exception("Исключение в EventBus/executeSubscribersSync: %s".formatted(e));
             }
         }
     }

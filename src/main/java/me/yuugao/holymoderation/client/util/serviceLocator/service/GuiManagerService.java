@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 import lombok.Getter;
 
@@ -11,13 +12,10 @@ public class GuiManagerService extends Service {
     private final ArrayList<DrawableModule<?>> drawableModules = new ArrayList<>();
 
     public void addDrawableModule(DrawableModule<?> drawableModule) {
-        for (int i = 0; i < drawableModules.size(); i++) {
-            if (drawableModule.getRenderPriority() < drawableModules.get(i).getRenderPriority()) {
-                drawableModules.add(i, drawableModule);
-                return;
-            }
-        }
+        if (drawableModules.stream().anyMatch(m -> m.getClass() == drawableModule.getClass())) return;
+
         drawableModules.add(drawableModule);
+        drawableModules.sort(Comparator.comparingInt(DrawableModule::getRenderPriority));
     }
 
     public void clearDrawableModules() {

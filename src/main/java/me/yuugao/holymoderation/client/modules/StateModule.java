@@ -3,14 +3,21 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerDisconnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
+import net.minecraft.client.network.ClientPlayNetworkHandler;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.network.ClientPlayerInteractionManager;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.text.Text;
 import net.minecraft.world.GameMode;
 
@@ -23,99 +30,129 @@ public class StateModule extends Module {
 
     @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+        StateService stateService = serviceContext.getStateService();
+        EventBus eventBus = serviceContext.getEventBus();
+
+        ClientPlayerEntity player = minecraftService.getPlayer();
+
         if (event.isSwitch()) return; //tip: выполняется только при заходе на сервер, не при свитче
 
-        if (serviceContext.getMinecraftService().getPlayer() != null) {
-            serviceContext.getStateService().setUserNickname(serviceContext.getMinecraftService().getPlayer().getName().getString());
+        if (player != null) {
+            stateService.setUserNickname(player.getName().getString());
         }
 
-        serviceContext.getStateService().setConnected(true);
+        stateService.setConnected(true);
         checkServerAddress(event);
 
-        if (!serviceContext.getStateService().isOnHW()) {
-            serviceContext.getStateService().block(); //tip: ретурн если дальше будет логика
-        } else if (serviceContext.getStateService().isBlocked() && serviceContext.getStateService().isEnabled()) {
-            serviceContext.getStateService().unblock();
-            serviceContext.getEventBus().invokeEvent(event);
+        if (!stateService.isOnHW()) {
+            stateService.block(); //tip: ретурн если дальше будет логика
+        } else if (stateService.isBlocked() && stateService.isEnabled()) {
+            stateService.unblock();
+            eventBus.invokeEvent(event);
         }
     }
 
     @Subscribe(priority = 100)
     public void onServerConnectSecond(ServerConnectEvent event) {
-        if (serviceContext.getStateService().isBlocked()) return;
+        StateService stateService = serviceContext.getStateService();
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+        ChatService chatService = serviceContext.getChatService();
+        ConfigManager configManager = serviceContext.getConfigManager();
 
-        serviceContext.getStateService().setGameInitCompleted(false);
+        ClientPlayerInteractionManager interactionManager = minecraftService.getClient().interactionManager;
+        ClientWorld clientWorld = minecraftService.getWorld();
+        Config config = configManager.getConfig();
 
-        if (serviceContext.getMinecraftService().getClient().interactionManager != null && serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode().equals(GameMode.ADVENTURE)) {
-            serviceContext.getStateService().setInHub(true);
-            serviceContext.getStateService().setUserLocation(StringUtils.EMPTY);
+        if (stateService.isBlocked()) return;
+
+        stateService.setGameInitCompleted(false);
+
+        if (interactionManager != null && interactionManager.getCurrentGameMode().equals(GameMode.ADVENTURE)) {
+            stateService.setInHub(true);
+            stateService.setUserLocation(StringUtils.EMPTY);
         } else {
-            serviceContext.getStateService().setInHub(false);
-            serviceContext.getChatService().chatMessage("/find " + serviceContext.getStateService().getUserNickname());
+            stateService.setInHub(false);
+            chatService.chatMessage("/find %s".formatted(stateService.getUserNickname()));
         }
 
-        if (event.isSwitch() && !serviceContext.getStateService().isInHub()) {
-            if (serviceContext.getMinecraftService().getWorld() != null && serviceContext.getMinecraftService().getWorld().getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
-                serviceContext.getStateService().setVanishEnabled(true);
+        if (event.isSwitch() && !stateService.isInHub() && interactionManager != null) {
+            if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) { //tip: при первом заходе на анку не работает, потому что не был проинициализирован мир ни разу
+                stateService.setVanishEnabled(true);
             }
 
-            serviceContext.getStateService().setGm3Enabled(serviceContext.getMinecraftService().getClient().interactionManager.getCurrentGameMode() == GameMode.SPECTATOR);
+            stateService.setGm3Enabled(interactionManager.getCurrentGameMode() == GameMode.SPECTATOR);
 
-            if (serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && !serviceContext.getStateService().isVanishEnabled()
-                    || !serviceContext.getConfigManager().getConfig().isAutoVanishEnabled() && serviceContext.getStateService().isVanishEnabled()) {
-                serviceContext.getChatService().chatMessage("/v");
-                serviceContext.getStateService().setVanishEnabled(serviceContext.getStateService().isVanishEnabled());
+            if (config.isAutoVanishEnabled() && !stateService.isVanishEnabled()
+                    || !config.isAutoVanishEnabled() && stateService.isVanishEnabled()) {
+                chatService.chatMessage("/v");
+                stateService.setVanishEnabled(stateService.isVanishEnabled());
             }
 
-            if (serviceContext.getConfigManager().getConfig().isAutoGm3Enabled() && !serviceContext.getStateService().isGm3Enabled()
-                    || !serviceContext.getConfigManager().getConfig().isAutoGm3Enabled() && serviceContext.getStateService().isGm3Enabled()) {
-                serviceContext.getChatService().chatMessage("/gm 3");
-                serviceContext.getStateService().setGm3Enabled(serviceContext.getStateService().isGm3Enabled());
+            if (config.isAutoGm3Enabled() && !stateService.isGm3Enabled()
+                    || !config.isAutoGm3Enabled() && stateService.isGm3Enabled()) {
+                chatService.chatMessage("/gm 3");
+                stateService.setGm3Enabled(stateService.isGm3Enabled());
             }
 
-            if (serviceContext.getConfigManager().getConfig().isAutoFlyEnabled() && !serviceContext.getStateService().isFlyEnabled()
-                    || !serviceContext.getConfigManager().getConfig().isAutoFlyEnabled() && serviceContext.getStateService().isFlyEnabled()) {
-                if (!serviceContext.getStateService().isGm3Enabled()) {
-                    serviceContext.getChatService().chatMessage("/fly");
-                    serviceContext.getStateService().setFlyEnabled(serviceContext.getStateService().isFlyEnabled());
+            if (config.isAutoFlyEnabled() && !stateService.isFlyEnabled()
+                    || !config.isAutoFlyEnabled() && stateService.isFlyEnabled()) {
+                if (!stateService.isGm3Enabled()) {
+                    chatService.chatMessage("/fly");
+                    stateService.setFlyEnabled(stateService.isFlyEnabled());
                 }
             }
 
-            if (serviceContext.getConfigManager().getConfig().isAutoGodEnabled() && !serviceContext.getStateService().isGodEnabled()
-                    || !serviceContext.getConfigManager().getConfig().isAutoGodEnabled() && serviceContext.getStateService().isGodEnabled()) {
-                serviceContext.getChatService().chatMessage("/god");
-                serviceContext.getStateService().setGodEnabled(serviceContext.getStateService().isGodEnabled());
+            if (config.isAutoGodEnabled() && !stateService.isGodEnabled()
+                    || !config.isAutoGodEnabled() && stateService.isGodEnabled()) {
+                chatService.chatMessage("/god");
+                stateService.setGodEnabled(stateService.isGodEnabled());
             }
 
-            if (serviceContext.getConfigManager().getConfig().isAutoHacAlertsEnabled() && !serviceContext.getStateService().isHacAlertsEnabled()
-                    || !serviceContext.getConfigManager().getConfig().isAutoHacAlertsEnabled() && serviceContext.getStateService().isHacAlertsEnabled()) {
-                serviceContext.getChatService().chatMessage("/hac alerts");
-                serviceContext.getStateService().setHacAlertsEnabled(serviceContext.getStateService().isHacAlertsEnabled());
+            if (config.isAutoHacAlertsEnabled() && !stateService.isHacAlertsEnabled()
+                    || !config.isAutoHacAlertsEnabled() && stateService.isHacAlertsEnabled()) {
+                chatService.chatMessage("/hac alerts");
+                stateService.setHacAlertsEnabled(stateService.isHacAlertsEnabled());
             }
         }
 
-        serviceContext.getStateService().setGameInitCompleted(true);
+        stateService.setGameInitCompleted(true);
     }
 
     @Subscribe(priority = 100)
     public void onServerDisconnect(ServerDisconnectEvent event) {
-        if (serviceContext.getStateService().isConnected()) {
-            serviceContext.getStateService().reset();
-            serviceContext.getNotificationService().clearNotifications();
+        StateService stateService = serviceContext.getStateService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+
+        if (stateService.isConnected()) {
+            stateService.reset();
+            notificationsService.clearNotifications();
         }
     }
 
     @Subscribe(priority = 100)
     public void onCommandSend(CommandSendEvent event) {
-        if (!serviceContext.getStateService().isOnHW()) return;
+        StateService stateService = serviceContext.getStateService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+        ConfigManager configManager = serviceContext.getConfigManager();
+        SoundService soundService = serviceContext.getSoundService();
 
-        if (!serviceContext.getStateService().isGameInitCompleted()) {
-            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Не спеши, инициализация игры ещё не завершилась!", 5f);
+        ClientWorld clientWorld = minecraftService.getWorld();
+        ClientPlayNetworkHandler clientPlayNetworkHandler = minecraftService.getClient().getNetworkHandler();
+        Config config = configManager.getConfig();
+
+        if (!stateService.isOnHW()) return;
+
+        if (!stateService.isGameInitCompleted()) {
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Не спеши, инициализация игры ещё не завершилась!", 5f);
             return;
         }
 
-        if (serviceContext.getStateService().isCheckingTwinks()) {
-            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Дождитесь окончания проверки твинков.", 5f);
+        if (stateService.isCheckingTwinks()) {
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Дождитесь окончания проверки твинков.", 5f);
             event.setCancelled(true);
             return;
         }
@@ -126,18 +163,18 @@ public class StateModule extends Module {
 
         switch (command) {
             case ("v"): {
-                if (serviceContext.getMinecraftService().getWorld() != null && serviceContext.getMinecraftService().getWorld().getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
+                if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
                     if (messageSplit.length > 1) {
                         if (messageSplit[1].equals("enable")) {
-                            serviceContext.getStateService().setVanishEnabled(true);
+                            stateService.setVanishEnabled(true);
                             break;
                         } else if (messageSplit[1].equals("disable")) {
-                            serviceContext.getStateService().setVanishEnabled(false);
+                            stateService.setVanishEnabled(false);
                             break;
                         }
                     }
 
-                    serviceContext.getStateService().setVanishEnabled(!serviceContext.getStateService().isVanishEnabled());
+                    stateService.setVanishEnabled(!stateService.isVanishEnabled());
                 }
                 break;
             }
@@ -145,10 +182,11 @@ public class StateModule extends Module {
             case ("gamemode"):
             case ("gm"): {
                 if (messageSplit[1].equals("3") || messageSplit[1].equals("spectator")) {
-                    serviceContext.getStateService().setGm3Enabled(true);
+                    stateService.setGm3Enabled(true);
                 } else if (messageSplit[1].equals("0") || messageSplit[1].equals("1") || messageSplit[1].equals("2")
-                        || messageSplit[1].equals("survival") || messageSplit[1].equals("creative") || messageSplit[1].equals("adventure")) {
-                    serviceContext.getStateService().setGm3Enabled(false);
+                        || messageSplit[1].equals("survival") || messageSplit[1].equals("creative")
+                        || messageSplit[1].equals("adventure")) {
+                    stateService.setGm3Enabled(false);
                 }
                 break;
             }
@@ -156,75 +194,100 @@ public class StateModule extends Module {
             case ("fly"): {
                 if (messageSplit.length > 1) {
                     if (messageSplit[1].equals("enable")) {
-                        serviceContext.getStateService().setFlyEnabled(true);
+                        stateService.setFlyEnabled(true);
                         break;
                     } else if (messageSplit[1].equals("disable")) {
-                        serviceContext.getStateService().setFlyEnabled(false);
+                        stateService.setFlyEnabled(false);
                         break;
                     }
                 }
 
-                serviceContext.getStateService().setFlyEnabled(!serviceContext.getStateService().isFlyEnabled());
+                stateService.setFlyEnabled(!stateService.isFlyEnabled());
                 break;
             }
 
             case ("god"): {
                 if (messageSplit.length > 1) {
                     if (messageSplit[1].equals("enable")) {
-                        serviceContext.getStateService().setGodEnabled(true);
+                        stateService.setGodEnabled(true);
                         break;
                     } else if (messageSplit[1].equals("disable")) {
-                        serviceContext.getStateService().setGodEnabled(false);
+                        stateService.setGodEnabled(false);
                         break;
                     }
                 }
 
-                serviceContext.getStateService().setGodEnabled(!serviceContext.getStateService().isGodEnabled());
+                stateService.setGodEnabled(!stateService.isGodEnabled());
                 break;
             }
 
             case ("hac"): {
                 if (messageSplit.length > 1 && messageSplit[1].equals("alerts")) {
-                    serviceContext.getStateService().setHacAlertsEnabled(!serviceContext.getStateService().isHacAlertsEnabled());
+                    stateService.setHacAlertsEnabled(!stateService.isHacAlertsEnabled());
                 }
+                break;
+            }
 
+            case ("enableDebug"): {
+                stateService.enableDebug();
+                notificationsService.addNotification(NotificationType.WARNING,
+                        "%s%sПОЖАЛУЙСТА, ОБРАТИТЕ ВНИМАНИЕ!".formatted(RED, BOLD),
+                        """
+                                %sБыл включен %sдебаг.%s Это означает, что в логах может появиться важная информация, и в том числе:
+                                %sИнформация о вашей системе.
+                                %sИнформация о ваших действиях в текущей сессии.
+                                %sВаш конфиг, в том числе apitoken.
+                                %sЕсли кто-то сказал вам включить этот режим, будьте осторожны и %sНИ В КОЕМ СЛУЧАЕ НЕ ДАВАЙТЕ ДОСТУП К СВОЕМУ ПК ИЛИ ЛОГАМ ТЕКУЩЕЙ СЕССИИ!"""
+                                .formatted(GOLD, RED, GOLD, RED, RED, RED, GOLD, RED), 30f);
+                break;
+            }
+
+            case ("disableDebug"): {
+                stateService.disableDebug();
+                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                        "Дебаг выключен!", 5f);
+                break;
+            }
+
+            case ("enable"): {
+                if (!stateService.isBlocked()) {
+                    stateService.enable();
+                    notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                            "Мод включен!", 5f);
+                }
                 break;
             }
 
             case ("disable"): {
                 event.setCancelled(true);
 
-                if (!serviceContext.getStateService().isBlocked()) {
-                    serviceContext.getStateService().disable();
-                    serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод выключен!", 5f);
-                }
-                break;
-            }
-
-            case ("enable"): {
-                if (!serviceContext.getStateService().isBlocked()) {
-                    serviceContext.getStateService().enable();
-                    serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Мод включен!", 5f);
+                if (!stateService.isBlocked()) {
+                    stateService.disable();
+                    notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                            "Мод выключен!", 5f);
                 }
                 break;
             }
 
             case ("setapitoken"): {
                 if (messageSplit.length == 2) {
-                    serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не ввели токен.", 5f);
+                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                            "Вы не ввели токен.", 5f);
                     return;
                 }
                 String apiToken = messageSplit[2];
                 if (apiToken.contains(" ")) {
-                    serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.", 5f);
+                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                            "В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.", 5f);
                     return;
                 }
-                serviceContext.getConfigManager().getConfig().setApiToken(apiToken);
-                serviceContext.getConfigManager().saveCfg(serviceContext.getConfigManager().getConfig());
-                serviceContext.getSoundService().playSound("success.wav");
+                config.setApiToken(apiToken);
+                configManager.saveCfg(config);
+                soundService.playSound("success.wav");
 
-                if (serviceContext.getMinecraftService().getClient().getNetworkHandler() != null) {
-                    serviceContext.getMinecraftService().getClient().getNetworkHandler().getConnection().disconnect(Text.of(AQUA + BOLD + "Вы успешно установили API токен. Пожалуйста, перезайдите на сервер."));
+                if (clientPlayNetworkHandler != null) {
+                    clientPlayNetworkHandler.getConnection().disconnect(Text.of(
+                            "%s%sВы успешно установили API токен. Пожалуйста, перезайдите на сервер.".formatted(AQUA, BOLD)));
                 }
                 break;
             }
@@ -238,24 +301,30 @@ public class StateModule extends Module {
 
     @Subscribe(priority = 100)
     public void onMessageReceive(MessageReceiveEvent event) {
-        String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
+        ChatService chatService = serviceContext.getChatService();
+        StateService stateService = serviceContext.getStateService();
+
+        String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
-        if (receivedText.equals("▶ Ожидайте завершения проверки... Пожалуйста, не двигайтесь.") || receivedText.equals("▶ Введите цифры с картинки в чат! Для открытия чата, нажмите <T>")) {
-            serviceContext.getStateService().setInHub(true);
-            serviceContext.getStateService().setGameInitCompleted(true);
-            serviceContext.getStateService().setUserLocation(StringUtils.EMPTY);
+        if (receivedText.equals("▶ Ожидайте завершения проверки... Пожалуйста, не двигайтесь.")
+                || receivedText.equals("▶ Введите цифры с картинки в чат! Для открытия чата, нажмите <T>")) {
+            stateService.setInHub(true);
+            stateService.setGameInitCompleted(true);
+            stateService.setUserLocation(StringUtils.EMPTY);
         }
 
-        if (serviceContext.getStateService().getUserLocation().isEmpty()) {
-            if (receivedText.startsWith("Игрок " + serviceContext.getStateService().getUserNickname())) {
+        if (stateService.getUserLocation().isEmpty()) {
+            if (receivedText.startsWith("Игрок %s".formatted(stateService.getUserNickname()))) {
                 event.setCancelled(true);
-                serviceContext.getStateService().setUserLocation(serviceContext.getChatService().formatLocation(receivedText.split("сервере ")[1]));
+                stateService.setUserLocation(chatService.formatLocation(receivedText.split("сервере ")[1]));
             }
         }
     }
 
     private void checkServerAddress(ServerConnectEvent event) {
-        serviceContext.getStateService().setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
+        StateService stateService = serviceContext.getStateService();
+
+        stateService.setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
     }
 }

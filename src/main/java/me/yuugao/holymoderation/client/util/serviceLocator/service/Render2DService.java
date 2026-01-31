@@ -31,7 +31,8 @@ public class Render2DService extends Service {
 
     public void initializeShaders() {
         MinecraftClient mc = ServiceLocator.getMinecraftService().getClient();
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
+
         try {
             ResourceManager rm = mc.getResourceManager();
             RECT = new ShaderProgram(rm, "rect", VertexFormats.POSITION_COLOR);
@@ -41,13 +42,11 @@ public class Render2DService extends Service {
             SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "soft_rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
             RGB_PALETTE = new ShaderProgram(rm, "rgb_palette", VertexFormats.POSITION_COLOR_TEXTURE);
         } catch (Exception e) {
-            notificationService.addNotification(
-                    NotificationType.EXCEPTION,
-                    "Исключение",
-                    "Render2DService: " + e,
-                    5f
-            );
+            loggerService.exception("Исключение в Render2DService: %s".formatted(e));
+            return;
         }
+
+        loggerService.info("Shaders has been initialized.");
     }
 
     public void renderRect(MatrixStack matrices, float x, float y, float w, float h, int z, Color color) {

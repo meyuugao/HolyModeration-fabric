@@ -1,7 +1,10 @@
 package me.yuugao.holymoderation.client.mixin;
 
+import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.eventbus.event.ServerDisconnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
 
 import net.minecraft.client.MinecraftClient;
 
@@ -11,15 +14,20 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftClient.class)
-public class MinecraftClientMixin {
+public abstract class MinecraftClientMixin {
     @Inject(method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V", at = @At("TAIL"))
     public void onDisconnect(CallbackInfo ci) {
-        ServiceLocator.getEventBus().invokeEvent(new ServerDisconnectEvent());
+        EventBus eventBus = ServiceLocator.getEventBus();
+
+        eventBus.invokeEvent(new ServerDisconnectEvent());
     }
 
     @Inject(method = "onInitFinished", at = @At("TAIL"))
     private void onInitFinished(CallbackInfo ci) {
-        ServiceLocator.getRender2DService().initializeShaders();
-        ServiceLocator.getLoggerService().logger().info("Shaders has been initialized");
+        Render2DService render2DService = ServiceLocator.getRender2DService();
+        LoggerService loggerService = ServiceLocator.getLoggerService();
+
+        render2DService.initializeShaders();
+        loggerService.info("HolyModeration has been initialized.");
     }
 }

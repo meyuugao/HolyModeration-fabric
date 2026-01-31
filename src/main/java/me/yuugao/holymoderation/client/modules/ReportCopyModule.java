@@ -7,8 +7,9 @@ import static me.yuugao.holymoderation.client.util.Colors.GREEN;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.ChatService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationsService;
 
 public class ReportCopyModule extends Module {
     private boolean messageIsReportInfo = false;
@@ -19,7 +20,11 @@ public class ReportCopyModule extends Module {
 
     @Subscribe(priority = 96)
     public void onMessageReceive(MessageReceiveEvent event) {
-        String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
+        ChatService chatService = serviceContext.getChatService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+
+        String receivedText = chatService.formatReceivedText(event.getMessage().getString());
+
         if (receivedText == null) return;
 
         if (receivedText.startsWith("▍ Заявитель:")) {
@@ -27,9 +32,10 @@ public class ReportCopyModule extends Module {
         }
 
         if (receivedText.contains("Подозреваемый:")) {
-            serviceContext.getChatService().copyToClipboard(receivedText.split(": ")[1].split(" ")[0]);
-            ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех",
-                    "Ник игрока из репорта скопирован: " + receivedText.split(": ")[1].split(" ")[0], 5f);
+            String nickname = receivedText.split(": ")[1].split(" ")[0];
+            chatService.copyToClipboard(nickname);
+            notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                    "Ник игрока из репорта скопирован: %s".formatted(nickname), 5f);
         }
 
         if (messageIsReportInfo) {

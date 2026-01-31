@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.gui.modules;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
 
 import net.minecraft.client.util.math.MatrixStack;
 
@@ -15,9 +16,8 @@ public class ColorPickerModule extends GuiModule {
     private float centerX;
     private float centerY;
     private float radius;
-    private Color outlineColor;
     private float outlineWidth;
-
+    private Color outlineColor;
     private Color selectedColor;
 
     public ColorPickerModule(ServiceContext serviceContext) {
@@ -27,12 +27,15 @@ public class ColorPickerModule extends GuiModule {
     }
 
     public void render(MatrixStack matrices, float x, float y, int z, float radius, Color outlineColor, float outlineWidth) {
+        Render2DService render2DService = serviceContext.getRender2DService();
+
         this.centerX = x;
         this.centerY = y;
         this.radius = radius;
         this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
-        serviceContext.getRender2DService().renderRGBPalette(matrices, x, y, z, radius, outlineColor, outlineWidth);
+
+        render2DService.renderRGBPalette(matrices, x, y, z, radius, outlineColor, outlineWidth);
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {

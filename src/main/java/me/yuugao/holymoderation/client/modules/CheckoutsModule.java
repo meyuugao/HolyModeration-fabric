@@ -3,6 +3,8 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
@@ -10,7 +12,9 @@ import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.modules.drawable.element.CheckoutsDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +39,15 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
+        StateService stateService = serviceContext.getStateService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        ChatService chatService = serviceContext.getChatService();
+        CheckoutsService checkoutsService = serviceContext.getCheckoutsService();
+        PunishmentsService punishmentsService = serviceContext.getPunishmentsService();
+        NetService netService = serviceContext.getNetService();
+
+        String checkoutPlayer = stateService.getCheckoutPlayer();
+
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
         if (eventCommand.startsWith("hm") && commandSplit.length < 2) return;
@@ -43,173 +56,180 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
         if (eventCommand.startsWith("hm")) {
             command = commandSplit[1];
         } else {
-            command = "/" + commandSplit[0];
+            command = "/%s".formatted(commandSplit[0]);
         }
 
-        if (ServiceLocator.getChatService().isArrayContains(FreezerCommands, command) || ServiceLocator.getChatService().isArrayContains(ApiCommands, command)) {
-            if (serviceContext.getStateService().isInHub()) {
-                serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "В хабе этого делать нельзя.", 5f);
+        if (ServiceLocator.getChatService().isArrayContains(FreezerCommands, command)
+                || ServiceLocator.getChatService().isArrayContains(ApiCommands, command)) {
+            if (stateService.isInHub()) {
+                notificationsService.addNotification(NotificationType.WARNING,
+                        "%s%sПредупреждение".formatted(GOLD, BOLD),
+                        "В хабе этого делать нельзя.", 5f);
                 return;
             }
         }
         if (ServiceLocator.getChatService().isArrayContains(FreezerCommands, command)) {
             switch (command) {
-                case ("/freezing"):
-                case ("/frz"): {
+                case ("/freezing"), ("/frz") -> {
                     event.setCancelled(true);
                     commandSplit = eventCommand.split(" ", 2);
                     if (commandSplit.length == 1) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали ник игрока.", 5f);
                         return;
                     }
                     String player = commandSplit[1];
-                    if (player.equals(serviceContext.getStateService().getPlayer())) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Этот игрок находиться у вас на проверке. Для его разморозки используйте " + GOLD + GOLD + BOLD + "/unfreezing" + WHITE + " или " + GOLD + GOLD + BOLD + "/unfrz" + WHITE, 5f);
+                    if (player.equals(checkoutPlayer)) {
+                        notificationsService.addNotification(NotificationType.WARNING,
+                                "%s%sПредупреждение".formatted(GOLD, BOLD),
+                                "Этот игрок находиться у вас на проверке. Для его разморозки используйте %s%s%s/unfreezing%s или %s%s%s/unfrz%s"
+                                        .formatted(GOLD, GOLD, BOLD, WHITE, GOLD, GOLD, BOLD, WHITE),
+                                5f);
                         return;
                     }
-                    serviceContext.getChatService().chatMessage("/freezing " + player);
-                    break;
+                    chatService.chatMessage("/freezing %s".formatted(player));
                 }
-
-                case ("unfreezing"):
-                case ("unfrz"): {
-                    if (serviceContext.getStateService().getPlayer().isEmpty()) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы никого не проверяете.", 5f);
+                case ("unfreezing"), ("unfrz") -> {
+                    if (checkoutPlayer.isEmpty()) {
+                        notificationsService.addNotification(NotificationType.WARNING,
+                                "%s%sПредупреждение".formatted(GOLD, BOLD),
+                                "Вы никого не проверяете.", 5f);
                         return;
                     }
-                    serviceContext.getCheckoutsService().endCheckOut();
-                    break;
+                    checkoutsService.endCheckOut();
                 }
-
-                case ("sban"): {
+                case ("sban") -> {
                     commandSplit = eventCommand.split(" ", 4);
-                    if (serviceContext.getStateService().getPlayer().isEmpty()) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Вы никого не проверяете.", 5f);
+                    if (checkoutPlayer.isEmpty()) {
+                        notificationsService.addNotification(NotificationType.WARNING,
+                                "%s%sПредупреждение".formatted(GOLD, BOLD),
+                                "Вы никого не проверяете.", 5f);
                         return;
                     }
                     switch (commandSplit.length) {
-                        case (2):
-                            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали время и причину бана.", 5f);
-                            return;
-                        case (3):
-                            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали причину бана.", 5f);
-                            return;
+                        case 2 -> notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали время и причину бана.", 5f);
+                        case 3 -> notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали причину бана.", 5f);
                     }
                     String time = commandSplit[2];
                     String reason = commandSplit[3];
-                    if (!serviceContext.getPunishmentsService().punish("/banip", serviceContext.getStateService().getPlayer(), time, "2.4 (" + reason + ")", true)) {
+                    if (!punishmentsService.punish("/banip", checkoutPlayer, time,
+                            "2.4 (%s)".formatted(reason), true)) {
                         return;
                     }
-                    serviceContext.getCheckoutsService().endCheckOut();
-                    break;
+                    checkoutsService.endCheckOut();
                 }
-
-                case ("freezing"):
-                case ("frz"): {
+                case ("freezing"), ("frz") -> {
                     commandSplit = eventCommand.split(" ", 3);
                     if (commandSplit.length < 3) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали ник игрока.", 5f);
                         return;
                     }
 
-                    if (serviceContext.getCheckoutsService().startCheckOut(commandSplit[2])) {
+                    if (checkoutsService.startCheckOut(commandSplit[2])) {
                         this.drawableElement.coStartForLocal(commandSplit[2]);
                     }
-
-                    break;
                 }
-
-                case ("sendtexts"): {
+                case ("sendtexts") -> {
                     commandSplit = eventCommand.split(" ", 3);
                     if (commandSplit.length == 2) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока.", 5f);
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали ник игрока.", 5f);
                         return;
                     }
-                    serviceContext.getCheckoutsService().sendTexts(commandSplit[2]);
-                    break;
+                    checkoutsService.sendTexts(commandSplit[2]);
                 }
             }
-        } else if (ServiceLocator.getChatService().isArrayContains(ApiCommands, command)) {
+        } else if (chatService.isArrayContains(ApiCommands, command)) {
             String[] messageSplit;
             switch (command) {
-                case ("startcheckout"): {
+                case ("startcheckout") -> {
                     messageSplit = eventCommand.split(" ", 4);
                     switch (messageSplit.length) {
-                        case (2):
-                            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока и причину проверки.", 5f);
-                            return;
-                        case (3):
-                            serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали причину проверки.", 5f);
-                            return;
+                        case 2 -> notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали ник игрока и причину проверки.", 5f);
+                        case 3 -> notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали причину проверки.", 5f);
                     }
                     String player = messageSplit[2];
                     String reason = messageSplit[3];
-                    if (!Arrays.stream(new String[]{"report", "checkout", "autobuy", "autosell", "customka", "personal", "toManyChecks", "candidate"}).toList().contains(reason)) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Некорректная причина проверки.", 5f);
+                    if (!Arrays.stream(new String[]{"report", "checkout", "autobuy", "autosell", "customka", "personal",
+                            "toManyChecks", "candidate"}).toList().contains(reason)) {
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Некорректная причина проверки.", 5f);
                         return;
                     }
-                    String loc = serviceContext.getStateService().getUserLocation();
-                    String mode = loc.startsWith("lite120") ? "lite120" : loc.startsWith("lite") ? "lite" : loc.startsWith("classic") ? "classic" : "lpvp";
-                    System.out.println(mode);
+                    String loc = stateService.getUserLocation();
+                    String mode = loc.startsWith("lite120") ? "lite120" : loc.startsWith("lite") ? "lite" :
+                            loc.startsWith("classic") ? "classic" : "lpvp";
                     CompletableFuture.runAsync(() -> {
                         if (mode.equals("lpvp")) {
-                            serviceContext.getNetService().startCheckout(player, reason, "lite", 1, true);
+                            netService.startCheckout(player, reason, "lite", 1, true);
                         } else {
-                            int number = Integer.parseInt(loc.split(mode + "-")[1]);
-                            System.out.println(player + " " + reason + " " + mode + " " + number + " " + false);
-                            serviceContext.getNetService().startCheckout(player, reason, mode, number, false);
+                            int number = Integer.parseInt(loc.split("%s-".formatted(mode))[1]);
+                            netService.startCheckout(player, reason, mode, number, false);
                         }
                     });
-                    break;
                 }
-                case ("endcheckout"): {
+                case ("endcheckout") -> {
                     messageSplit = eventCommand.split(" ", 6);
                     if (messageSplit.length == 2) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали результат проверки.", 5f);
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали результат проверки.", 5f);
                         return;
                     }
                     String result = messageSplit[2];
                     if (!Arrays.stream(new String[]{"clean", "ban", "autobuy", "autosell"}).toList().contains(result)) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Некорректный результат проверки.", 5f);
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Некорректный результат проверки.", 5f);
                         return;
                     }
                     CompletableFuture.runAsync(() -> {
                         switch (result) {
-                            case ("clean"): {
-                                serviceContext.getNetService().endCheckout(result, result, false);
-                                break;
-                            }
-                            case ("ban"): {
+                            case ("clean") -> netService.endCheckout(result, result, false);
+                            case ("ban") -> {
                                 if (messageSplit.length == 3) {
-                                    serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали ник игрока и необходимость снести стеш.", 5f);
+                                    notificationsService.addNotification(NotificationType.ERROR,
+                                            "%s%sОшибка".formatted(RED, BOLD),
+                                            "Вы не указали ник игрока и необходимость снести стеш.", 5f);
                                     return;
                                 } else if (messageSplit.length == 4) {
-                                    serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Вы не указали необходимость снести стеш.", 5f);
+                                    notificationsService.addNotification(NotificationType.ERROR,
+                                            "%s%sОшибка".formatted(RED, BOLD),
+                                            "Вы не указали необходимость снести стеш.", 5f);
                                     return;
                                 }
 
                                 if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[4])) {
-                                    serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Некорректная необходимость снести стеш.", 5f);
+                                    notificationsService.addNotification(NotificationType.ERROR,
+                                            "%s%sОшибка".formatted(RED, BOLD),
+                                            "Некорректная необходимость снести стеш.", 5f);
                                     return;
                                 }
                                 destroyStash = messageSplit[4].equals("true");
 
                                 if (messageSplit.length == 5) {
                                     banChecking = true;
-                                    serviceContext.getChatService().chatMessage("/checkban " + messageSplit[3]);
+                                    chatService.chatMessage("/checkban %s".formatted(messageSplit[3]));
                                 } else if (messageSplit.length == 6) {
-                                    serviceContext.getNetService().endCheckout(result, messageSplit[5], destroyStash);
+                                    netService.endCheckout(result, messageSplit[5], destroyStash);
                                 }
-                                break;
                             }
-                            case ("autobuy"):
-                            case ("autosell"): {
-                                serviceContext.getNetService().endCheckout(result, result, true);
-                                break;
-                            }
+                            case ("autobuy"), ("autosell") -> netService.endCheckout(result, result, true);
                         }
                     });
-                    break;
                 }
             }
         }
@@ -217,51 +237,65 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
 
     @Subscribe(priority = 99)
     public void onMessageReceive(MessageReceiveEvent event) {
-        String receivedText = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
+        ChatService chatService = serviceContext.getChatService();
+        StateService stateService = serviceContext.getStateService();
+        ConfigManager configManager = serviceContext.getConfigManager();
+        PunishmentsService punishmentsService = serviceContext.getPunishmentsService();
+        CheckoutsService checkoutsService = serviceContext.getCheckoutsService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        NetService netService = serviceContext.getNetService();
+
+        String checkoutPlayer = stateService.getCheckoutPlayer();
+        Config config = configManager.getConfig();
+        String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
-        if (!serviceContext.getStateService().getPlayer().isEmpty() && serviceContext.getConfigManager().getConfig().isAutoBanEnabled()) {
-            if (receivedText.startsWith("▶ Замороженный игрок " + serviceContext.getStateService().getPlayer())) {
-                serviceContext.getPunishmentsService().punish("/banip", serviceContext.getStateService().getPlayer(), "30d", "2.4 (Лив с проверки)", true);
-                serviceContext.getCheckoutsService().endCheckOut();
+        if (!checkoutPlayer.isEmpty() && config.isAutoBanEnabled()) {
+            if (receivedText.startsWith("▶ Замороженный игрок %s".formatted(checkoutPlayer))) {
+                punishmentsService.punish("/banip", checkoutPlayer,
+                        "30d", "2.4 (Лив с проверки)", true);
+                checkoutsService.endCheckOut();
             }
         }
 
-        if (serviceContext.getConfigManager().getConfig().isAutoAnyDeskEnabled() && !serviceContext.getStateService().getPlayer().isEmpty() && receivedText.contains(serviceContext.getStateService().getPlayer())) {
+        if (config.isAutoAnyDeskEnabled() && !checkoutPlayer.isEmpty() && receivedText.contains(checkoutPlayer)) {
             String chatText;
             String msgText;
-            if (receivedText.startsWith("[" + serviceContext.getStateService().getPlayer() + " ->") && serviceContext.getChatService().checkCorrectLong(msgText = receivedText.split("я]", 0)[1].replace(" ", "")) && msgText.length() >= 9 && msgText.length() <= 11) {
-                serviceContext.getChatService().copyToClipboard(msgText);
-                ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Скопирован анидеск из лс: " + msgText, 5f);
-            } else if (serviceContext.getChatService().checkCorrectLong(chatText = receivedText.split(":")[1].replace(" ", "")) && chatText.length() >= 9 && chatText.length() <= 11) {
-                serviceContext.getChatService().copyToClipboard(chatText);
-                ServiceLocator.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Скопирован анидеск из чата: " + chatText, 5f);
+            if (receivedText.startsWith("[%s ->".formatted(checkoutPlayer))
+                    && chatService.checkCorrectLong(msgText = receivedText.split("я]", 0)[1]
+                    .replace(" ", StringUtils.EMPTY)) && msgText.length() >= 9 && msgText.length() <= 11) {
+                chatService.copyToClipboard(msgText);
+                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                        "Скопирован анидеск из лс: %s".formatted(msgText), 5f);
+            } else if (chatService.checkCorrectLong(chatText = receivedText.split(":")[1]
+                    .replace(" ", StringUtils.EMPTY)) && chatText.length() >= 9 && chatText.length() <= 11) {
+                chatService.copyToClipboard(chatText);
+                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                        "Скопирован анидеск из чата: %s".formatted(chatText), 5f);
             }
         }
 
         if (banChecking) {
             if (receivedText.equals("Цель не забанена!") || receivedText.equals("История не найдена.")) {
                 event.setCancelled(true);
-                serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Проверка не была закончена, т.к. не удалось определить причину бана игрока. Пожалуйста, допишите причину вручную.", 5f);
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "Проверка не была закончена, т.к. не удалось определить причину бана игрока. Пожалуйста, допишите причину вручную.", 5f);
                 banChecking = false;
             }
 
-            if (receivedText.startsWith("Игрок [")) {
+            if (receivedText.startsWith("Игрок ["))
                 messageIsCheckbanInfo = true;
-            }
 
-            if (receivedText.startsWith("Причина:")) {
+            if (receivedText.startsWith("Причина:"))
                 banReason = receivedText.split("Причина: ")[1].split(" \\| ")[0];
-            }
 
-            if (messageIsCheckbanInfo) {
+            if (messageIsCheckbanInfo)
                 event.setCancelled(true);
-            }
 
             if (receivedText.startsWith("IP бан:")) {
                 messageIsCheckbanInfo = false;
                 banChecking = false;
-                CompletableFuture.runAsync(() -> serviceContext.getNetService().endCheckout("ban", banReason, destroyStash));
+                CompletableFuture.runAsync(() -> netService.endCheckout("ban", banReason, destroyStash));
             }
         }
     }

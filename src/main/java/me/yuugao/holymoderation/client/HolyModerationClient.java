@@ -14,7 +14,8 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
@@ -25,16 +26,21 @@ public class HolyModerationClient implements ClientModInitializer {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
-        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(), new GuiManagerService(), new InputService(), new MinecraftService(), new NetService(), new NotificationService(), new PunishmentsService(), new Render2DService(), new SchedulerService(), new SoundService(), new StateService(), LoggerFactory.getLogger("HolyModeration/Client"));
+        Logger logger = (Logger) LogManager.getLogger(HolyModerationClient.class);
+        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(),
+                new GuiManagerService(), new InputService(), new MinecraftService(), new NetService(),
+                new NotificationsService(), new PunishmentsService(), new Render2DService(), new SchedulerService(),
+                new SoundService(), new StateService(), logger);
         eventBusInitialize();
         commandsInitialize();
-        ServiceLocator.getLoggerService().logger().info("HolyModerationClient has been initialized");
     }
 
     private void eventBusInitialize() {
         EventBus eventBus = ServiceLocator.getEventBus();
+        LoggerService loggerService = ServiceLocator.getLoggerService();
+
         registerEventListeners(eventBus);
-        ServiceLocator.getLoggerService().logger().info("Eventbus & modules has been initialized");
+        loggerService.info("Eventbus & modules has been initialized.");
     }
 
     private void commandsInitialize() {
@@ -77,6 +83,7 @@ public class HolyModerationClient implements ClientModInitializer {
 
     public static void registerEventListeners(EventBus eventBus) {
         ServiceContext serviceContext = new ServiceContext();
+
         eventBus.register(new MainGuiModule(serviceContext));
         eventBus.register(new CheckoutsModule(serviceContext, new CheckoutsDrawableElement(serviceContext, PositionMode.CENTER)));
         eventBus.register(new GuiManagerModule(serviceContext));

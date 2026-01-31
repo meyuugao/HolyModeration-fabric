@@ -16,7 +16,7 @@ public class ServiceContext {
     private final InputService inputService;
     private final MinecraftService minecraftService;
     private final NetService netService;
-    private final NotificationService notificationService;
+    private final NotificationsService notificationsService;
     private final PunishmentsService punishmentsService;
     private final Render2DService render2DService;
     private final SchedulerService schedulerService;
@@ -33,7 +33,7 @@ public class ServiceContext {
         this.inputService = ServiceLocator.getInputService();
         this.minecraftService = ServiceLocator.getMinecraftService();
         this.netService = ServiceLocator.getNetService();
-        this.notificationService = ServiceLocator.getNotificationService();
+        this.notificationsService = ServiceLocator.getNotificationsService();
         this.punishmentsService = ServiceLocator.getPunishmentsService();
         this.render2DService = ServiceLocator.getRender2DService();
         this.schedulerService = ServiceLocator.getSchedulerService();

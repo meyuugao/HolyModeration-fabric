@@ -3,11 +3,13 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -15,19 +17,17 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class NetModule extends Module {
-    public static final Map<Integer, String> RANKS = new HashMap<>() {
-        {
-            put(1, AQUA + BOLD + "Стажёр");
-            put(2, YELLOW + BOLD + "Мл. Сотрудник");
-            put(3, GOLD + BOLD + "Сотрудник");
-            put(4, GOLD + BOLD + "Сотрудник+");
-            put(5, GOLD + BOLD + "Вед. Сотрудник");
-            put(6, WHITE + BOLD + "Спектатор");
-            put(7, RED + BOLD + "Ст. Сотрудник");
-            put(8, RED + BOLD + "Админ");
-            put(9, RED + BOLD + "Куратор");
-        }
-    };
+    public static final Map<Integer, String> RANKS = new HashMap<>() {{
+        put(1, "%s%sСтажёр".formatted(AQUA, BOLD));
+        put(2, "%s%sМл. Сотрудник".formatted(YELLOW, BOLD));
+        put(3, "%s%sСотрудник".formatted(GOLD, BOLD));
+        put(4, "%s%sСотрудник+".formatted(GOLD, BOLD));
+        put(5, "%s%sВед. Сотрудник".formatted(GOLD, BOLD));
+        put(6, "%s%sСпектатор".formatted(GRAY, BOLD));
+        put(7, "%s%sСт. Сотрудник".formatted(RED, BOLD));
+        put(8, "%s%sАдмин".formatted(RED, BOLD));
+        put(9, "%s%sКуратор".formatted(RED, BOLD));
+    }};
 
     private Map<String, Object> journalProfile = new HashMap<>();
     private Map<String, Object> journalStats = new HashMap<>();
@@ -43,6 +43,8 @@ public class NetModule extends Module {
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
         if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
@@ -50,36 +52,37 @@ public class NetModule extends Module {
         String command = commandSplit[1];
 
         switch (command) {
-            case ("net"): {
-                refresh();
-                break;
-            }
-            case ("me"): {
-                CompletableFuture.runAsync(() -> {
-                    try {
-                        String texts = WHITE + "Ваш никнейм: " + AQUA + BOLD + journalProfile.get("nickname").toString() +
-                                "\n" +
-                                WHITE + "Ваша должность: " + RANKS.get((int) Double.parseDouble(journalProfile.get("rank").toString())) +
-                                "\n" +
-                                WHITE + "Ваш вк: " + AQUA + BOLD + journalProfile.get("fullname").toString() +
-                                " (" + WHITE + "vk.com/id" + (long) Double.parseDouble(journalProfile.get("idVk").toString()) + AQUA + BOLD + ")" +
-                                "\n" +
-                                WHITE + "Ваш баланс: " + GREEN + BOLD + (int) Double.parseDouble(journalProfile.get("neponyatki").toString()) +
-                                "\n" +
-                                WHITE + "Количество выговоров: " + RED + BOLD + (int) Double.parseDouble(journalProfile.get("reprimands").toString()) +
-                                "\n" +
-                                WHITE + "Количество предупреждений: " + GOLD + BOLD + (int) Double.parseDouble(journalProfile.get("warns").toString()) +
-                                "\n" +
-                                WHITE + "Режим: " + YELLOW + BOLD + journalProfile.get("anarchyMode");
+            case "net" -> refresh();
 
-                        serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "ИНФОРМАЦИЯ О МОДЕРАТОРЕ", texts, 10f);
-                    } catch (Exception e) {
-                        serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в SettingsManager/onMessageSend: " + DARK_RED + e, 5f);
-                    }
-                });
-                break;
-            }
-            case ("stats"): {
+            case "me" -> CompletableFuture.runAsync(() -> {
+                try {
+                    String texts = """
+                            %sВаш никнейм: %s%s%s
+                            %sВаша должность: %s
+                            %sВаш вк: %s%s%s (%s%s%s%s)
+                            %sВаш баланс: %s%s%s
+                            %sКоличество выговоров: %s%s%s
+                            %sКоличество предупреждений: %s%s%s
+                            %sРежим: %s%s%s""".formatted(
+                            WHITE, AQUA, BOLD, journalProfile.get("nickname"),
+                            WHITE, RANKS.get((int) Double.parseDouble(journalProfile.get("rank").toString())),
+                            WHITE, AQUA, BOLD, journalProfile.get("fullname"), WHITE, "vk.com/id%s".formatted(
+                                    (long) Double.parseDouble(journalProfile.get("idVk").toString())), AQUA, BOLD,
+                            WHITE, GREEN, BOLD, (int) Double.parseDouble(journalProfile.get("neponyatki").toString()),
+                            WHITE, RED, BOLD, (int) Double.parseDouble(journalProfile.get("reprimands").toString()),
+                            WHITE, GOLD, BOLD, (int) Double.parseDouble(journalProfile.get("warns").toString()),
+                            WHITE, YELLOW, BOLD, journalProfile.get("anarchyMode")
+                    );
+
+                    notificationsService.addNotification(NotificationType.SUCCESS, "%s%sИНФОРМАЦИЯ О МОДЕРАТОРЕ"
+                            .formatted(GREEN, BOLD), texts, 10f);
+                } catch (Exception e) {
+                    notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                            "Исключение в SettingsManager/onMessageSend: %s%S".formatted(DARK_RED, e), 5f);
+                }
+            });
+
+            case "stats" -> {
                 try {
                     @SuppressWarnings("unchecked")
                     Map<String, Map<String, Object>> typedJournalStats = (Map<String, Map<String, Object>>) (Map<?, ?>) journalStats;
@@ -89,107 +92,126 @@ public class NetModule extends Module {
                     Map<String, Object> revisesWeek = typedJournalStats.get("revisesWeek");
                     Map<String, Object> revisesToday = typedJournalStats.get("revisesToday");
 
-
-                    String texts = "";
+                    StringBuilder texts = new StringBuilder();
 
                     if (revisesAll != null && revisesMonth != null && revisesWeek != null && revisesToday != null) {
-                        texts =
-                                LIGHT_PURPLE + BOLD + "СТАТИСТИКА ПРОВЕРОК" +
-                                        "\n" +
-                                        WHITE + "Проверок за всё время: " + AQUA + BOLD + (int) Double.parseDouble(revisesAll.get("total").toString()) +
-                                        " (лайт: " + (int) Double.parseDouble(revisesAll.get("lite").toString()) +
-                                        ", лайт 1.20: " + (int) Double.parseDouble(revisesAll.get("lite120").toString()) +
-                                        ", классик: " + (int) Double.parseDouble(revisesAll.get("classic").toString()) + ")" +
-                                        "\n" +
-                                        WHITE + "Проверок за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(revisesMonth.get("total").toString()) +
-                                        " (лайт: " + (int) Double.parseDouble(revisesMonth.get("lite").toString()) +
-                                        ", лайт 1.20: " + (int) Double.parseDouble(revisesMonth.get("lite120").toString()) +
-                                        ", классик: " + (int) Double.parseDouble(revisesMonth.get("classic").toString()) + ")" +
-                                        "\n" +
-                                        WHITE + "Проверок за последнюю неделю: " + AQUA + BOLD + (int) Double.parseDouble(revisesWeek.get("total").toString()) +
-                                        " (лайт: " + (int) Double.parseDouble(revisesWeek.get("lite").toString()) +
-                                        ", лайт 1.20: " + (int) Double.parseDouble(revisesWeek.get("lite120").toString()) +
-                                        ", классик: " + (int) Double.parseDouble(revisesWeek.get("classic").toString()) + ")" +
-                                        "\n" +
-                                        WHITE + "Проверок за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(revisesToday.get("total").toString()) +
-                                        " (лайт: " + (int) Double.parseDouble(revisesToday.get("lite").toString()) +
-                                        ", лайт 1.20: " + (int) Double.parseDouble(revisesToday.get("lite120").toString()) +
-                                        ", классик: " + (int) Double.parseDouble(revisesToday.get("classic").toString()) + ")" +
-                                        "\n";
+                        texts.append("""
+                                %s%sСТАТИСТИКА ПРОВЕРОК
+                                %sПроверок за всё время: %s%s%s (лайт: %s, лайт 1.20: %s, классик: %s)
+                                %sПроверок за последний месяц: %s%s%s (лайт: %s, лайт 1.20: %s, классик: %s)
+                                %sПроверок за последнюю неделю: %s%s%s (лайт: %s, лайт 1.20: %s, классик: %s)
+                                %sПроверок за сегодня: %s%s%s (лайт: %s, лайт 1.20: %s, классик: %s)
+                                """.formatted(
+                                LIGHT_PURPLE, BOLD,
+                                WHITE, AQUA, BOLD, (int) Double.parseDouble(revisesAll.get("total").toString()),
+                                (int) Double.parseDouble(revisesAll.get("lite").toString()),
+                                (int) Double.parseDouble(revisesAll.get("lite120").toString()),
+                                (int) Double.parseDouble(revisesAll.get("classic").toString()),
+                                WHITE, AQUA, BOLD, (int) Double.parseDouble(revisesMonth.get("total").toString()),
+                                (int) Double.parseDouble(revisesMonth.get("lite").toString()),
+                                (int) Double.parseDouble(revisesMonth.get("lite120").toString()),
+                                (int) Double.parseDouble(revisesMonth.get("classic").toString()),
+                                WHITE, AQUA, BOLD, (int) Double.parseDouble(revisesWeek.get("total").toString()),
+                                (int) Double.parseDouble(revisesWeek.get("lite").toString()),
+                                (int) Double.parseDouble(revisesWeek.get("lite120").toString()),
+                                (int) Double.parseDouble(revisesWeek.get("classic").toString()),
+                                WHITE, AQUA, BOLD, (int) Double.parseDouble(revisesToday.get("total").toString()),
+                                (int) Double.parseDouble(revisesToday.get("lite").toString()),
+                                (int) Double.parseDouble(revisesToday.get("lite120").toString()),
+                                (int) Double.parseDouble(revisesToday.get("classic").toString())
+                        ));
                     }
 
-                    texts +=
-                            LIGHT_PURPLE + BOLD + "СТАТИСТИКА МУТОВ И ГАРАНТОВ" +
-                                    "\n" +
-                                    WHITE + "Мутов за всё время: " + AQUA + BOLD + (int) Double.parseDouble(journalStats.get("mutesAll").toString()) +
-                                    "\n" +
-                                    WHITE + "Мутов за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(journalStats.get("mutesMonth").toString()) +
-                                    "\n" +
-                                    WHITE + "Мутов за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(journalStats.get("mutesToday").toString()) +
-                                    "\n" +
-                                    WHITE + "Гарантов за всё время: " + AQUA + BOLD + (int) Double.parseDouble(journalStats.get("gaurantsAll").toString()) +
-                                    "\n" +
-                                    WHITE + "Гарантов за последний месяц: " + AQUA + BOLD + (int) Double.parseDouble(journalStats.get("gaurantsMonth").toString()) +
-                                    "\n" +
-                                    WHITE + "Гарантов за сегодня: " + AQUA + BOLD + (int) Double.parseDouble(journalStats.get("gaurantsToday").toString());
+                    texts.append("""
+                            %s%sСТАТИСТИКА МУТОВ И ГАРАНТОВ
+                            %sМутов за всё время: %s%s%s
+                            %sМутов за последний месяц: %s%s%s
+                            %sМутов за сегодня: %s%s%s
+                            %sГарантов за всё время: %s%s%s
+                            %sГарантов за последний месяц: %s%s%s
+                            %sГарантов за сегодня: %s%s%s
+                            """.formatted(
+                            LIGHT_PURPLE, BOLD,
+                            WHITE, AQUA, BOLD, (int) Double.parseDouble(journalStats.get("mutesAll").toString()),
+                            WHITE, AQUA, BOLD, (int) Double.parseDouble(journalStats.get("mutesMonth").toString()),
+                            WHITE, AQUA, BOLD, (int) Double.parseDouble(journalStats.get("mutesToday").toString()),
+                            WHITE, AQUA, BOLD, (int) Double.parseDouble(journalStats.get("gaurantsAll").toString()),
+                            WHITE, AQUA, BOLD, (int) Double.parseDouble(journalStats.get("gaurantsMonth").toString()),
+                            WHITE, AQUA, BOLD, (int) Double.parseDouble(journalStats.get("gaurantsToday").toString())
+                    ));
 
-                    serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "СТАТИСТИКА МОДЕРАТОРА", texts, 10f
-                    );
+                    notificationsService.addNotification(NotificationType.SUCCESS, "%s%sСТАТИСТИКА МОДЕРАТОРА"
+                            .formatted(GREEN, BOLD), texts.toString(), 10f);
                 } catch (Exception e) {
-                    serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_AQUA + BOLD + "Исключение", "Исключение в SettingsManager/onMessageSend: " + DARK_RED + e, 5f);
+                    notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                            "Исключение в SettingsManager/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
                 }
-                break;
             }
         }
     }
 
     private void refresh() {
+        NetService netService = serviceContext.getNetService();
+        ConfigManager configManager = serviceContext.getConfigManager();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        StateService stateService = serviceContext.getStateService();
+
         CompletableFuture.runAsync(() -> {
             if (needUpdates()) return;
 
-            serviceContext.getNetService().downloadSounds();
+            netService.downloadSounds();
 
-            if (serviceContext.getConfigManager().getConfig().getApiToken().isEmpty()) {
-                serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка",
-                        "У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить ("
-                                + GOLD + GOLD + BOLD + "/hm setapitoken " + GREEN + BOLD + "apitoken" + WHITE + ") и перезайти на сервер.", 3600f);
-                serviceContext.getStateService().block();
+            if (configManager.getConfig().getApiToken().isEmpty()) {
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (%s%s%s/hm setapitoken %s%sapitoken%s) и перезайти на сервер."
+                                .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 3600f);
+                stateService.block();
                 return;
             }
 
-            journalProfile = serviceContext.getNetService().getJournalProfile();
-            journalStats = serviceContext.getNetService().getJournalStats();
-            serviceContext.getStateService().setRank((int) Double.parseDouble(journalProfile.get("rank").toString()));
-            serviceContext.getStateService().setVkUrl("vk.com/id" + (long) Double.parseDouble(journalProfile.get("idVk").toString()));
+            journalProfile = netService.getJournalProfile();
+            journalStats = netService.getJournalStats();
+            stateService.setRank((int) Double.parseDouble(journalProfile.get("rank").toString()));
+            stateService.setVkUrl("vk.com/id%s".formatted((long) Double.parseDouble(journalProfile.get("idVk").toString())));
 
-            if (!serviceContext.getStateService().getUserNickname().equals(journalProfile.get("nickname").toString())) {
-                serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка",
+            if (!stateService.getUserNickname().equals(journalProfile.get("nickname").toString())) {
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                         "Ваш никнейм не совпадает с никнеймом из журнала. Мод был заблокирован.", 3600f);
-                serviceContext.getStateService().block();
+                stateService.block();
                 return;
             }
 
-            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Синхронизация завершена!", 5f);
+            notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD), "Синхронизация завершена!", 5f);
         });
     }
 
     private boolean needUpdates() {
-        AbstractMap.SimpleEntry<String, String> lastUpdates = serviceContext.getNetService().getLastUpdates();
+        NetService netService = serviceContext.getNetService();
+        ConfigManager configManager = serviceContext.getConfigManager();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        ChatService chatService = serviceContext.getChatService();
+        StateService stateService = serviceContext.getStateService();
+
+        Config config = configManager.getConfig();
+        AbstractMap.SimpleEntry<String, String> lastUpdates = netService.getLastUpdates();
         String lastVersion = lastUpdates.getKey();
         String description = lastUpdates.getValue();
 
-        if (!serviceContext.getConfigManager().getConfig().getCurrentVersion().equals(lastVersion)) {
-            serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD +
-                            "Ваша версия HolyModeration устарела. Новейшая версия: " + DARK_GREEN + BOLD + lastVersion +
-                            GOLD + BOLD + ", ваша: " + DARK_GREEN + BOLD + serviceContext.getConfigManager().getConfig().getCurrentVersion(),
-                    AQUA + BOLD + "Описание обновления: " + LIGHT_PURPLE + BOLD + description.replace("\\n", "\n"), 3600f, "update.wav");
+        if (!config.getCurrentVersion().equals(lastVersion)) {
+            notificationsService.addNotification(NotificationType.WARNING,
+                    "%s%sВаша версия HolyModeration устарела. Новейшая версия: %s%s%s%s%s, ваша: %s%s%s".formatted(
+                            GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, config.getCurrentVersion()
+                    ),
+                    "%s%sОписание обновления: %s%s%s".formatted(AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n")),
+                    3600f, "update.wav");
 
-            serviceContext.getChatService().clientMessage(serviceContext.getChatService().openURLTextComponent(
-                    GREEN + BOLD + "Новая версия!",
+            chatService.clientMessage(chatService.openURLTextComponent(
+                    "%s%sНовая версия!".formatted(GREEN, BOLD),
                     "Нажмите, чтобы перейти на страницу с новой версией мода.",
-                    "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/" + lastVersion));
+                    "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/%s".formatted(lastVersion)
+            ));
 
-            serviceContext.getStateService().block();
+            stateService.block();
             return true;
         }
 

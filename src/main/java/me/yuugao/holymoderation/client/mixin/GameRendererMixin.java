@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.mixin;
 
+import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
@@ -25,6 +26,8 @@ public class GameRendererMixin {
             )
     )
     private void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
-        ServiceLocator.getEventBus().invokeEvent(new HudRenderEvent(drawContext, tickDelta));
+        EventBus eventBus = ServiceLocator.getEventBus();
+
+        eventBus.invokeEvent(new HudRenderEvent(drawContext, tickDelta));
     }
 }

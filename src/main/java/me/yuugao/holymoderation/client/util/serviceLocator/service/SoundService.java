@@ -2,6 +2,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 
 import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import java.io.ByteArrayInputStream;
@@ -16,7 +17,10 @@ import javax.sound.sampled.LineEvent;
 
 public class SoundService extends Service {
     public void playSound(String soundName) {
-        Config config = ServiceLocator.getConfigManager().getConfig();
+        ConfigManager configManager = ServiceLocator.getConfigManager();
+
+        Config config = configManager.getConfig();
+
         if (config.isSoundsEnabled()) {
             try {
                 Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
@@ -40,7 +44,7 @@ public class SoundService extends Service {
                     }
                 });
             } catch (Exception e) {
-                loggerService.printException("Исключение в SoundService/playSound: " + e);
+                loggerService.exception("Исключение в SoundService/playSound: %s".formatted(e));
             }
         }
     }

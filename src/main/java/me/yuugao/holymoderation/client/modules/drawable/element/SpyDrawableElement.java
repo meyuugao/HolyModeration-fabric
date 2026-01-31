@@ -1,6 +1,9 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.StateService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -31,10 +34,18 @@ public class SpyDrawableElement extends DrawableElement {
     }
 
     @Override
+    protected boolean shouldRender() {
+        return !(display0.isEmpty() && display1.isEmpty());
+    }
+
+    @Override
     protected void renderContent(DrawContext ctx, int z) {
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+        Render2DService render2DService = serviceContext.getRender2DService();
+
         MatrixStack ms = ctx.getMatrices();
         anim += (animTarget - anim) * 0.15f;
-        if (anim < 0.01f && display0.isEmpty() && display1.isEmpty()) return;
+        if (anim < 0.01f) return;
 
         String[] current = getStringsToRender();
         if (!(current[0].isEmpty() && current[1].isEmpty())) {
@@ -42,7 +53,7 @@ public class SpyDrawableElement extends DrawableElement {
             display1 = current[1];
         }
 
-        TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
+        TextRenderer tr = minecraftService.getClient().textRenderer;
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;
@@ -58,7 +69,7 @@ public class SpyDrawableElement extends DrawableElement {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        serviceContext.getRender2DService().setupRender();
+        render2DService.setupRender();
 
         float[] tl = topLeftLocal();
         float[] pv = scalePivotLocal();
@@ -74,19 +85,22 @@ public class SpyDrawableElement extends DrawableElement {
         ms.translate(-px, -py, 0f);
 
         float baseY = (height - textBlockHeight) / 2f + 0.5f;
-        serviceContext.getRender2DService().renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z, 10f, bg, outline, 1.5f, 3);
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z,
+                10f, bg, outline, 1.5f, 3);
 
-        serviceContext.getRender2DService().renderText(tr, display0, (int) (width / 2f - tr.getWidth(display0) / 2f), (int) baseY, z, 0xffffffff, false, ctx);
+        render2DService.renderText(tr, display0, (int) (width / 2f - tr.getWidth(display0) / 2f),
+                (int) baseY, z, 0xffffffff, false, ctx);
         if (!display1.isEmpty()) {
-            serviceContext.getRender2DService().renderText(tr, display1, (int) (width / 2f - tr.getWidth(display1) / 2f), (int) (baseY + tr.fontHeight + 4), z, 0xffffffff, false, ctx);
+            render2DService.renderText(tr, display1, (int) (width / 2f - tr.getWidth(display1) / 2f),
+                    (int) (baseY + tr.fontHeight + 4), z, 0xffffffff, false, ctx);
         }
 
         ms.pop();
 
-        serviceContext.getRender2DService().endRender();
+        render2DService.endRender();
 
         if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
-            display0 = display1 = "";
+            display0 = display1 = StringUtils.EMPTY;
             clearDisplayWhenHidden = false;
         }
     }
@@ -104,19 +118,24 @@ public class SpyDrawableElement extends DrawableElement {
     }
 
     private String @NotNull [] getStringsToRender() {
-        String spyPlayer = serviceContext.getStateService().getSpyPlayer();
-        if (spyPlayer.isEmpty()) return new String[]{"", ""};
+        StateService stateService = serviceContext.getStateService();
 
-        if (serviceContext.getStateService().getSpyPlayerStatus().isEmpty())
-            return new String[]{spyPlayer, ""};
+        String spyPlayer = stateService.getSpyPlayer();
+        if (spyPlayer.isEmpty()) return new String[]{StringUtils.EMPTY, StringUtils.EMPTY};
 
-        return switch (serviceContext.getStateService().getSpyPlayerStatus()) {
-            case "stop" -> new String[]{"Слежка приостановлена", ""};
-            case "offline" -> new String[]{"Игрок " + spyPlayer + " оффлайн", ""};
-            case "lobby" -> new String[]{"Игрок " + spyPlayer + " в лобби", ""};
+        String spyPlayerStatus = stateService.getSpyPlayerStatus();
+        String spyPlayerActivity = stateService.getSpyPlayerActivity();
+
+        if (spyPlayerStatus.isEmpty())
+            return new String[]{spyPlayer, StringUtils.EMPTY};
+
+        return switch (spyPlayerStatus) {
+            case "stop" -> new String[]{"Слежка приостановлена", StringUtils.EMPTY};
+            case "offline" -> new String[]{"Игрок %s оффлайн".formatted(spyPlayer), StringUtils.EMPTY};
+            case "lobby" -> new String[]{"Игрок %s в лобби".formatted(spyPlayer), StringUtils.EMPTY};
             default -> new String[]{
-                    "Игрок " + spyPlayer + " находится на " + serviceContext.getStateService().getSpyPlayerStatus(),
-                    serviceContext.getStateService().getSpyPlayerActivity() == null ? "" : "Активность: " + serviceContext.getStateService().getSpyPlayerActivity()
+                    "Игрок %s находится на %s".formatted(spyPlayer, spyPlayerStatus),
+                    spyPlayerActivity == null ? StringUtils.EMPTY : "Активность: %s".formatted(spyPlayerActivity)
             };
         };
     }

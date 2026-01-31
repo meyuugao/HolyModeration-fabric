@@ -7,7 +7,7 @@ import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,12 +22,13 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public class TwinksCheckModule extends Module {
+public class TwinksCheckModule extends Module { //tip: продолжи делать ссылки на сервисы, потом переделай notificationService --> notificationsService, потом сделай переносы строк
     private final Path outputDir = Paths.get("C:\\HolyModeration\\Temp");
     private final File tempFile = new File("C:\\HolyModeration\\Temp\\temp.txt");
 
@@ -37,23 +38,33 @@ public class TwinksCheckModule extends Module {
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
+        StateService stateService = serviceContext.getStateService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        ChatService chatService = serviceContext.getChatService();
+        SchedulerService schedulerService = serviceContext.getSchedulerService();
+
+        ScheduledExecutorService scheduler = schedulerService.getInstance();
+
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
         if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
 
         if (commandSplit[1].equals("twinks")) {
-            if (serviceContext.getStateService().isInHub()) {
-                serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "В хабе этого делать нельзя.", 5f);
+            if (stateService.isInHub()) {
+                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                        "В хабе этого делать нельзя.", 5f);
                 return;
             }
 
             File file = new File("C:\\HolyModeration\\checktwinks.txt");
             if (!file.exists()) {
-                serviceContext.getNotificationService().addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Не найден файл 'checktwinks.txt' по пути 'C:\\HolyModeration'.", 5f);
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "Не найден файл 'checktwinks.txt' по пути 'C:\\HolyModeration'.", 5f);
                 return;
             }
 
-            serviceContext.getNotificationService().addNotification(NotificationType.WARNING, GOLD + BOLD + "Предупреждение", "Проверка твинков началась.", 5f);
+            notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                    "Проверка твинков началась.", 5f);
 
             try {
                 if (tempFile.exists()) {
@@ -65,7 +76,8 @@ public class TwinksCheckModule extends Module {
                 }
                 Files.createFile(tempFile.toPath());
             } catch (Exception e) {
-                serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/onMessageSend: " + DARK_RED + e, 5f);
+                notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                        "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
             }
 
             try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_16LE))) {
@@ -75,59 +87,72 @@ public class TwinksCheckModule extends Module {
                 }
 
                 String[] twinks = br.readLine().split(" ");
-                serviceContext.getStateService().setCheckingTwinks(true);
+                stateService.setCheckingTwinks(true);
                 loop:
                 for (int i = 0; i < twinks.length; i++) {
                     String twink = twinks[i];
-                    for (char ch : serviceContext.getChatService().Chars) {
+                    for (char ch : chatService.Chars) {
                         if (twink.contains(String.valueOf(ch))) {
                             continue loop;
                         }
                     }
 
-                    serviceContext.getSchedulerService().getInstance().schedule(() -> {
+                    scheduler.schedule(() -> {
                         try {
-                            String content = (tempFile.length() > 0 ? System.lineSeparator() : "") + "%%%" + twink + "%%%";
+                            String content = "%s%%%%%%%s%%%%%%".formatted(tempFile.length() > 0 ?
+                                    System.lineSeparator() : StringUtils.EMPTY, twink);
+
                             Files.writeString(tempFile.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                         } catch (Exception e) {
-                            serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/onMessageSend: " + DARK_RED + e, 5f);
+                            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                                    "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
                         }
-                        serviceContext.getChatService().chatMessage("/history " + twink + " 100");
+                        chatService.chatMessage("/history %s 100".formatted(twink));
                     }, i, TimeUnit.SECONDS);
                     if (twinks.length == i + 1) {
-                        serviceContext.getSchedulerService().getInstance().schedule(() -> {
-                            serviceContext.getStateService().setCheckingTwinks(false);
+                        scheduler.schedule(() -> {
+                            stateService.setCheckingTwinks(false);
                             parseHistory();
                         }, i + 1, TimeUnit.SECONDS);
                     }
                 }
             } catch (Exception e) {
-                serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/onMessageSend: " + DARK_RED + e, 5f);
+                notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                        "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
             }
         }
     }
 
     @Subscribe(priority = 97)
     public void onMessageReceive(MessageReceiveEvent event) {
-        String message = serviceContext.getChatService().formatReceivedText(event.getMessage().getString());
+        ChatService chatService = serviceContext.getChatService();
+        StateService stateService = serviceContext.getStateService();
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+
+        String message = chatService.formatReceivedText(event.getMessage().getString());
         if (message == null) {
             return;
         }
 
-        if (serviceContext.getStateService().isCheckingTwinks()) {
-            if (message.startsWith(" -- [") || message.startsWith("Игрок") || message.startsWith("по причина:") || message.startsWith("История") || message.startsWith("Окончание через") || message.startsWith("Разбанен:") || message.startsWith("Размьючен:") || message.trim().isEmpty()) {
+        if (stateService.isCheckingTwinks()) {
+            if (message.startsWith(" -- [") || message.startsWith("Игрок") || message.startsWith("по причина:")
+                    || message.startsWith("История") || message.startsWith("Окончание через")
+                    || message.startsWith("Разбанен:") || message.startsWith("Размьючен:") || message.trim().isEmpty()) {
                 event.setCancelled(true);
                 try {
-                    String content = System.lineSeparator() + message;
+                    String content = "%s%s".formatted(System.lineSeparator(), message);
                     Files.writeString(tempFile.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
                 } catch (Exception e) {
-                    serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/onMessageReceive: " + DARK_RED + e, 5f);
+                    notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                            "Исключение в TwinksCheckModule/onMessageReceive: %s%s".formatted(DARK_RED, e), 5f);
                 }
             }
         }
     }
 
     private void parseHistory() {
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+
         try {
             List<String> lines = Files.readAllLines(tempFile.toPath());
             Files.delete(tempFile.toPath());
@@ -157,7 +182,7 @@ public class TwinksCheckModule extends Module {
                         .forEach(path -> {
                             try {
                                 String nickname = path.getFileName().toString()
-                                        .replace(".txt", "");
+                                        .replace(".txt", StringUtils.EMPTY);
                                 List<String> parseLines = Files.readAllLines(path);
 
                                 String banStatus = checkBanStatus(nickname, parseLines);
@@ -179,7 +204,9 @@ public class TwinksCheckModule extends Module {
                                     results.append("}\n\n");
                                 }
                             } catch (Exception e) {
-                                serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/parseHistory: " + DARK_RED + e, 5f);
+                                notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение"
+                                        .formatted(DARK_RED, BOLD), "Исключение в TwinksCheckModule/parseHistory: %s%s"
+                                        .formatted(DARK_RED, e), 5f);
                             }
                         });
             }
@@ -187,9 +214,12 @@ public class TwinksCheckModule extends Module {
             Path outputFile = Paths.get("C:\\HolyModeration\\results.txt");
             Files.writeString(outputFile, results.toString());
             FileUtils.deleteDirectory(outputDir.toFile());
-            serviceContext.getNotificationService().addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Проверка твинков завершена, просмотрите результаты в C\\HolyModeration\\results.txt.", 5f, "twinksDone.wav");
+            notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                    "Проверка твинков завершена, просмотрите результаты в C\\HolyModeration\\results.txt.",
+                    5f, "twinksDone.wav");
         } catch (Exception e) {
-            serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/parseHistory: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/parseHistory: %s%s".formatted(DARK_RED, e), 5f);
         }
     }
 
@@ -222,9 +252,7 @@ public class TwinksCheckModule extends Module {
     private static List<String> parsePunishments(String nickname, List<String> lines) {
         List<String> punishments = new ArrayList<>();
         Pattern pattern = Pattern.compile(
-                "-- \\[(.*?) назад] --.*?" +
-                        "Игрок " + Pattern.quote(nickname) + " был (\\S+).*?" +
-                        "по причина:\\s*'(.*?)'",
+                "-- \\[(.*?) назад] --.*?Игрок %s был (\\S+).*?по причина:\\s*'(.*?)'".formatted(Pattern.quote(nickname)),
                 Pattern.DOTALL
         );
 
@@ -309,10 +337,12 @@ public class TwinksCheckModule extends Module {
     }
 
     private void saveBlock(Path outputDir, String filename, List<String> content) {
+        NotificationsService notificationsService = serviceContext.getNotificationsService();
+
         try {
             boolean validBlock = false;
             for (String line : content) {
-                if (line.startsWith("История " + filename) ||
+                if (line.startsWith("История %s".formatted(filename)) ||
                         line.startsWith("История не найдена.")) {
                     validBlock = true;
                     break;
@@ -323,10 +353,11 @@ public class TwinksCheckModule extends Module {
                 return;
             }
 
-            Path outputFile = outputDir.resolve(filename + ".txt");
+            Path outputFile = outputDir.resolve("%s.txt".formatted(filename));
             Files.write(outputFile, content);
         } catch (Exception e) {
-            serviceContext.getNotificationService().addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в TwinksCheckModule/saveBlock: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/saveBlock: %s%s".formatted(DARK_RED, e), 5f);
         }
     }
 }

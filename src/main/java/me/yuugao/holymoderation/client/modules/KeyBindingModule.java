@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.modules;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.KeyPressEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
 
 public class KeyBindingModule extends Module {
     public KeyBindingModule(ServiceContext serviceContext) {
@@ -11,6 +12,8 @@ public class KeyBindingModule extends Module {
 
     @Subscribe
     public void onKeyPress(KeyPressEvent event) {
-        serviceContext.getInputService().updatePressedKeys(event.getKey(), event.getAction());
+        InputService inputService = serviceContext.getInputService();
+
+        inputService.updatePressedKeys(event.getKey(), event.getAction());
     }
 }

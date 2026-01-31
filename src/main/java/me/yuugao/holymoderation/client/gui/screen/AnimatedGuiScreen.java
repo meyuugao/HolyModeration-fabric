@@ -1,6 +1,8 @@
 package me.yuugao.holymoderation.client.gui.screen;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.SchedulerService;
 
 import net.minecraft.text.Text;
 
@@ -37,9 +39,11 @@ public class AnimatedGuiScreen extends GuiScreen {
     }
 
     private void startAnimation() {
+        SchedulerService schedulerService = serviceContext.getSchedulerService();
+
         stopAnimation();
 
-        task = serviceContext.getSchedulerService().getInstance().scheduleAtFixedRate(() -> {
+        task = schedulerService.getInstance().scheduleAtFixedRate(() -> {
             if (opening) {
                 progress += speed;
                 if (progress > 1f) progress = 1f;
@@ -74,8 +78,10 @@ public class AnimatedGuiScreen extends GuiScreen {
     }
 
     private void onFullyClosed() {
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+
         stopAnimation();
-        serviceContext.getMinecraftService().getClient().execute(super::close);
+        minecraftService.getClient().execute(super::close);
     }
 
     @Override

@@ -26,11 +26,13 @@ public abstract class DrawableElement {
         this.positionMode = positionMode;
     }
 
+    protected abstract boolean shouldRender();
+
     protected abstract void renderContent(DrawContext ctx, int z);
 
     protected abstract void initPosition(DrawContext ctx);
 
-    public final void render(DrawContext ctx, int z) {
+    public final void render(DrawContext ctx, int z, boolean forced) {
         if (!positioned) {
             initPosition(ctx);
             positioned = true;
@@ -44,7 +46,9 @@ public abstract class DrawableElement {
         ms.translate(x, y, 0f);
         ms.scale(widthScale, heightScale, 0f);
         try {
-            renderContent(ctx, z);
+            if (shouldRender() || forced) {
+                renderContent(ctx, z);
+            }
         } finally {
             ms.pop();
         }

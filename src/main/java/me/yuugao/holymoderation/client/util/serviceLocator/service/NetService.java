@@ -36,7 +36,7 @@ public class NetService extends Service {
     }
 
     public List<String> getSoundsList() {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         List<String> soundFiles = new ArrayList<>();
         try {
@@ -55,13 +55,14 @@ public class NetService extends Service {
             }
             connection.disconnect();
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/getSoundsList: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/getSoundsList: %s%s".formatted(DARK_RED, e), 5f);
         }
         return soundFiles;
     }
 
     public void downloadSounds() {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             Path soundsDir = Paths.get("C:\\HolyModeration\\Sounds");
@@ -83,7 +84,7 @@ public class NetService extends Service {
             }
 
             for (String sound : getSoundsList()) {
-                String fileUrl = "https://raw.githubusercontent.com/meyuugao/HolyModeration-Releases/main/Sounds/" + sound;
+                String fileUrl = "https://raw.githubusercontent.com/meyuugao/HolyModeration-Releases/main/Sounds/%s".formatted(sound);
                 Path filePath = soundsDir.resolve(sound);
                 URL url = new URL(fileUrl);
                 try (InputStream in = url.openStream()) {
@@ -91,8 +92,8 @@ public class NetService extends Service {
                 }
             }
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/downloadSounds: " + DARK_RED + e, 5f, StringUtils.EMPTY
-            );
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/downloadSounds: %s%s".formatted(DARK_RED, e), 5f, StringUtils.EMPTY);
         }
     }
 
@@ -105,15 +106,17 @@ public class NetService extends Service {
     }
 
     public void startCheckout(String name, String reason, String mode, int number, boolean pvp) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             if (hasActiveCheckout()) {
-                notificationService.addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас уже есть активная проверка.", 5f);
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "У вас уже есть активная проверка.", 5f);
                 return;
             }
 
-            HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/start", "POST", null);
+            HttpsURLConnection connection = openHttpsConnection(
+                    "%scheckout/start".formatted(journalApiPath), "POST", null);
             if (connection == null) throw new IOException("connection is null");
 
             try {
@@ -127,28 +130,33 @@ public class NetService extends Service {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201)
-                        notificationService.addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно внесли проверку в журнал.", 5f);
+                        notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                                "Вы успешно внесли проверку в журнал.", 5f);
                     else
-                        notificationService.addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Ошибка при внесении проверки. Код: " + RED + connection.getResponseCode(), 5f);
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                                "Ошибка при внесении проверки. Код: %s%s".formatted(RED, connection.getResponseCode()), 5f);
                 }
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/startCheckout: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/startCheckout: %s%s".formatted(DARK_RED, e), 5f);
         }
     }
 
     public void endCheckout(String result, String reason, boolean destroyStash) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             if (!hasActiveCheckout()) {
-                notificationService.addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "У вас нет активной проверки.", 5f);
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "У вас нет активной проверки.", 5f);
                 return;
             }
 
-            HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/end", "POST", null);
+            HttpsURLConnection connection = openHttpsConnection(
+                    "%scheckout/end".formatted(journalApiPath), "POST", null);
             if (connection == null) throw new IOException("connection is null");
 
             try {
@@ -160,23 +168,27 @@ public class NetService extends Service {
 
                 if (writeJson(connection, jsonBody)) {
                     if (connection.getResponseCode() == 201)
-                        notificationService.addNotification(NotificationType.SUCCESS, GREEN + BOLD + "Успех", "Вы успешно закончили проверку в журнале.", 5f);
+                        notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
+                                "Вы успешно закончили проверку в журнале.", 5f);
                     else
-                        notificationService.addNotification(NotificationType.ERROR, RED + BOLD + "Ошибка", "Ошибка при завершении проверки. Код: " + RED + connection.getResponseCode(), 5f);
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                                "Ошибка при завершении проверки. Код: %s%s".formatted(RED, connection.getResponseCode()), 5f);
                 }
             } finally {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/endCheckout: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/endCheckout: %s%s".formatted(DARK_RED, e), 5f);
         }
     }
 
     private boolean hasActiveCheckout() {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
-            HttpsURLConnection connection = openHttpsConnection(journalApiPath + "checkout/status", "GET", null);
+            HttpsURLConnection connection = openHttpsConnection(
+                    "%scheckout/status".formatted(journalApiPath), "GET", null);
             if (connection == null) throw new IOException("connection is null");
             try {
                 setAuthHeaders(connection);
@@ -188,16 +200,18 @@ public class NetService extends Service {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/hasActiveCheckout: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/hasActiveCheckout: %s%s".formatted(DARK_RED, e), 5f);
             return false;
         }
     }
 
     private Map<String, Object> executeGetRequest(String endpoint) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
-            HttpsURLConnection connection = openHttpsConnection(journalApiPath + endpoint, "GET", null);
+            HttpsURLConnection connection = openHttpsConnection(
+                    "%s%s".formatted(journalApiPath, endpoint), "GET", null);
             if (connection == null) throw new IOException("connection is null");
             try {
                 setAuthHeaders(connection);
@@ -206,19 +220,21 @@ public class NetService extends Service {
                 connection.disconnect();
             }
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/executeGetRequest: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/executeGetRequest: %s%s".formatted(DARK_RED, e), 5f);
             return Collections.emptyMap();
         }
     }
 
     private void setAuthHeaders(@NotNull HttpsURLConnection connection) {
         Config config = ServiceLocator.getConfigManager().getConfig();
+
         connection.setRequestProperty("x-token", config.getApiToken());
         connection.setRequestProperty("Content-Type", "application/json");
     }
 
     private boolean writeJson(@NotNull HttpsURLConnection connection, @NotNull JsonObject jsonBody) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             connection.setDoOutput(true);
@@ -227,42 +243,46 @@ public class NetService extends Service {
             }
             return true;
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/writeJson: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/writeJson: %s%s".formatted(DARK_RED, e), 5f);
             return false;
         }
     }
 
     public StringBuilder getResponse(@NotNull HttpsURLConnection connection) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
             StringBuilder response = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) response.append(line);
             reader.close();
             return response;
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/getResponse: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/getResponse: %s%s".formatted(DARK_RED, e), 5f);
             return null;
         }
     }
 
     private Map<String, Object> parseJsonResponse(@NotNull StringBuilder response) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             Type type = new TypeToken<Map<String, Object>>() {
             }.getType();
             return gson.fromJson(response.toString(), type);
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/parseJsonResponse: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/parseJsonResponse: %s%s".formatted(DARK_RED, e), 5f);
             return Collections.emptyMap();
         }
     }
 
     public HttpsURLConnection openHttpsConnection(String url, String method, String cookie) {
-        NotificationService notificationService = ServiceLocator.getNotificationService();
+        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
@@ -271,7 +291,8 @@ public class NetService extends Service {
             if (cookie != null) connection.setRequestProperty("Cookie", cookie);
             return connection;
         } catch (Exception e) {
-            notificationService.addNotification(NotificationType.EXCEPTION, DARK_RED + BOLD + "Исключение", "Исключение в NetService/openHttpsConnection: " + DARK_RED + e, 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в NetService/openHttpsConnection: %s%s".formatted(DARK_RED, e), 5f);
             return null;
         }
     }

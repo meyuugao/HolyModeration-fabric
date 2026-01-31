@@ -4,7 +4,10 @@ import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 
 public class MainGuiModule extends Module {
@@ -16,10 +19,15 @@ public class MainGuiModule extends Module {
 
     @Subscribe
     public void onHudRender(HudRenderEvent event) {
-        if (serviceContext.getInputService().wasKeyBindPressed("open_main_gui")) {
-            Screen currentScreen = serviceContext.getMinecraftService().getClient().currentScreen;
+        InputService inputService = serviceContext.getInputService();
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+
+        MinecraftClient mc = minecraftService.getClient();
+
+        if (inputService.wasKeyBindPressed("open_main_gui")) {
+            Screen currentScreen = mc.currentScreen;
             if (currentScreen == null) {
-                serviceContext.getMinecraftService().getClient().setScreen(mainGuiScreen);
+                mc.setScreen(mainGuiScreen);
             } else if (currentScreen.equals(mainGuiScreen)) {
                 mainGuiScreen.close();
             }

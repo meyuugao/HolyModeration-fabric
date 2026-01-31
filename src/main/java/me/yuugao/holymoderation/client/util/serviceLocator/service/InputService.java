@@ -51,6 +51,7 @@ public class InputService extends Service {
 
     public boolean isKeyBindHeld(String actionName) {
         Config config = ServiceLocator.getConfigManager().getConfig();
+
         Config.KeyBindConfig keyBind = config.getKeyBind(actionName);
         if (keyBind == null) return false;
         if (keyBind.getType() != Config.KeyBindType.HOLD) return false;
@@ -63,6 +64,7 @@ public class InputService extends Service {
 
     public boolean wasKeyBindPressed(String actionName) {
         Config config = ServiceLocator.getConfigManager().getConfig();
+
         Config.KeyBindConfig keyBind = config.getKeyBind(actionName);
         if (keyBind == null) return false;
 

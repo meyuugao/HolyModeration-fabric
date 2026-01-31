@@ -4,7 +4,7 @@ import me.yuugao.holymoderation.client.config.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
-import org.slf4j.Logger;
+import org.apache.logging.log4j.core.Logger;
 
 import lombok.Getter;
 
@@ -26,7 +26,7 @@ public class ServiceLocator {
     @Getter
     private static NetService netService;
     @Getter
-    private static NotificationService notificationService;
+    private static NotificationsService notificationsService;
     @Getter
     private static PunishmentsService punishmentsService;
     @Getter
@@ -40,7 +40,12 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService, CheckoutsService checkoutsService, GuiManagerService guiManagerService, InputService inputService, MinecraftService minecraftService, NetService netService, NotificationService notificationService, PunishmentsService punishmentsService, Render2DService render2DService, SchedulerService schedulerService, SoundService soundService, StateService stateService, org.slf4j.Logger logger) {
+    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService,
+                                  CheckoutsService checkoutsService, GuiManagerService guiManagerService,
+                                  InputService inputService, MinecraftService minecraftService, NetService netService,
+                                  NotificationsService notificationsService, PunishmentsService punishmentsService,
+                                  Render2DService render2DService, SchedulerService schedulerService,
+                                  SoundService soundService, StateService stateService, Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
@@ -49,13 +54,13 @@ public class ServiceLocator {
         ServiceLocator.inputService = inputService;
         ServiceLocator.minecraftService = minecraftService;
         ServiceLocator.netService = netService;
-        ServiceLocator.notificationService = notificationService;
+        ServiceLocator.notificationsService = notificationsService;
         ServiceLocator.punishmentsService = punishmentsService;
         ServiceLocator.render2DService = render2DService;
         ServiceLocator.schedulerService = schedulerService;
         ServiceLocator.soundService = soundService;
         ServiceLocator.stateService = stateService;
-        logger.info("Base services has been initialized");
+        logger.info("Base services has been initialized.");
         initializeLoggerService(logger);
     }
 
@@ -68,12 +73,12 @@ public class ServiceLocator {
         inputService.setLoggerService(loggerService);
         minecraftService.setLoggerService(loggerService);
         netService.setLoggerService(loggerService);
-        notificationService.setLoggerService(loggerService);
+        notificationsService.setLoggerService(loggerService);
         punishmentsService.setLoggerService(loggerService);
         render2DService.setLoggerService(loggerService);
         schedulerService.setLoggerService(loggerService);
         soundService.setLoggerService(loggerService);
         stateService.setLoggerService(loggerService);
-        loggerService.logger().info("Logger service has been initialized");
+        loggerService.info("Logger service has been initialized.");
     }
 }

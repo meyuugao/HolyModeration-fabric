@@ -3,6 +3,9 @@ package me.yuugao.holymoderation.client.gui.screen;
 import me.yuugao.holymoderation.client.gui.tabs.main.GeneralTab;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
@@ -31,6 +34,10 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
+        Render2DService render2DService = serviceContext.getRender2DService();
+        InputService inputService = serviceContext.getInputService();
+        GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
+
         float targetW = (float) ctx.getScaledWindowWidth() / 2.2f;
         float targetH = (float) ctx.getScaledWindowHeight() / 1.8f;
 
@@ -44,9 +51,9 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         float scaleFactor = Math.min(this.width, this.height) / 100f;
         float scaledOutline = baseOutline * scaleFactor;
 
-        serviceContext.getRender2DService().setupRender();
+        render2DService.setupRender();
 
-        serviceContext.getRender2DService().renderSoftRoundedRectOutline(
+        render2DService.renderSoftRoundedRectOutline(
                 ctx.getMatrices(),
                 this.x, this.y, Math.max(1, this.width), Math.max(1, this.height),
                 renderPriority,
@@ -56,13 +63,13 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 scaledOutline, 3
         );
 
-        serviceContext.getRender2DService().endRender();
+        render2DService.endRender();
 
-        boolean mouseHeld = serviceContext.getInputService().isMouseButtonHeld(0);
+        boolean mouseHeld = inputService.isMouseButtonHeld(0);
 
         if (mouseHeld) {
-            if (dragging == null && serviceContext.getInputService().wasMouseButtonPressed(0)) {
-                ArrayList<DrawableModule<?>> list = new ArrayList<>(serviceContext.getGuiManagerService().getDrawableModules());
+            if (dragging == null && inputService.wasMouseButtonPressed(0)) {
+                ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
                 Collections.reverse(list);
                 for (DrawableModule<?> d : list) {
                     if (d.isMouseOver(mouseX, mouseY, ctx)) {

@@ -8,6 +8,9 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Logger;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -15,6 +18,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class StateService extends Service {
+    private boolean debugEnabled = false;
     private boolean enabled = true;
     private boolean blocked = false;
     private boolean connected = false;
@@ -26,7 +30,7 @@ public class StateService extends Service {
     private boolean gm3Enabled = false;
     private boolean hacAlertsEnabled = false;
     private boolean godEnabled = false;
-    private String player = StringUtils.EMPTY;
+    private String checkoutPlayer = StringUtils.EMPTY;
     private String spyPlayer = StringUtils.EMPTY;
     private String spyPlayerStatus = StringUtils.EMPTY;
     private String spyPlayerActivity = StringUtils.EMPTY;
@@ -46,7 +50,7 @@ public class StateService extends Service {
         this.gm3Enabled = false;
         this.hacAlertsEnabled = false;
         this.godEnabled = false;
-        this.player = StringUtils.EMPTY;
+        this.checkoutPlayer = StringUtils.EMPTY;
         this.spyPlayer = StringUtils.EMPTY;
         this.spyPlayerStatus = StringUtils.EMPTY;
         this.spyPlayerActivity = StringUtils.EMPTY;
@@ -54,29 +58,47 @@ public class StateService extends Service {
         this.userLocation = StringUtils.EMPTY;
         this.vkUrl = StringUtils.EMPTY;
         this.rank = 0;
-        ServiceLocator.getGuiManagerService().clearDrawableModules();
     }
 
     public void unregisterEventListeners() {
         EventBus eventBus = ServiceLocator.getEventBus();
         ServiceContext ctx = new ServiceContext();
+
         eventBus.clear();
         eventBus.register(new StateModule(ctx));
         eventBus.register(new GuiManagerModule(ctx));
     }
 
     public void registerEventListeners() {
-        HolyModerationClient.registerEventListeners(ServiceLocator.getEventBus());
+        EventBus eventBus = ServiceLocator.getEventBus();
+
+        eventBus.clear();
+        HolyModerationClient.registerEventListeners(eventBus);
     }
 
-    public void disable() {
-        enabled = false;
-        unregisterEventListeners();
+    public void enableDebug() {
+        this.debugEnabled = true;
+        ((Logger) LogManager.getRootLogger()).setLevel(Level.DEBUG);
+        loggerService.setLevel(Level.DEBUG);
+    }
+
+    public void disableDebug() {
+        this.debugEnabled = false;
+        loggerService.setLevel(Level.INFO);
     }
 
     public void enable() {
-        enabled = true;
-        registerEventListeners();
+        if (!enabled) {
+            enabled = true;
+            registerEventListeners();
+        }
+    }
+
+    public void disable() {
+        if (enabled) {
+            enabled = false;
+            unregisterEventListeners();
+        }
     }
 
     public void block() {

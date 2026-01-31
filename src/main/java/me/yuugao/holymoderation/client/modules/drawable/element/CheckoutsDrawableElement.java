@@ -1,10 +1,15 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.StateService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
+
+import org.apache.commons.lang3.StringUtils;
 
 import java.awt.Color;
 
@@ -14,7 +19,7 @@ public class CheckoutsDrawableElement extends DrawableElement {
     private float coCurrentWidth = 1f;
     private float coCurrentHeight = 1f;
     private long checkoutStartMillis = 0L;
-    private String coLastPlayer = "";
+    private String coLastPlayer = StringUtils.EMPTY;
     private boolean coClearDisplayWhenHidden = false;
 
     public CheckoutsDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
@@ -28,11 +33,22 @@ public class CheckoutsDrawableElement extends DrawableElement {
     }
 
     @Override
+    protected boolean shouldRender() {
+        StateService stateService = serviceContext.getStateService();
+
+        return !stateService.getCheckoutPlayer().isEmpty();
+    }
+
+    @Override
     protected void renderContent(DrawContext ctx, int z) {
+        StateService stateService = serviceContext.getStateService();
+        MinecraftService minecraftService = serviceContext.getMinecraftService();
+        Render2DService render2DService = serviceContext.getRender2DService();
+
         MatrixStack ms = ctx.getMatrices();
         coAnim += (coAnimTarget - coAnim) * 0.15f;
 
-        String player = serviceContext.getStateService().getPlayer();
+        String player = stateService.getCheckoutPlayer();
         if (!coLastPlayer.equals(player)) {
             if (coLastPlayer.isEmpty() && !player.isEmpty()) {
                 checkoutStartMillis = System.currentTimeMillis();
@@ -44,12 +60,13 @@ public class CheckoutsDrawableElement extends DrawableElement {
             coLastPlayer = player;
         }
 
-        if (coAnim < 0.01f && player.isEmpty()) return;
+        if (coAnim < 0.01f) return;
 
-        TextRenderer tr = serviceContext.getMinecraftService().getClient().textRenderer;
+        TextRenderer tr = minecraftService.getClient().textRenderer;
 
         long elapsed = checkoutStartMillis == 0L ? 0L : (System.currentTimeMillis() - checkoutStartMillis) / 1000L;
-        String display = "Текущая проверка: " + (player.isEmpty() ? coLastPlayer : player) + " | " + elapsed / 60 + ":" + String.format("%02d", elapsed % 60);
+        String display = "Текущая проверка: %s | %s:%s".formatted(
+                player.isEmpty() ? coLastPlayer : player, elapsed / 60, String.format("%02d", elapsed % 60));
 
         float targetWidth = tr.getWidth(display) + 16f;
         float targetHeight = tr.fontHeight + 12f;
@@ -63,7 +80,7 @@ public class CheckoutsDrawableElement extends DrawableElement {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        serviceContext.getRender2DService().setupRender();
+        render2DService.setupRender();
 
         float[] tl = topLeftLocal();
         float[] pv = scalePivotLocal();
@@ -78,18 +95,20 @@ public class CheckoutsDrawableElement extends DrawableElement {
         ms.scale(coAnim, coAnim, 1f);
         ms.translate(-px, -py, 0f);
 
-        serviceContext.getRender2DService().renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z, 10f, bg, outline, 1.5f, 3);
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z,
+                10f, bg, outline, 1.5f, 3);
 
-        serviceContext.getRender2DService().renderText(tr, display, (int) (width / 2f - tr.getWidth(display) / 2f), (int) (height / 2f - tr.fontHeight / 2f + 0.5f), z, 0xffffffff, false, ctx);
+        render2DService.renderText(tr, display, (int) (width / 2f - tr.getWidth(display) / 2f),
+                (int) (height / 2f - tr.fontHeight / 2f + 0.5f), z, 0xffffffff, false, ctx);
 
         ms.pop();
 
-        serviceContext.getRender2DService().endRender();
+        render2DService.endRender();
 
         if (coAnim < 0.02f && coAnimTarget == 0f && coClearDisplayWhenHidden) {
             checkoutStartMillis = 0L;
             coClearDisplayWhenHidden = false;
-            coLastPlayer = "";
+            coLastPlayer = StringUtils.EMPTY;
         }
     }
 

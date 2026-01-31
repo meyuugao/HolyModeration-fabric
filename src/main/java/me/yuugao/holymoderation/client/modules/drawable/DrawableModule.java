@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.modules.drawable;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
 
 import net.minecraft.client.gui.DrawContext;
 
@@ -14,8 +15,11 @@ public abstract class DrawableModule<T extends DrawableElement> extends Module {
 
     public DrawableModule(ServiceContext serviceContext, T drawableElement) {
         super(serviceContext);
+
+        GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
+
         this.drawableElement = drawableElement;
-        serviceContext.getGuiManagerService().addDrawableModule(this);
+        guiManagerService.addDrawableModule(this);
     }
 
     public boolean isMouseOver(int mouseX, int mouseY, DrawContext ctx) {
@@ -34,7 +38,7 @@ public abstract class DrawableModule<T extends DrawableElement> extends Module {
 
     public abstract int getRenderPriority();
 
-    public void render(DrawContext ctx) {
-        drawableElement.render(ctx, getRenderPriority());
+    public void render(DrawContext ctx, boolean forced) {
+        drawableElement.render(ctx, getRenderPriority(), forced);
     }
 }

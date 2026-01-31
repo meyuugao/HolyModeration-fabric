@@ -22,7 +22,7 @@ public class GeneralTab extends Tab<MainGuiScreen> {
         ColorPickerModule colorPickerModule = (ColorPickerModule) modules.get("ColorPicker");
 
         float radius = 25f;
-        float totalRadius = radius * mainGuiScreen.getAnimValue(); //tip: отнимай от x не ток радиус а ещё и outlinewidth (possibly * 2)
+        float totalRadius = radius * mainGuiScreen.getAnimValue();
         colorPickerModule.render(context.getMatrices(),
                 mainGuiScreen.getX() + mainGuiScreen.getWidth() / 2 - totalRadius - colorPickerModule.getOutlineWidth(),
                 mainGuiScreen.getY() + mainGuiScreen.getHeight() / 2 - totalRadius - colorPickerModule.getOutlineWidth(),

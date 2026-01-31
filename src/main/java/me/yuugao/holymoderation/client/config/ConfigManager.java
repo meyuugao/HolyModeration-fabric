@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.config;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
 
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -30,14 +31,18 @@ public class ConfigManager {
     }
 
     private void ensureConfigDirectory() {
+        LoggerService loggerService = ServiceLocator.getLoggerService();
+
         try {
             Files.createDirectories(Paths.get(CONFIG_DIRECTORY));
         } catch (Exception e) {
-            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/ensureConfigDirectory: " + e);
+            loggerService.exception("Исключение в ConfigManager/ensureConfigDirectory: %s".formatted(e));
         }
     }
 
     public void loadConfig() {
+        LoggerService loggerService = ServiceLocator.getLoggerService();
+
         ensureConfigDirectory();
         Path configPath = Paths.get(CONFIG_FILE_PATH);
 
@@ -58,12 +63,14 @@ public class ConfigManager {
                 }
             }
         } catch (Exception e) {
-            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/loadConfig: " + e);
+            loggerService.exception("Исключение в ConfigManager/loadConfig: %s".formatted(e));
             saveCfg(config);
         }
     }
 
     public void saveCfg(Config config) {
+        LoggerService loggerService = ServiceLocator.getLoggerService();
+
         this.config = config;
         ensureConfigDirectory();
 
@@ -72,8 +79,8 @@ public class ConfigManager {
             writer.write("""
                     /*
                     ********************************************************************************
-                    **                              ВНИМАНИЕ!                                    **
-                    **  Создатель мода не несёт ответственности за любые изменения конфигурации  **
+                    **                              ВНИМАНИЕ!                                     **
+                    **  Создатель мода не несёт ответственности за любые изменения конфигурации   **
                     **  вручную, за передачу конфигурационных файлов другим лицам, включая API    **
                     **  токен, и возможные последствия использования модифицированного файла.     **
                     ********************************************************************************
@@ -125,7 +132,7 @@ public class ConfigManager {
                     ⢁⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠂⠀⢪⡪⡎⣎⢎⢎⢆⢕⠜⡌⢎⢎⢮⢪⢎⢮⢪⡪⡎⡮⡪⡎⡮⡪⣪⢣⢣⡣⣣⢳⢹⢸⠨⡪⡘⡌⢎⢎⢮⢪⡣⣓⠅⠀⣺⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⢿⢿⠿⠻⠋⠁⠀⠀⠀⠀⠀⠀⠀⢂
                     """);
         } catch (Exception e) {
-            ServiceLocator.getLoggerService().printException("Исключение в ConfigManager/saveCfg: " + e);
+            loggerService.exception("Исключение в ConfigManager/saveCfg: %s".formatted(e));
         }
     }
 }

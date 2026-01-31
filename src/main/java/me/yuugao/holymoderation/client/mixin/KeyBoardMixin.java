@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.mixin;
 
+import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.eventbus.event.KeyPressEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
@@ -14,6 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class KeyBoardMixin {
     @Inject(method = "onKey", at = @At("TAIL"))
     public void onKey(long window, int key, int scancode, int action, int modifiers, CallbackInfo ci) {
-        ServiceLocator.getEventBus().invokeEvent(new KeyPressEvent(window, key, scancode, action, modifiers));
+        EventBus eventBus = ServiceLocator.getEventBus();
+
+        eventBus.invokeEvent(new KeyPressEvent(window, key, scancode, action, modifiers));
     }
 }
