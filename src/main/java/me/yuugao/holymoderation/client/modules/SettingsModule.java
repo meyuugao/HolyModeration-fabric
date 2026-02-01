@@ -23,13 +23,13 @@ import obfuscator.ObfRule;
 public class SettingsModule extends Module {
     private final String[] settingsCommands = {
             "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
-            "copy", "me", "setcopy", "setmarker", "setspydelay", "setsoundsvolume", "sounds", "stats",
-            "textadd", "textedit", "textremove", "textsclear", "textslist"
+            "copy", "setcopy", "setmarker", "setspydelay", "setsoundsvolume", "sounds", "textadd", "textedit",
+            "textremove", "textsclear", "textslist"
     };
 
     private final String[] settingsWithoutArguments = {
-            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha",
-            "autotp", "autovanish", "copy", "me", "sounds", "stats", "textsclear", "textslist"
+            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
+            "copy", "sounds", "textsclear", "textslist"
     };
 
     private final String[] settingsWithOneArgument = {
@@ -73,7 +73,7 @@ public class SettingsModule extends Module {
                                 if (i < textsList.size() - 1) texts.append("\n");
                             }
                             notificationsService.addNotification(NotificationType.SUCCESS,
-                                    "%s%sСписок ваших текстов".formatted(GREEN, BOLD), texts.toString(), 5f);
+                                    "%s%sСписок ваших текстов".formatted(GREEN, BOLD), texts.toString(), 10f);
                         }
                         break;
                     }
