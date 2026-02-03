@@ -165,7 +165,7 @@ public class PunishmentsModule extends Module {
             if (chatService.isArrayContains(BanCommands, command) || command.equals("/warn")) {
                 if (StrangeFrzPunishmentConfirm && StrangeFrzMessage.isEmpty()) {
                     StrangeFrzPunishmentConfirm = false;
-                    checkoutsService.endCheckOut();
+                    checkoutsService.endCheckOut(false);
                 }
             }
 

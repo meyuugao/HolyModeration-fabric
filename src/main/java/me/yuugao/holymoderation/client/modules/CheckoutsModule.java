@@ -28,6 +28,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
             "endcheckout", "startcheckout"
     };
 
+    private boolean startingCheckout = false;
     private boolean banChecking = false;
     private boolean destroyStash;
     private boolean messageIsCheckbanInfo;
@@ -97,7 +98,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                                 "Вы никого не проверяете.", 5f);
                         return;
                     }
-                    checkoutsService.endCheckOut();
+                    checkoutsService.endCheckOut(false);
                 }
                 case "sban" -> {
                     commandSplit = eventCommand.split(" ", 4);
@@ -116,7 +117,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     String time = commandSplit[2];
                     String reason = commandSplit.length == 3 ? "2.4" : "2.4 (%s)".formatted(commandSplit[3]);
                     if (!punishmentsService.punish("/banip", checkoutPlayer, time, reason, true)) return;
-                    checkoutsService.endCheckOut();
+                    checkoutsService.endCheckOut(false);
                 }
                 case "freezing", "frz" -> {
                     commandSplit = eventCommand.split(" ", 3);
@@ -127,6 +128,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         return;
                     }
 
+                    startingCheckout = true;
                     if (checkoutsService.startCheckOut(commandSplit[2])) {
                         this.drawableElement.coStartForLocal(commandSplit[2]);
                     }
@@ -245,11 +247,20 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
         String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
+        if (startingCheckout) {
+            if (receivedText.equals("Игрок заморожен!")) {
+                startingCheckout = false;
+            } else if (receivedText.equals("Игрок не найден!")) {
+                startingCheckout = false;
+                checkoutsService.endCheckOut(true);
+            }
+        }
+
         if (!checkoutPlayer.isEmpty() && config.isAutoBanEnabled()) {
             if (receivedText.startsWith("▶ Замороженный игрок %s".formatted(checkoutPlayer))) {
                 punishmentsService.punish("/banip", checkoutPlayer,
                         "30d", "2.4 (Лив с проверки)", true);
-                checkoutsService.endCheckOut();
+                checkoutsService.endCheckOut(false);
             }
         }
 
