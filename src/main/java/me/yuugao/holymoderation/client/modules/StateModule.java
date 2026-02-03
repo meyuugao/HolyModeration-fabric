@@ -162,7 +162,7 @@ public class StateModule extends Module {
         String command = eventCommand.startsWith("hm") ? messageSplit[1] : messageSplit[0];
 
         switch (command) {
-            case ("v"): {
+            case ("v") -> {
                 if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
                     if (messageSplit.length > 1) {
                         if (messageSplit[1].equals("enable")) {
@@ -176,11 +176,9 @@ public class StateModule extends Module {
 
                     stateService.setVanishEnabled(!stateService.isVanishEnabled());
                 }
-                break;
             }
 
-            case ("gamemode"):
-            case ("gm"): {
+            case "gamemode", "gm" -> {
                 if (messageSplit[1].equals("3") || messageSplit[1].equals("spectator")) {
                     stateService.setGm3Enabled(true);
                 } else if (messageSplit[1].equals("0") || messageSplit[1].equals("1") || messageSplit[1].equals("2")
@@ -188,10 +186,9 @@ public class StateModule extends Module {
                         || messageSplit[1].equals("adventure")) {
                     stateService.setGm3Enabled(false);
                 }
-                break;
             }
 
-            case ("fly"): {
+            case "fly" -> {
                 if (messageSplit.length > 1) {
                     if (messageSplit[1].equals("enable")) {
                         stateService.setFlyEnabled(true);
@@ -203,10 +200,9 @@ public class StateModule extends Module {
                 }
 
                 stateService.setFlyEnabled(!stateService.isFlyEnabled());
-                break;
             }
 
-            case ("god"): {
+            case "god" -> {
                 if (messageSplit.length > 1) {
                     if (messageSplit[1].equals("enable")) {
                         stateService.setGodEnabled(true);
@@ -218,17 +214,15 @@ public class StateModule extends Module {
                 }
 
                 stateService.setGodEnabled(!stateService.isGodEnabled());
-                break;
             }
 
-            case ("hac"): {
+            case "hac" -> {
                 if (messageSplit.length > 1 && messageSplit[1].equals("alerts")) {
                     stateService.setHacAlertsEnabled(!stateService.isHacAlertsEnabled());
                 }
-                break;
             }
 
-            case ("enableDebug"): {
+            case "enableDebug" -> {
                 stateService.enableDebug();
                 notificationsService.addNotification(NotificationType.WARNING,
                         "%s%sПОЖАЛУЙСТА, ОБРАТИТЕ ВНИМАНИЕ!".formatted(RED, BOLD),
@@ -239,26 +233,24 @@ public class StateModule extends Module {
                                 %sВаш конфиг, в том числе apitoken.
                                 %sЕсли кто-то сказал вам включить этот режим, будьте осторожны и %sНИ В КОЕМ СЛУЧАЕ НЕ ДАВАЙТЕ ДОСТУП К СВОЕМУ ПК ИЛИ ЛОГАМ ТЕКУЩЕЙ СЕССИИ!"""
                                 .formatted(GOLD, RED, GOLD, RED, RED, RED, GOLD, RED), 30f);
-                break;
             }
 
-            case ("disableDebug"): {
+            case "disableDebug" -> {
                 stateService.disableDebug();
                 notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                         "Дебаг выключен!", 5f);
                 break;
             }
 
-            case ("enable"): {
+            case "enable" -> {
                 if (!stateService.isBlocked()) {
                     stateService.enable();
                     notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                             "Мод включен!", 5f);
                 }
-                break;
             }
 
-            case ("disable"): {
+            case "disable" -> {
                 event.setCancelled(true);
 
                 if (!stateService.isBlocked()) {
@@ -266,10 +258,9 @@ public class StateModule extends Module {
                     notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                             "Мод выключен!", 5f);
                 }
-                break;
             }
 
-            case ("setapitoken"): {
+            case "setapitoken" -> {
                 if (messageSplit.length == 2) {
                     notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                             "Вы не ввели токен.", 5f);
@@ -289,7 +280,6 @@ public class StateModule extends Module {
                     clientPlayNetworkHandler.getConnection().disconnect(Text.of(
                             "%s%sВы успешно установили API токен. Пожалуйста, перезайдите на сервер.".formatted(AQUA, BOLD)));
                 }
-                break;
             }
         }
     }

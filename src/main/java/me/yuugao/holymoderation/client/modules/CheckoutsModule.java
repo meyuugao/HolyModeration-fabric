@@ -70,7 +70,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
         }
         if (ServiceLocator.getChatService().isArrayContains(FreezerCommands, command)) {
             switch (command) {
-                case ("/freezing"), ("/frz") -> {
+                case "/freezing", "/frz" -> {
                     event.setCancelled(true);
                     commandSplit = eventCommand.split(" ", 2);
                     if (commandSplit.length == 1) {
@@ -90,7 +90,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     }
                     chatService.chatMessage("/freezing %s".formatted(player));
                 }
-                case ("unfreezing"), ("unfrz") -> {
+                case "unfreezing", "unfrz" -> {
                     if (checkoutPlayer.isEmpty()) {
                         notificationsService.addNotification(NotificationType.WARNING,
                                 "%s%sПредупреждение".formatted(GOLD, BOLD),
@@ -99,7 +99,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     }
                     checkoutsService.endCheckOut();
                 }
-                case ("sban") -> {
+                case "sban" -> {
                     commandSplit = eventCommand.split(" ", 4);
                     if (checkoutPlayer.isEmpty()) {
                         notificationsService.addNotification(NotificationType.WARNING,
@@ -123,7 +123,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     }
                     checkoutsService.endCheckOut();
                 }
-                case ("freezing"), ("frz") -> {
+                case "freezing", "frz" -> {
                     commandSplit = eventCommand.split(" ", 3);
                     if (commandSplit.length < 3) {
                         notificationsService.addNotification(NotificationType.ERROR,
@@ -136,7 +136,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         this.drawableElement.coStartForLocal(commandSplit[2]);
                     }
                 }
-                case ("sendtexts") -> {
+                case "sendtexts" -> {
                     commandSplit = eventCommand.split(" ", 3);
                     if (commandSplit.length == 2) {
                         notificationsService.addNotification(NotificationType.ERROR,
@@ -150,7 +150,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
         } else if (chatService.isArrayContains(ApiCommands, command)) {
             String[] messageSplit;
             switch (command) {
-                case ("startcheckout") -> {
+                case "startcheckout" -> {
                     messageSplit = eventCommand.split(" ", 4);
                     switch (messageSplit.length) {
                         case 2 -> notificationsService.addNotification(NotificationType.ERROR,
@@ -181,7 +181,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         }
                     });
                 }
-                case ("endcheckout") -> {
+                case "endcheckout" -> {
                     messageSplit = eventCommand.split(" ", 6);
                     if (messageSplit.length == 2) {
                         notificationsService.addNotification(NotificationType.ERROR,
@@ -198,8 +198,8 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     }
                     CompletableFuture.runAsync(() -> {
                         switch (result) {
-                            case ("clean") -> netService.endCheckout(result, result, false);
-                            case ("ban") -> {
+                            case "clean" -> netService.endCheckout(result, result, false);
+                            case "ban" -> {
                                 if (messageSplit.length == 3) {
                                     notificationsService.addNotification(NotificationType.ERROR,
                                             "%s%sОшибка".formatted(RED, BOLD),
@@ -227,7 +227,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                                     netService.endCheckout(result, messageSplit[5], destroyStash);
                                 }
                             }
-                            case ("autobuy"), ("autosell") -> netService.endCheckout(result, result, true);
+                            case "autobuy", "autosell" -> netService.endCheckout(result, result, true);
                         }
                     });
                 }

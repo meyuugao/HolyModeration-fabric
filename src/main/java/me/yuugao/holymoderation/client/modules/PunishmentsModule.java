@@ -112,18 +112,22 @@ public class PunishmentsModule extends Module {
             if (chatService.isArrayContains(TempPunishments, command)) {
                 commandSplit = eventCommand.split(" ", 4);
                 switch (commandSplit.length) {
-                    case (1):
+                    case 1 -> {
                         notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                                 "Вы не указали ник игрока, время и причину.", 5f);
                         return;
-                    case (2):
+                    }
+                    case 2 -> {
                         notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                                 "Вы не указали время и причину.", 5f);
                         return;
-                    case (3):
+                    }
+
+                    case 3 -> {
                         notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                                 "Вы не указали причину.", 5f);
                         return;
+                    }
                 }
                 String nick = commandSplit[1];
                 String time = commandSplit[2];
@@ -141,14 +145,17 @@ public class PunishmentsModule extends Module {
             } else if (chatService.isArrayContains(InfinityPunishments, command) || command.equals("/warn")) {
                 commandSplit = eventCommand.split(" ", 3);
                 switch (commandSplit.length) {
-                    case (1):
+                    case 1 -> {
                         notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                                 "Вы не указали ник игрока и причину.", 5f);
                         return;
-                    case (2):
+                    }
+
+                    case 2 -> {
                         notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                                 "Вы не указали причину.", 5f);
                         return;
+                    }
                 }
                 String nick = commandSplit[1];
                 String reason = commandSplit[2];

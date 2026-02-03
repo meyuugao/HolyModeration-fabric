@@ -300,7 +300,8 @@ public class TwinksCheckModule extends Module {
                     }
                 }
 
-                if (action != null && (action.equals("забанен") || action.equals("кикнут")) && timeAgo != null && isWithin30Days(timeAgo)) {
+                if (action != null && (action.equals("забанен") || action.equals("кикнут")) && timeAgo != null
+                        && isWithin30Days(timeAgo)) {
                     String actionType = action.equals("забанен") ? "БАН" : "КИК";
                     if (reason == null) reason = StringUtils.EMPTY;
                     punishments.add(String.format("%s (%s) by %s - %s назад",
