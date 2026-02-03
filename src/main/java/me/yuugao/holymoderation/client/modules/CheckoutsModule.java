@@ -107,20 +107,15 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                                 "Вы никого не проверяете.", 5f);
                         return;
                     }
-                    switch (commandSplit.length) {
-                        case 2 -> notificationsService.addNotification(NotificationType.ERROR,
+                    if (commandSplit.length == 2) {
+                        notificationsService.addNotification(NotificationType.ERROR,
                                 "%s%sОшибка".formatted(RED, BOLD),
                                 "Вы не указали время и причину бана.", 5f);
-                        case 3 -> notificationsService.addNotification(NotificationType.ERROR,
-                                "%s%sОшибка".formatted(RED, BOLD),
-                                "Вы не указали причину бана.", 5f);
-                    }
-                    String time = commandSplit[2];
-                    String reason = commandSplit[3];
-                    if (!punishmentsService.punish("/banip", checkoutPlayer, time,
-                            "2.4 (%s)".formatted(reason), true)) {
                         return;
                     }
+                    String time = commandSplit[2];
+                    String reason = commandSplit.length == 3 ? "2.4" : "2.4 (%s)".formatted(commandSplit[3]);
+                    if (!punishmentsService.punish("/banip", checkoutPlayer, time, reason, true)) return;
                     checkoutsService.endCheckOut();
                 }
                 case "freezing", "frz" -> {
