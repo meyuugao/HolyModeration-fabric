@@ -34,7 +34,7 @@ public class MessageModule extends Module {
 
         if (!checkoutPlayer.isEmpty() && (message.contains(":") &&
                 Arrays.asList(message.split(":")[0].split(" ")).contains(checkoutPlayer)) &&
-                !message.startsWith("Игрок") && !message.startsWith("История") && !message.startsWith("[я ->")) {
+                (message.startsWith("ʟ") || message.startsWith("ɢ"))) {
             String playerPart = message.split(": ")[message.split(": ").length - 1];
             String originalTip = "Оригинальное сообщение: %s\nНажмите, чтобы скопировать сообщение игрока.".formatted(message);
             event.setMessage(chatService.generateComponent(
