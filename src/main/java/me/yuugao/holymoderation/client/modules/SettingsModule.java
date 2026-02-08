@@ -208,7 +208,7 @@ public class SettingsModule extends Module {
                     case "setspydelay" -> {
                         String valueText;
                         try {
-                             valueText = validateArguments(commandSplit);
+                            valueText = validateArguments(commandSplit);
                         } catch (IllegalArgumentException e) {
                             return;
                         }

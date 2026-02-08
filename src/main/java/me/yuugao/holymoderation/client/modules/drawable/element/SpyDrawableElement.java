@@ -1,5 +1,8 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
+import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.SpyRenderStateProvider;
+import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
@@ -14,9 +17,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 
-public class SpyDrawableElement extends DrawableElement {
+public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
     private float anim = 0f;
-    private float animTarget = 0f;
     private float currentWidth = 1f;
     private float currentHeight = 1f;
     private String display0 = StringUtils.EMPTY;
@@ -24,7 +26,7 @@ public class SpyDrawableElement extends DrawableElement {
     private boolean clearDisplayWhenHidden = false;
 
     public SpyDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
-        super(serviceContext, positionMode);
+        super(serviceContext, positionMode, new SpyRenderStateProvider(serviceContext));
     }
 
     @Override
@@ -34,24 +36,24 @@ public class SpyDrawableElement extends DrawableElement {
     }
 
     @Override
-    protected boolean shouldRender() {
-        return !(display0.isEmpty() && display1.isEmpty());
-    }
-
-    @Override
-    protected void renderContent(DrawContext ctx, int z) {
+    protected void render(DrawContext ctx, int z, SpyRenderState renderState) {
         MinecraftService minecraftService = serviceContext.getMinecraftService();
         Render2DService render2DService = serviceContext.getRender2DService();
 
         MatrixStack ms = ctx.getMatrices();
-        anim += (animTarget - anim) * 0.15f;
-        if (anim < 0.01f) return;
 
-        String[] current = getStringsToRender();
+        String[] current = renderState.stringsToRender();
+        float animTarget;
         if (!(current[0].isEmpty() && current[1].isEmpty())) {
             display0 = current[0];
             display1 = current[1];
+            animTarget = 1f;
+        } else {
+            animTarget = 0f;
         }
+
+        anim += (animTarget - anim) * 0.15f;
+        if (anim < 0.01f) return;
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
@@ -69,14 +71,14 @@ public class SpyDrawableElement extends DrawableElement {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        render2DService.setupRender();
-
         float[] tl = topLeftLocal();
         float[] pv = scalePivotLocal();
         float tlx = tl[0];
         float tly = tl[1];
         float px = pv[0];
         float py = pv[1];
+
+        render2DService.setupRender();
 
         ms.push();
         ms.translate(tlx, tly, 0f);
@@ -106,37 +108,6 @@ public class SpyDrawableElement extends DrawableElement {
     }
 
     public void onStartSpy() {
-        animTarget = 1f;
-        String[] s = getStringsToRender();
-        display0 = s[0];
-        display1 = s[1];
         clearDisplayWhenHidden = true;
-    }
-
-    public void onResetSpy() {
-        animTarget = 0f;
-    }
-
-    private String @NotNull [] getStringsToRender() {
-        StateService stateService = serviceContext.getStateService();
-
-        String spyPlayer = stateService.getSpyPlayer();
-        if (spyPlayer.isEmpty()) return new String[]{StringUtils.EMPTY, StringUtils.EMPTY};
-
-        String spyPlayerStatus = stateService.getSpyPlayerStatus();
-        String spyPlayerActivity = stateService.getSpyPlayerActivity();
-
-        if (spyPlayerStatus.isEmpty())
-            return new String[]{spyPlayer, StringUtils.EMPTY};
-
-        return switch (spyPlayerStatus) {
-            case "stop" -> new String[]{"Слежка приостановлена", StringUtils.EMPTY};
-            case "offline" -> new String[]{"Игрок %s оффлайн".formatted(spyPlayer), StringUtils.EMPTY};
-            case "lobby" -> new String[]{"Игрок %s в лобби".formatted(spyPlayer), StringUtils.EMPTY};
-            default -> new String[]{
-                    "Игрок %s находится на %s".formatted(spyPlayer, spyPlayerStatus),
-                    spyPlayerActivity == null ? StringUtils.EMPTY : "Активность: %s".formatted(spyPlayerActivity)
-            };
-        };
     }
 }

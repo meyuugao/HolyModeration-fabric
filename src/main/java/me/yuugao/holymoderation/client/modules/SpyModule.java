@@ -227,7 +227,6 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
 
         stateService.setSpyPlayer(StringUtils.EMPTY);
         enabled = false;
-        this.drawableElement.onResetSpy();
         lastKnownLocation = StringUtils.EMPTY;
         stateService.setSpyPlayerActivity(StringUtils.EMPTY);
         stateService.setSpyPlayerStatus(StringUtils.EMPTY);

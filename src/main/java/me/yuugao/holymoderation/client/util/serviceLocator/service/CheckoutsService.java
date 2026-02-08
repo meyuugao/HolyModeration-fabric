@@ -46,19 +46,19 @@ public class CheckoutsService extends Service {
 
             schedulerService.getInstance().schedule(() -> {
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sЗакончить проверку с результатом 'чистый'"
-                        .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'чистый'",
+                                .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'чистый'",
                         "/hm endcheckout clean"));
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sЗакончить проверку с результатом 'бан' + снести стеш"
-                        .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш",
+                                .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'бан' + снести стеш",
                         "/hm endcheckout ban %s true".formatted(player)));
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sЗакончить проверку с результатом 'бан' + не сносить стеш"
-                        .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш",
+                                .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'бан' + не сносить стеш",
                         "/hm endcheckout ban %s false".formatted(player)));
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sЗакончить проверку с результатом 'автобай'"
-                        .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'автобай'",
+                                .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'автобай'",
                         "/hm endcheckout autobuy"));
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sЗакончить проверку с результатом 'автоселл'"
-                        .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'автоселл'",
+                                .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'автоселл'",
                         "/hm endcheckout autosell"));
             }, 1, TimeUnit.SECONDS);
         } else {

@@ -1,5 +1,9 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
+import me.yuugao.holymoderation.client.modules.drawable.element.state.RenderState;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.RenderStateProvider;
+import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;
@@ -7,8 +11,9 @@ import net.minecraft.client.util.math.MatrixStack;
 
 import lombok.Getter;
 
-public abstract class DrawableElement {
+public abstract class DrawableElement<T extends RenderState> {
     protected final ServiceContext serviceContext;
+    protected final RenderStateProvider<T> stateProvider;
 
     protected float relX;
     protected float relY;
@@ -18,40 +23,38 @@ public abstract class DrawableElement {
 
     @Getter
     protected float widthScale = 1f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
+
     protected PositionMode positionMode;
     protected boolean positioned = false;
 
-    protected DrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
+    protected DrawableElement(ServiceContext serviceContext, PositionMode positionMode,
+                              RenderStateProvider<T> stateProvider) {
         this.serviceContext = serviceContext;
         this.positionMode = positionMode;
+        this.stateProvider = stateProvider;
     }
-
-    protected abstract boolean shouldRender();
-
-    protected abstract void renderContent(DrawContext ctx, int z);
 
     protected abstract void initPosition(DrawContext ctx);
 
-    public final void render(DrawContext ctx, int z, boolean forced) {
+    protected abstract void render(DrawContext ctx, int z, T state);
+
+    public final void updateRender(DrawContext ctx, int z, RenderMode mode) {
         if (!positioned) {
             initPosition(ctx);
             positioned = true;
         }
 
-        float x = getX(ctx);
-        float y = getY(ctx);
-
         MatrixStack ms = ctx.getMatrices();
         ms.push();
-        ms.translate(x, y, 0f);
-        ms.scale(widthScale, heightScale, 0f);
-        try {
-            if (shouldRender() || forced) {
-                renderContent(ctx, z);
-            }
-        } finally {
-            ms.pop();
+        ms.translate(getX(ctx), getY(ctx), 0f);
+        ms.scale(widthScale, heightScale, 1f);
+
+        T state = stateProvider.getState(mode);
+        if (state != null) {
+            render(ctx, z, state);
         }
+
+        ms.pop();
     }
 
     public float getX(DrawContext ctx) {

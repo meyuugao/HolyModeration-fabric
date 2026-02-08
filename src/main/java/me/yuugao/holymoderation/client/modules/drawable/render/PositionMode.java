@@ -1,4 +1,4 @@
-package me.yuugao.holymoderation.client.modules.drawable.element;
+package me.yuugao.holymoderation.client.modules.drawable.render;
 
 public enum PositionMode {
     UP,

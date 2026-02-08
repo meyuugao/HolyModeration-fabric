@@ -2,6 +2,7 @@ package me.yuugao.holymoderation.client.gui.screen;
 
 import me.yuugao.holymoderation.client.gui.tabs.main.GeneralTab;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
+import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
@@ -38,6 +39,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         InputService inputService = serviceContext.getInputService();
         GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
 
+        guiManagerService.getDrawableModules().forEach((module) -> module.render(ctx, RenderMode.CONFIG)); //tip: сделай
+
         float targetW = (float) ctx.getScaledWindowWidth() / 2.2f;
         float targetH = (float) ctx.getScaledWindowHeight() / 1.8f;
 
@@ -65,9 +68,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         render2DService.endRender();
 
-        boolean mouseHeld = inputService.isMouseButtonHeld(0);
-
-        if (mouseHeld) {
+        if (inputService.isMouseButtonHeld(0)) {
             if (dragging == null && inputService.wasMouseButtonPressed(0)) {
                 ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
                 Collections.reverse(list);

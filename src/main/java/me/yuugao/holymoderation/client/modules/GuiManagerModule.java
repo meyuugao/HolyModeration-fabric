@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.modules;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
 import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
+import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
 
@@ -20,7 +21,7 @@ public class GuiManagerModule extends Module {
 
         if (!(mc.currentScreen instanceof MainGuiScreen)) {
             guiManagerService.getDrawableModules().forEach((drawableModule) ->
-                    drawableModule.render(event.getDrawContext(), false));
+                    drawableModule.render(event.getDrawContext(), RenderMode.LIVE));
         }
     }
 }

@@ -1,6 +1,8 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.WatermarkRenderState;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.WatermarkRenderStateProvider;
+import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
@@ -13,7 +15,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import java.awt.Color;
 import java.util.Random;
 
-public class WatermarkDrawableElement extends DrawableElement {
+public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderState> {
     private static final char[][] LEET = {
             {'a', '4'}, {'e', '3'}, {'i', '1'}, {'o', '0'}, {'s', '5'}, {'l', '1'}
     };
@@ -25,7 +27,7 @@ public class WatermarkDrawableElement extends DrawableElement {
     private float anim = 0f;
 
     public WatermarkDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
-        super(serviceContext, positionMode);
+        super(serviceContext, positionMode, new WatermarkRenderStateProvider(serviceContext));
     }
 
     @Override
@@ -37,15 +39,7 @@ public class WatermarkDrawableElement extends DrawableElement {
     }
 
     @Override
-    protected boolean shouldRender() {
-        ConfigManager configManager = serviceContext.getConfigManager();
-
-        return configManager.getConfig().isWatermarkEnabled();
-    }
-
-    @Override
-    protected void renderContent(DrawContext ctx, int z) {
-        ConfigManager configManager = serviceContext.getConfigManager();
+    protected void render(DrawContext ctx, int z, WatermarkRenderState state) {
         StateService stateService = serviceContext.getStateService();
         MinecraftService minecraftService = serviceContext.getMinecraftService();
         Render2DService render2DService = serviceContext.getRender2DService();
@@ -54,17 +48,20 @@ public class WatermarkDrawableElement extends DrawableElement {
         tickCounter++;
         if (tickCounter % 18 == 0) updateAnimText();
 
-        float animTarget = shouldRender() ? 1f : 0f;
+        float animTarget = state.animTarget();
         anim += (animTarget - anim) * 0.15f;
         if (anim < 0.01f) return;
 
-        String text = "HolyModeration v%s | %s | %s".formatted(configManager.getConfig().getCurrentVersion(),
-                stateService.getUserNickname(), new String(animBuffer));
+        String text = "HolyModeration v%s | %s | %s".formatted(
+                serviceContext.getConfigManager().getConfig().getCurrentVersion(),
+                stateService.getUserNickname(),
+                new String(animBuffer)
+        );
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
-        width = (tr.getWidth(text) + 12f);
-        height = (tr.fontHeight + 8f);
+        width = tr.getWidth(text) + 12f;
+        height = tr.fontHeight + 8f;
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
@@ -83,7 +80,17 @@ public class WatermarkDrawableElement extends DrawableElement {
         ms.translate(tl[0], tl[1], 0f);
 
         render2DService.renderSoftRoundedRectOutline(
-                ms, 0f, 0f, width, height, z, 8f, bg, outline, 1.2f, 3
+                ms,
+                0f,
+                0f,
+                width,
+                height,
+                z,
+                8f,
+                bg,
+                outline,
+                1.2f,
+                3
         );
 
         render2DService.renderText(
