@@ -18,18 +18,13 @@ public class CheckoutsRenderStateProvider extends RenderStateProvider<CheckoutsR
     @Override
     public CheckoutsRenderState getState(RenderMode mode) {
         StateService stateService = serviceContext.getStateService();
-
-        return switch (mode) {
-            case LIVE -> new CheckoutsRenderState(stateService.getCheckoutPlayer());
-            case CONFIG -> buildConfigState();
-        };
-    }
-
-    private CheckoutsRenderState buildConfigState() {
         MinecraftService minecraftService = serviceContext.getMinecraftService();
 
         ClientPlayerEntity player = minecraftService.getPlayer();
 
-        return new CheckoutsRenderState(player != null ? player.getName().getString() : StringUtils.EMPTY);
+        return switch (mode) {
+            case LIVE -> new CheckoutsRenderState(stateService.getCheckoutPlayer());
+            case CONFIG -> new CheckoutsRenderState(player != null ? player.getName().getString() : StringUtils.EMPTY);
+        };
     }
 }
