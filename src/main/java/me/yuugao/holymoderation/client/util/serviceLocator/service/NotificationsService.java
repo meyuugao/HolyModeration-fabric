@@ -24,7 +24,7 @@ public class NotificationsService extends Service {
         soundService.playSound(type.getSoundName());
 
         if (type.equals(NotificationType.EXCEPTION)) {
-            loggerService.exception("Exception: %s".formatted(text));
+            loggerService.exception("Исключение из уведомлений: %s".formatted(text));
         }
     }
 

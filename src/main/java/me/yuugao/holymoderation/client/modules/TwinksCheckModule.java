@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -28,12 +29,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import com.google.common.hash.Hashing;
+
 public class TwinksCheckModule extends Module {
-    private final Path outputDir = Paths.get("C:\\HolyModeration\\Temp");
-    private final File tempFile = new File("C:\\HolyModeration\\Temp\\temp.txt");
+    private final Path workDir = Paths.get("C:\\HolyModeration\\Twinks");
+    private final Path tempDir = Paths.get(workDir.toString(), "Temp");
+    private final File checkFile = new File(workDir.toFile(), "checktwinks.txt");
+    private final File tempFile = new File(tempDir.toFile(), "temp.txt");
 
     public TwinksCheckModule(ServiceContext serviceContext) {
         super(serviceContext);
+
+        if (!workDir.toFile().exists()) {
+            try {
+                Files.createDirectory(workDir);
+            } catch (IOException e) {
+                serviceContext.getLoggerService().exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
+            }
+        }
     }
 
     @Subscribe
@@ -56,10 +69,9 @@ public class TwinksCheckModule extends Module {
                 return;
             }
 
-            File file = new File("C:\\HolyModeration\\checktwinks.txt");
-            if (!file.exists()) {
+            if (!checkFile.exists()) {
                 notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                        "Не найден файл 'checktwinks.txt' по пути 'C:\\HolyModeration'.", 5f);
+                        "Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(workDir), 5f);
                 return;
             }
 
@@ -71,8 +83,8 @@ public class TwinksCheckModule extends Module {
                     Files.delete(tempFile.toPath());
                 }
 
-                if (!Files.exists(outputDir)) {
-                    Files.createDirectory(outputDir);
+                if (!Files.exists(tempDir)) {
+                    Files.createDirectory(tempDir);
                 }
                 Files.createFile(tempFile.toPath());
             } catch (Exception e) {
@@ -80,7 +92,7 @@ public class TwinksCheckModule extends Module {
                         "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
             }
 
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(file.toPath()), StandardCharsets.UTF_16LE))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(checkFile.toPath()), StandardCharsets.UTF_16LE))) {
                 br.mark(1);
                 if (br.read() != 0xFEFF) {
                     br.reset();
@@ -174,7 +186,7 @@ public class TwinksCheckModule extends Module {
             for (String line : lines) {
                 if (line.startsWith("%%%") && line.endsWith("%%%")) {
                     if (!currentFilename.isEmpty() && !currentBlock.isEmpty()) {
-                        saveBlock(outputDir, currentFilename, currentBlock);
+                        saveBlock(tempDir, currentFilename, currentBlock);
                     }
                     String raw = line.replaceAll("^%{3}|%{3}$", "");
                     currentFilename = sanitizeNickname(raw);
@@ -185,11 +197,11 @@ public class TwinksCheckModule extends Module {
             }
 
             if (!currentFilename.isEmpty() && !currentBlock.isEmpty()) {
-                saveBlock(outputDir, currentFilename, currentBlock);
+                saveBlock(tempDir, currentFilename, currentBlock);
             }
 
             StringBuilder results = new StringBuilder();
-            try (Stream<Path> stream = Files.list(outputDir)) {
+            try (Stream<Path> stream = Files.list(tempDir)) {
                 stream.filter(path -> path.toString().endsWith(".txt"))
                         .forEach(path -> {
                             try {
@@ -224,9 +236,11 @@ public class TwinksCheckModule extends Module {
                         });
             }
 
-            Path outputFile = Paths.get("C:\\HolyModeration\\results.txt");
-            Files.writeString(outputFile, results.toString());
-            FileUtils.deleteDirectory(outputDir.toFile());
+
+            File resultFile = new File(workDir.toFile(), "%s.txt".formatted(
+                    Hashing.sha256().hashString(results, StandardCharsets.UTF_8).toString()));
+            Files.writeString(resultFile.toPath(), results.toString());
+            FileUtils.deleteDirectory(tempDir.toFile());
             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                     "Проверка твинков завершена, просмотрите результаты в C\\HolyModeration\\results.txt.",
                     5f, "twinksDone.wav");

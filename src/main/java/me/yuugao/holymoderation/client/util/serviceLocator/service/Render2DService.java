@@ -42,7 +42,7 @@ public class Render2DService extends Service {
             SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "soft_rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
             RGB_PALETTE = new ShaderProgram(rm, "rgb_palette", VertexFormats.POSITION_COLOR_TEXTURE);
         } catch (Exception e) {
-            loggerService.exception("Исключение в Render2DService: %s".formatted(e));
+            loggerService.exception("Исключение в Render2DService/initializeShaders: %s".formatted(e));
             return;
         }
 
