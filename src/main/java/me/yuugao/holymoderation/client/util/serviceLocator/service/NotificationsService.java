@@ -84,7 +84,7 @@ public class NotificationsService extends Service {
         }
 
         notificationPool.removeIf(n ->
-                n.state == State.HIDING && n.x > screenW + n.width
+                n.state == State.HIDING && n.x > screenW
         );
 
         float yCursor = screenH - margin;
@@ -98,7 +98,7 @@ public class NotificationsService extends Service {
 
             n.targetX = screenW - margin - n.width;
             if (n.state == State.HIDING) {
-                n.targetX = screenW + n.width;
+                n.targetX = screenW + n.width * 2;
             }
         }
 
@@ -121,6 +121,8 @@ public class NotificationsService extends Service {
         }
 
         for (Notification n : notificationPool) {
+            if (n.y + n.height < 0) continue;
+
             MatrixStack ms = ctx.getMatrices();
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
@@ -163,7 +165,6 @@ public class NotificationsService extends Service {
         float targetY;
         float width;
         float height;
-        boolean remove;
         boolean initialized;
         State state = State.SPAWNING;
         List<OrderedText> titleLines = new ArrayList<>();

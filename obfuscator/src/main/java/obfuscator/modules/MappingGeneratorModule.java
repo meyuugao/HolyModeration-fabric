@@ -198,10 +198,10 @@ public final class MappingGeneratorModule {
     }
 
     private static EnumSet<ObfRule> getCombinedRules(ObfContext ctx, String internalName, String key) {
-        EnumSet<ObfRule> methodRules =
-                ctx.dontObfRules.getOrDefault(key, EnumSet.noneOf(ObfRule.class));
         EnumSet<ObfRule> classRules =
                 ctx.dontObfRules.getOrDefault(internalName, EnumSet.noneOf(ObfRule.class));
+        EnumSet<ObfRule> methodRules =
+                ctx.dontObfRules.getOrDefault(key, EnumSet.noneOf(ObfRule.class));
         EnumSet<ObfRule> combinedMethodRules = EnumSet.copyOf(classRules);
         combinedMethodRules.addAll(methodRules);
         return combinedMethodRules;
