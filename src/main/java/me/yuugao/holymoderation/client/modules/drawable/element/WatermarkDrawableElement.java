@@ -44,12 +44,14 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         MinecraftService minecraftService = serviceContext.getMinecraftService();
         Render2DService render2DService = serviceContext.getRender2DService();
 
+        TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
+
         tickCounter++;
         if (tickCounter % 18 == 0) updateAnimText();
 
         float animTarget = state.animTarget();
-        anim += (animTarget - anim) * 0.15f;
+        anim = animate(anim, animTarget, 1f);
         if (anim < 0.01f) return;
 
         String text = "HolyModeration v%s | %s | %s".formatted(
@@ -58,26 +60,20 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
                 new String(animBuffer)
         );
 
-        TextRenderer tr = minecraftService.getClient().textRenderer;
-
         width = tr.getWidth(text) + 12f;
         height = tr.fontHeight + 8f;
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
+        float[] pv = scalePivotLocal();
+
         render2DService.setupRender();
 
         ms.push();
 
-        float[] tl = topLeftLocal();
-        float[] pv = scalePivotLocal();
-
-        ms.translate(pv[0], pv[1], 0f);
         ms.scale(anim, anim, 1f);
         ms.translate(-pv[0], -pv[1], 0f);
-
-        ms.translate(tl[0], tl[1], 0f);
 
         render2DService.renderSoftRoundedRectOutline(
                 ms,

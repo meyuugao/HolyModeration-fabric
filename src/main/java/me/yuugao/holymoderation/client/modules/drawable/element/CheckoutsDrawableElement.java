@@ -16,13 +16,13 @@ import org.apache.commons.lang3.StringUtils;
 import java.awt.Color;
 
 public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderState> {
-    private float coAnim = 0f;
-    private float coAnimTarget = 0f;
-    private float coCurrentWidth = 1f;
-    private float coCurrentHeight = 1f;
+    private float anim = 0f;
+    private float animTarget = 0f;
+    private float currentWidth = 1f;
+    private float currentHeight = 1f;
     private long checkoutStartMillis = 0L;
-    private String coLastPlayer = StringUtils.EMPTY;
-    private boolean coClearDisplayWhenHidden = false;
+    private String lastPlayer = StringUtils.EMPTY;
+    private boolean clearDisplayWhenHidden = false;
 
     public CheckoutsDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
         super(serviceContext, positionMode, new CheckoutsRenderStateProvider(serviceContext));
@@ -36,38 +36,38 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
 
     @Override
     protected void render(DrawContext ctx, int z, CheckoutsRenderState renderState) {
-        coAnim += (coAnimTarget - coAnim) * 0.15f;
+        anim = animate(anim, animTarget, 1f);
 
         String player = renderState.checkoutPlayer();
-        if (!coLastPlayer.equals(player)) {
-            if (coLastPlayer.isEmpty() && !player.isEmpty()) {
+        if (!lastPlayer.equals(player)) {
+            if (lastPlayer.isEmpty() && !player.isEmpty()) {
                 checkoutStartMillis = System.currentTimeMillis();
-                coAnimTarget = 1f;
-            } else if (!coLastPlayer.isEmpty() && player.isEmpty()) {
-                coAnimTarget = 0f;
-                coClearDisplayWhenHidden = true;
+                animTarget = 1f;
+            } else if (!lastPlayer.isEmpty() && player.isEmpty()) {
+                animTarget = 0f;
+                clearDisplayWhenHidden = true;
             }
-            coLastPlayer = player;
+            lastPlayer = player;
         }
 
-        if (coAnim < 0.01f) return;
+        if (anim < 0.01f) return;
 
         long elapsed = checkoutStartMillis == 0L
                 ? 0L
                 : (System.currentTimeMillis() - checkoutStartMillis) / 1000L;
 
         String content = "Текущая проверка: %s | %s:%s".formatted(
-                player.isEmpty() ? coLastPlayer : player,
+                player.isEmpty() ? lastPlayer : player,
                 elapsed / 60,
                 String.format("%02d", elapsed % 60)
         );
 
         renderContent(content, ctx, z);
 
-        if (coAnim < 0.02f && coAnimTarget == 0f && coClearDisplayWhenHidden) {
+        if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
             checkoutStartMillis = 0L;
-            coClearDisplayWhenHidden = false;
-            coLastPlayer = StringUtils.EMPTY;
+            clearDisplayWhenHidden = false;
+            lastPlayer = StringUtils.EMPTY;
         }
     }
 
@@ -81,23 +81,22 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         float targetWidth = tr.getWidth(display) + 16f;
         float targetHeight = tr.fontHeight + 12f;
 
-        coCurrentWidth += (targetWidth - coCurrentWidth) * 0.2f;
-        coCurrentHeight += (targetHeight - coCurrentHeight) * 0.2f;
+        currentWidth = animate(currentWidth, targetWidth, 1.2f);
+        currentHeight = animate(currentHeight, targetHeight, 1.2f);
 
-        width = Math.max(1f, coCurrentWidth);
-        height = Math.max(1f, coCurrentHeight);
+        width = Math.max(1f, currentWidth);
+        height = Math.max(1f, currentHeight);
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        float[] tl = topLeftLocal();
         float[] pv = scalePivotLocal();
 
         render2DService.setupRender();
 
         ms.push();
-        ms.translate(tl[0] + pv[0], tl[1] + pv[1], 0f);
-        ms.scale(coAnim, coAnim, 1f);
+
+        ms.scale(anim, anim, 1f);
         ms.translate(-pv[0], -pv[1], 0f);
 
         render2DService.renderSoftRoundedRectOutline(
@@ -117,12 +116,13 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         );
 
         ms.pop();
+
         render2DService.endRender();
     }
 
     public void coStartForLocal(String player) {
         checkoutStartMillis = System.currentTimeMillis();
-        coLastPlayer = player;
-        coAnimTarget = 1f;
+        lastPlayer = player;
+        animTarget = 1f;
     }
 }

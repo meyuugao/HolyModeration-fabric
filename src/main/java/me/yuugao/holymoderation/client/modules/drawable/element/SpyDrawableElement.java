@@ -40,6 +40,7 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         MinecraftService minecraftService = serviceContext.getMinecraftService();
         Render2DService render2DService = serviceContext.getRender2DService();
 
+        TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
 
         String[] current = renderState.stringsToRender();
@@ -52,18 +53,16 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
             animTarget = 0f;
         }
 
-        anim += (animTarget - anim) * 0.15f;
+        anim = animate(anim, animTarget, 1f);
         if (anim < 0.01f) return;
-
-        TextRenderer tr = minecraftService.getClient().textRenderer;
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;
         float textBlockHeight = lines * tr.fontHeight + (lines == 2 ? 4 : 0);
         float targetHeight = textBlockHeight + 12f;
 
-        currentWidth += (targetWidth - currentWidth) * 0.2f;
-        currentHeight += (targetHeight - currentHeight) * 0.2f;
+        currentWidth = animate(currentWidth, targetWidth, 1.2f);
+        currentHeight = animate(currentHeight, targetHeight, 1.2f);
 
         width = Math.max(1f, currentWidth);
         height = Math.max(1f, currentHeight);
@@ -71,20 +70,14 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
 
-        float[] tl = topLeftLocal();
         float[] pv = scalePivotLocal();
-        float tlx = tl[0];
-        float tly = tl[1];
-        float px = pv[0];
-        float py = pv[1];
 
         render2DService.setupRender();
 
         ms.push();
-        ms.translate(tlx, tly, 0f);
-        ms.translate(px, py, 0f);
+
         ms.scale(anim, anim, 1f);
-        ms.translate(-px, -py, 0f);
+        ms.translate(-pv[0], -pv[1], 0f);
 
         float baseY = (height - textBlockHeight) / 2f + 0.5f;
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z,

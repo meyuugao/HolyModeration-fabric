@@ -17,8 +17,4 @@ public class GuiManagerService extends Service {
         drawableModules.add(drawableModule);
         drawableModules.sort(Comparator.comparingInt(DrawableModule::getRenderPriority));
     }
-
-    public void clearDrawableModules() {
-        drawableModules.clear();
-    }
 }

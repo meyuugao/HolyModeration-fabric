@@ -1,7 +1,7 @@
 package me.yuugao.holymoderation.client.modules;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.HudRenderEvent;
+import me.yuugao.holymoderation.client.eventbus.event.RenderEvent;
 import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
@@ -18,7 +18,7 @@ public class MainGuiModule extends Module {
     }
 
     @Subscribe
-    public void onHudRender(HudRenderEvent event) {
+    public void onHudRender(RenderEvent event) {
         InputService inputService = serviceContext.getInputService();
         MinecraftService minecraftService = serviceContext.getMinecraftService();
 

@@ -34,21 +34,21 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
     @Override
     @DontObf(ObfRule.MAP_METHOD)
-    public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
+    public void render(DrawContext drawContext, int mouseX, int mouseY, float tickDelta) {
+        super.render(drawContext, mouseX, mouseY, tickDelta);
+
         Render2DService render2DService = serviceContext.getRender2DService();
         InputService inputService = serviceContext.getInputService();
         GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
 
-        guiManagerService.getDrawableModules().forEach((module) -> module.render(ctx, RenderMode.CONFIG)); //tip: сделай
-
-        float targetW = (float) ctx.getScaledWindowWidth() / 2.2f;
-        float targetH = (float) ctx.getScaledWindowHeight() / 1.8f;
+        float targetW = (float) drawContext.getScaledWindowWidth() / 2.2f;
+        float targetH = (float) drawContext.getScaledWindowHeight() / 1.8f;
 
         this.width = targetW * getAnimValue();
         this.height = targetH * getAnimValue();
 
-        this.x = (float) ctx.getScaledWindowWidth() / 2 - this.width / 2f;
-        this.y = (float) ctx.getScaledWindowHeight() / 2 - this.height / 2f;
+        this.x = (float) drawContext.getScaledWindowWidth() / 2 - this.width / 2f;
+        this.y = (float) drawContext.getScaledWindowHeight() / 2 - this.height / 2f;
 
         float baseOutline = 1f;
         float scaleFactor = Math.min(this.width, this.height) / 100f;
@@ -57,7 +57,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(
-                ctx.getMatrices(),
+                drawContext.getMatrices(),
                 this.x, this.y, Math.max(1, this.width), Math.max(1, this.height),
                 renderPriority,
                 10f,
@@ -73,23 +73,23 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
                 Collections.reverse(list);
                 for (DrawableModule<?> d : list) {
-                    if (d.isMouseOver(mouseX, mouseY, ctx)) {
+                    if (d.isMouseOver(mouseX, mouseY, drawContext)) {
                         dragging = d;
-                        dragOffsetX = mouseX - d.getDrawableElement().getX(ctx);
-                        dragOffsetY = mouseY - d.getDrawableElement().getY(ctx);
+                        dragOffsetX = mouseX - d.getDrawableElement().getX(drawContext);
+                        dragOffsetY = mouseY - d.getDrawableElement().getY(drawContext);
                         break;
                     }
                 }
             }
 
             if (dragging != null) {
-                dragging.getDrawableElement().setX(mouseX - dragOffsetX, ctx);
-                dragging.getDrawableElement().setY(mouseY - dragOffsetY, ctx);
+                dragging.getDrawableElement().setX(mouseX - dragOffsetX, drawContext);
+                dragging.getDrawableElement().setY(mouseY - dragOffsetY, drawContext);
             }
         } else {
             dragging = null;
         }
 
-        super.render(ctx, mouseX, mouseY, tickDelta);
+        renderTabs(drawContext, mouseX, mouseY, tickDelta);
     }
 }

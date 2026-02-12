@@ -24,13 +24,14 @@ public abstract class DrawableModule<T extends DrawableElement<?>> extends Modul
     }
 
     public boolean isMouseOver(int mouseX, int mouseY, DrawContext ctx) {
-        float[] tl = drawableElement.topLeftLocal();
+        float[] pv = getDrawableElement().scalePivotLocal();
 
         float x = drawableElement.getX(ctx);
         float y = drawableElement.getY(ctx);
 
-        float left = x + tl[0];
-        float top = y + tl[1];
+        float left = x - pv[0];
+        float top = y - pv[1];
+
         float right = left + drawableElement.getWidth() * drawableElement.getWidthScale();
         float bottom = top + drawableElement.getHeight() * drawableElement.getHeightScale();
 

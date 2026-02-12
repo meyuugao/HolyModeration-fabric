@@ -25,11 +25,7 @@ public abstract class GuiScreen extends Screen {
         this.serviceContext = serviceContext;
     }
 
-    @Override
-    @DontObf(ObfRule.MAP_METHOD)
-    public void render(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-        tabs.forEach((key, tab) -> tab.onRender(context, mouseX, mouseY, tickDelta));
-
-        super.render(context, mouseX, mouseY, tickDelta);
+    protected void renderTabs(DrawContext drawContext, int mouseX, int mouseY, float tickDelta) {
+        tabs.forEach((key, tab) -> tab.onRender(drawContext, mouseX, mouseY, tickDelta));
     }
 }

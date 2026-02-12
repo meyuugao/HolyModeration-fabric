@@ -17,7 +17,7 @@ public class AnimatedGuiScreen extends GuiScreen {
     private final float speed = 0.05f;
 
     private float progress = 0f;
-    private boolean opening = true;
+    private boolean opening = false;
 
     @Getter
     private float animValue = 0f;
