@@ -56,7 +56,7 @@ public class TwinksCheckModule extends Module {
         ChatService chatService = serviceContext.getChatService();
         SchedulerService schedulerService = serviceContext.getSchedulerService();
 
-        ScheduledExecutorService scheduler = schedulerService.getInstance();
+        ScheduledExecutorService scheduler = schedulerService.getScheduler();
 
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");

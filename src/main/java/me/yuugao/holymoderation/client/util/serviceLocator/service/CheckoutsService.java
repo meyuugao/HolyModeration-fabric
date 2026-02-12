@@ -8,11 +8,14 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 public class CheckoutsService extends Service {
+    List<ScheduledFuture<?>> futures = new ArrayList<>();
 
     public void endCheckOut(boolean playerNotFound) {
         StateService stateService = ServiceLocator.getStateService();
@@ -38,13 +41,15 @@ public class CheckoutsService extends Service {
             }
         }
 
+        futures.forEach(future -> future.cancel(true));
+
         if (!playerNotFound) {
             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                     "Вы успешно закончили проверку.", 5f);
 
             String player = new String(checkoutPlayer.toCharArray());
 
-            schedulerService.getInstance().schedule(() -> {
+            schedulerService.getScheduler().schedule(() -> {
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sЗакончить проверку с результатом 'чистый'"
                                 .formatted(AQUA, BOLD), "Нажмите, чтобы закончить проверку с результатом 'чистый'",
                         "/hm endcheckout clean"));
@@ -76,7 +81,7 @@ public class CheckoutsService extends Service {
         NotificationsService notificationsService = ServiceLocator.getNotificationsService();
         SchedulerService schedulerService = ServiceLocator.getSchedulerService();
 
-        ScheduledExecutorService scheduler = schedulerService.getInstance();
+        ScheduledExecutorService scheduler = schedulerService.getScheduler();
 
         if (!stateService.getCheckoutPlayer().isEmpty()) {
             notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
@@ -96,13 +101,13 @@ public class CheckoutsService extends Service {
         }
         chatService.chatMessage("/prova");
 
-        scheduler.schedule(() -> {
+        futures.add(scheduler.schedule(() -> {
             if (!stateService.getCheckoutPlayer().isEmpty()) {
                 sendTexts(stateService.getCheckoutPlayer());
             }
-        }, 5, TimeUnit.SECONDS);
+        }, 5, TimeUnit.SECONDS));
 
-        scheduler.schedule(() -> {
+        futures.add(scheduler.schedule(() -> {
             if (!stateService.getCheckoutPlayer().isEmpty()) {
                 if (config.isDupeIpEnabled()) {
                     chatService.chatMessage("/dupeip %s".formatted(stateService.getCheckoutPlayer()));
@@ -117,9 +122,9 @@ public class CheckoutsService extends Service {
                     stateService.setGm3Enabled(false);
                 }
             }
-        }, 8, TimeUnit.SECONDS);
+        }, 8, TimeUnit.SECONDS));
 
-        scheduler.schedule(() -> {
+        futures.add(scheduler.schedule(() -> {
             if (!stateService.getCheckoutPlayer().isEmpty()) {
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sВнести проверку по репорту".formatted(AQUA, BOLD),
                         "Нажмите, чтобы внести проверку по репорту", "/hm startcheckout %s report".formatted(stateService.getCheckoutPlayer())));
@@ -140,7 +145,7 @@ public class CheckoutsService extends Service {
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sВнести проверку игрока, у которого много пройденных проверок".formatted(AQUA, BOLD),
                         "Нажмите, чтобы внести проверку игрока, у которого много пройденных проверок", "/hm startcheckout %s toManyChecks".formatted(stateService.getCheckoutPlayer())));
             }
-        }, 9, TimeUnit.SECONDS);
+        }, 9, TimeUnit.SECONDS));
 
         return true;
     }
@@ -159,7 +164,7 @@ public class CheckoutsService extends Service {
         } else {
             for (int i = 0; i < textsList.size(); i++) {
                 String text = textsList.get(i);
-                schedulerService.getInstance().schedule(() -> chatService.chatMessage("/msg %s %s"
+                schedulerService.getScheduler().schedule(() -> chatService.chatMessage("/msg %s %s"
                         .formatted(player, text.replace("§", "&"))), i * 100L, TimeUnit.MILLISECONDS);
             }
         }

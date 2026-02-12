@@ -151,7 +151,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
             if (shouldUpdate) {
                 instantUpdate |= stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
                         && stateService.getSpyPlayerActivity().isEmpty();
-                schedulerService.getInstance().schedule(this::update, instantUpdate ? 500 :
+                schedulerService.getScheduler().schedule(this::update, instantUpdate ? 500 :
                         configManager.getConfig().getSpyDelay(), instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
             }
@@ -176,7 +176,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
         StateService stateService = serviceContext.getStateService();
         NotificationsService notificationsService = serviceContext.getNotificationsService();
 
-        schedulerService.getInstance().schedule(() -> {
+        schedulerService.getScheduler().schedule(() -> {
             if (stateService.isGameInitCompleted()) {
                 if (enabled) {
                     if (stateService.isInHub()) {
@@ -209,7 +209,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
         stateService.setSpyPlayer(player);
         enabled = true;
         this.drawableElement.onStartSpy();
-        schedulerService.getInstance().schedule(this::update, 250, TimeUnit.MILLISECONDS);
+        schedulerService.getScheduler().schedule(this::update, 250, TimeUnit.MILLISECONDS);
         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех"
                 .formatted(GREEN, BOLD), "Слежка начата", 5f);
     }
