@@ -10,8 +10,6 @@ import net.minecraft.text.Text;
 import java.util.HashMap;
 
 import lombok.Getter;
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
 
 public abstract class GuiScreen extends Screen {
     @Getter

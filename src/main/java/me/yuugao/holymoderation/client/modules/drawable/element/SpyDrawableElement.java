@@ -6,14 +6,12 @@ import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.StateService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 
 import java.awt.Color;
 

@@ -17,7 +17,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Screen.class)
 public class ScreenMixin {
-    @Shadow @Nullable protected MinecraftClient client;
+    @Shadow
+    @Nullable
+    protected MinecraftClient client;
 
     @Inject(method = "render", at = @At("HEAD"))
     private void onRender(DrawContext drawContext, int mouseX, int mouseY, float tickDelta, CallbackInfo ci) {

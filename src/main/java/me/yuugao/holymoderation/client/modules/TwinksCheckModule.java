@@ -2,14 +2,14 @@ package me.yuugao.holymoderation.client.modules;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
-
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
-import org.apache.commons.io.FileUtils;
+import com.google.common.hash.Hashing;
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.BufferedReader;
@@ -23,29 +23,23 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
-
-import com.google.common.hash.Hashing;
 
 public class TwinksCheckModule extends Module {
+    private static final Pattern STATUS_PATTERN = Pattern.compile("\\[(Активный|Истёкший)]");
+
     private final Path workDir = Paths.get("C:\\HolyModeration\\Twinks");
-    private final Path tempDir = Paths.get(workDir.toString(), "Temp");
-    private final File checkFile = new File(workDir.toFile(), "checktwinks.txt");
-    private final File tempFile = new File(tempDir.toFile(), "temp.txt");
+    private final File checkFile = workDir.resolve("checktwinks.txt").toFile();
+    private final File tempFile = workDir.resolve("temp.txt").toFile();
 
     public TwinksCheckModule(ServiceContext serviceContext) {
         super(serviceContext);
-
-        if (!workDir.toFile().exists()) {
-            try {
-                Files.createDirectory(workDir);
-            } catch (IOException e) {
-                serviceContext.getLoggerService().exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
-            }
+        try {
+            Files.createDirectories(workDir);
+        } catch (IOException e) {
+            serviceContext.getLoggerService().exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
         }
     }
 
@@ -56,276 +50,277 @@ public class TwinksCheckModule extends Module {
         ChatService chatService = serviceContext.getChatService();
         SchedulerService schedulerService = serviceContext.getSchedulerService();
 
-        ScheduledExecutorService scheduler = schedulerService.getScheduler();
+        String[] parts = event.getCommand().split(" ");
+        if (parts.length < 2 || !parts[0].equals("hm") || !parts[1].equals("twinks")) return;
 
-        String eventCommand = event.getCommand();
-        String[] commandSplit = eventCommand.split(" ");
-        if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
-
-        if (commandSplit[1].equals("twinks")) {
-            if (stateService.isInHub()) {
-                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
-                        "В хабе этого делать нельзя.", 5f);
-                return;
-            }
-
-            if (!checkFile.exists()) {
-                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                        "Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(workDir), 5f);
-                return;
-            }
-
+        if (stateService.isInHub()) {
             notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
-                    "Проверка твинков началась.", 5f);
+                    "В хабе этого делать нельзя.", 5f);
+            return;
+        }
 
-            try {
-                if (tempFile.exists()) {
-                    Files.delete(tempFile.toPath());
-                }
+        if (!checkFile.exists()) {
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(workDir), 5f);
+            return;
+        }
 
-                if (!Files.exists(tempDir)) {
-                    Files.createDirectory(tempDir);
-                }
-                Files.createFile(tempFile.toPath());
-            } catch (Exception e) {
-                notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                        "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
-            }
+        notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                "Проверка твинков началась.", 5f);
 
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(Files.newInputStream(checkFile.toPath()), StandardCharsets.UTF_16LE))) {
-                br.mark(1);
-                if (br.read() != 0xFEFF) {
-                    br.reset();
-                }
+        try {
+            Files.deleteIfExists(tempFile.toPath());
+            Files.createFile(tempFile.toPath());
+        } catch (Exception e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/onCommandSend: %s%s".formatted(DARK_RED, e), 5f);
+            return;
+        }
 
-                String line = br.readLine();
-                if (line == null) {
-                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                            "Файл checktwinks.txt пустой.", 5f);
-                    return;
-                }
-                String[] twinks = line.split(" ");
-                stateService.setCheckingTwinks(true);
+        List<String> nicknames = readNicknamesFromFile(notificationsService);
+        if (nicknames.isEmpty()) {
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Файл checktwinks.txt пустой.", 5f);
+            return;
+        }
 
-                for (int i = 0; i < twinks.length; i++) {
-                    String original = twinks[i];
-                    String sanitized = sanitizeNickname(original);
-                    if (sanitized.isEmpty()) {
-                        continue;
-                    }
+        stateService.setCheckingTwinks(true);
+        int lastIndex = nicknames.size() - 1;
 
-                    scheduler.schedule(() -> {
-                        try {
-                            String prefix = tempFile.length() > 0 ? System.lineSeparator() : StringUtils.EMPTY;
-                            String header = prefix + "%%%" + sanitized + "%%%";
-                            Files.writeString(tempFile.toPath(), header, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                        } catch (Exception e) {
-                            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                                    "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
-                        }
-                        chatService.chatMessage("/history %s 100".formatted(sanitized));
-                    }, i, TimeUnit.SECONDS);
+        for (int i = 0; i <= lastIndex; i++) {
+            String nickname = nicknames.get(i);
 
-                    if (twinks.length == i + 1) {
-                        scheduler.schedule(() -> {
-                            stateService.setCheckingTwinks(false);
-                            parseHistory();
-                        }, i + 1, TimeUnit.SECONDS);
-                    }
-                }
-            } catch (Exception e) {
-                notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                        "Исключение в TwinksCheckModule/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
+            schedulerService.getScheduler().schedule(() -> {
+                writeTempPlayer(nickname);
+                chatService.chatMessage("/history %s 100".formatted(nickname));
+            }, i, TimeUnit.SECONDS);
+
+            if (i == lastIndex) {
+                schedulerService.getScheduler().schedule(() -> {
+                    stateService.setCheckingTwinks(false);
+                    List<PlayerEntry> results = parseHistory();
+                    saveResults(results);
+                }, i + 1, TimeUnit.SECONDS);
             }
         }
     }
 
     @Subscribe(priority = 97)
     public void onMessageReceive(MessageReceiveEvent event) {
-        ChatService chatService = serviceContext.getChatService();
         StateService stateService = serviceContext.getStateService();
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
+        if (!stateService.isCheckingTwinks()) return;
 
+        ChatService chatService = serviceContext.getChatService();
         String message = chatService.formatReceivedText(event.getMessage().getString());
-        if (message == null) {
-            return;
-        }
+        if (message == null) return;
 
-        if (stateService.isCheckingTwinks()) {
-            if (message.startsWith(" -- [") || message.startsWith("Игрок") || message.startsWith("по причина:")
-                    || message.startsWith("История") || message.startsWith("Окончание через")
-                    || message.startsWith("Разбанен:") || message.startsWith("Размьючен:") || message.trim().isEmpty()) {
-                event.setCancelled(true);
-                try {
-                    String content = System.lineSeparator() + message;
-                    Files.writeString(tempFile.toPath(), content, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-                } catch (Exception e) {
-                    notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                            "Исключение в TwinksCheckModule/onMessageReceive: %s%s".formatted(DARK_RED, e), 5f);
-                }
-            }
+        if (isHistoryMessage(message)) {
+            event.setCancelled(true);
+            writeTempData(message);
         }
     }
 
-    private void parseHistory() {
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
+    private boolean isHistoryMessage(String message) {
+        return message.startsWith(" -- [") || message.startsWith("Игрок") || message.startsWith("по причина:")
+                || message.startsWith("История") || message.startsWith("Окончание через")
+                || message.startsWith("Разбанен:") || message.startsWith("Размьючен:") || message.trim().isEmpty();
+    }
 
-        try {
-            if (!tempFile.exists()) {
-                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                        "Временный файл не найден.", 5f);
-                return;
-            }
+    private List<String> readNicknamesFromFile(NotificationsService notificationsService) {
+        List<String> nicknames = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(Files.newInputStream(checkFile.toPath()), StandardCharsets.UTF_16LE))) {
+            br.mark(1);
+            if (br.read() != 0xFEFF) br.reset();
 
-            List<String> lines = Files.readAllLines(tempFile.toPath());
-            Files.delete(tempFile.toPath());
-
-            List<String> currentBlock = new ArrayList<>();
-            String currentFilename = StringUtils.EMPTY;
-
-            for (String line : lines) {
-                if (line.startsWith("%%%") && line.endsWith("%%%")) {
-                    if (!currentFilename.isEmpty() && !currentBlock.isEmpty()) {
-                        saveBlock(tempDir, currentFilename, currentBlock);
+            String line = br.readLine();
+            if (line != null) {
+                for (String nick : line.split(" ")) {
+                    String sanitized = sanitizeNickname(nick);
+                    if (!sanitized.isEmpty()) {
+                        nicknames.add(sanitized);
                     }
-                    String raw = line.replaceAll("^%{3}|%{3}$", "");
-                    currentFilename = sanitizeNickname(raw);
-                    currentBlock = new ArrayList<>();
-                } else if (!currentFilename.isEmpty()) {
-                    currentBlock.add(line);
                 }
             }
-
-            if (!currentFilename.isEmpty() && !currentBlock.isEmpty()) {
-                saveBlock(tempDir, currentFilename, currentBlock);
-            }
-
-            StringBuilder results = new StringBuilder();
-            try (Stream<Path> stream = Files.list(tempDir)) {
-                stream.filter(path -> path.toString().endsWith(".txt"))
-                        .forEach(path -> {
-                            try {
-                                String filename = path.getFileName().toString().replace(".txt", StringUtils.EMPTY);
-                                List<String> parseLines = Files.readAllLines(path);
-
-                                String banStatus = checkBanStatus(filename, parseLines);
-
-                                boolean noHistory =
-                                        (parseLines.size() == 1 && parseLines.get(0).equals("История не найдена.")) ||
-                                                (parseLines.size() == 2 && parseLines.get(0).startsWith("История ") && parseLines.get(1).isEmpty());
-
-                                if (noHistory) {
-                                    results.append(filename).append(banStatus).append(" {\n")
-                                            .append("  История не найдена\n")
-                                            .append("}\n\n");
-                                } else {
-                                    List<String> punishments = parsePunishments(filename, parseLines);
-                                    results.append(filename).append(banStatus).append(" {\n");
-                                    if (punishments.isEmpty()) {
-                                        results.append("  Нет наказаний за последние 30 дней\n");
-                                    } else {
-                                        punishments.forEach(p -> results.append("  ").append(p).append("\n"));
-                                    }
-                                    results.append("}\n\n");
-                                }
-                            } catch (Exception e) {
-                                notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение"
-                                        .formatted(DARK_RED, BOLD), "Исключение в TwinksCheckModule/parseHistory: %s%s"
-                                        .formatted(DARK_RED, e), 5f);
-                            }
-                        });
-            }
-
-
-            File resultFile = new File(workDir.toFile(), "%s.txt".formatted(
-                    Hashing.sha256().hashString(results, StandardCharsets.UTF_8).toString()));
-            Files.writeString(resultFile.toPath(), results.toString());
-            FileUtils.deleteDirectory(tempDir.toFile());
-            notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                    "Проверка твинков завершена, просмотрите результаты в C\\HolyModeration\\results.txt.",
-                    5f, "twinksDone.wav");
         } catch (Exception e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/readNicknamesFromFile: %s%s".formatted(DARK_RED, e), 5f);
+        }
+        return nicknames;
+    }
+
+    private void writeTempPlayer(String nickname) {
+        try {
+            boolean isEmpty = tempFile.length() == 0;
+            String header = isEmpty ? "PLAYER: " + nickname : System.lineSeparator() + "PLAYER: " + nickname;
+            Files.writeString(tempFile.toPath(), header, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+                    "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/writeTempPlayer: %s%s".formatted(DARK_RED, e), 5f);
+        }
+    }
+
+    private void writeTempData(String message) {
+        try {
+            Files.writeString(tempFile.toPath(), System.lineSeparator() + "DATA: " + message,
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (Exception e) {
+            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+                    "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/writeTempData: %s%s".formatted(DARK_RED, e), 5f);
+        }
+    }
+
+    private List<PlayerEntry> parseHistory() {
+        List<PlayerEntry> results = new ArrayList<>();
+        if (!tempFile.exists()) return results;
+
+        try {
+            List<String> lines = Files.readAllLines(tempFile.toPath());
+            Files.deleteIfExists(tempFile.toPath());
+
+            String currentNickname = null;
+            List<String> currentBlock = new ArrayList<>();
+
+            for (String line : lines) {
+                if (line.startsWith("PLAYER: ")) {
+                    if (currentNickname != null && !currentBlock.isEmpty()) {
+                        results.add(buildPlayerEntry(currentNickname, currentBlock));
+                    }
+                    currentNickname = line.substring(8);
+                    currentBlock.clear();
+                } else if (line.startsWith("DATA: ")) {
+                    currentBlock.add(line.substring(6));
+                }
+            }
+
+            if (currentNickname != null && !currentBlock.isEmpty()) {
+                results.add(buildPlayerEntry(currentNickname, currentBlock));
+            }
+        } catch (Exception e) {
+            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+                    "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/parseHistory: %s%s".formatted(DARK_RED, e), 5f);
         }
+
+        return results;
     }
 
-    private static String checkBanStatus(String nickname, List<String> lines) {
-        Pattern pattern = Pattern.compile("\\[(Активный|Истёкший)]");
-        boolean isBanned = false;
+    private PlayerEntry buildPlayerEntry(String nickname, List<String> lines) {
+        PlayerEntry entry = new PlayerEntry(nickname);
+
+        if (isNoHistory(lines)) return entry;
+
+        entry.historyFound = true;
+        entry.isBanned = checkBanStatus(nickname, lines);
+        entry.fullHistory = parsePunishments(lines, false);
+        entry.recentHistory = parsePunishments(lines, true);
+
+        return entry;
+    }
+
+    private boolean isNoHistory(List<String> lines) {
+        return (lines.size() == 1 && lines.get(0).equals("История не найдена."))
+                || (lines.size() == 2 && lines.get(0).startsWith("История ") && lines.get(1).isEmpty());
+    }
+
+    private boolean checkBanStatus(String nickname, List<String> lines) {
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            if (!line.contains("был забанен") || !line.contains(nickname)) continue;
+
+            Matcher matcher = STATUS_PATTERN.matcher(line);
+            if (!matcher.find() && i + 1 < lines.size()) {
+                matcher = STATUS_PATTERN.matcher(lines.get(i + 1));
+            }
+            if (matcher.find() && "Активный".equals(matcher.group(1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<PunishmentEntry> parsePunishments(List<String> lines, boolean filter30Days) {
+        List<PunishmentEntry> history = new ArrayList<>();
 
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
-            if (line.contains("был забанен") && line.contains(nickname)) {
-                Matcher matcher = pattern.matcher(line);
-                if (!matcher.find() && i + 1 < lines.size()) {
-                    matcher = pattern.matcher(lines.get(i + 1));
-                }
-                if (matcher.find()) {
-                    String status = matcher.group(1);
-                    if ("Активный".equals(status)) {
-                        isBanned = true;
-                        break;
-                    }
-                }
+            if (!line.startsWith(" -- [")) continue;
+
+            List<String> entryLines = collectEntryLines(lines, i);
+            i += entryLines.size() - 1;
+
+            PunishmentEntry entry = parsePunishmentEntry(entryLines, filter30Days);
+            if (entry != null) {
+                history.add(entry);
             }
         }
 
-        return isBanned ? " - забанен" : " - не забанен";
+        return history;
     }
 
-    private static List<String> parsePunishments(String nickname, List<String> lines) {
-        List<String> punishments = new ArrayList<>();
+    private List<String> collectEntryLines(List<String> lines, int startIndex) {
+        List<String> entryLines = new ArrayList<>();
+        entryLines.add(lines.get(startIndex));
 
-        for (int i = 0; i < lines.size(); i++) {
-            String line = lines.get(i);
-            if (line.startsWith(" -- [")) {
-                List<String> entryLines = new ArrayList<>();
-                entryLines.add(line);
-                int j = i;
-                while (j + 1 < lines.size()) {
-                    String next = lines.get(j + 1);
-                    if (next.startsWith(" -- [") || next.startsWith("История") || next.startsWith("Окончание") ||
-                            next.startsWith("Разбанен:") || next.startsWith("Размьючен:")) {
-                        break;
-                    }
-                    j++;
-                    entryLines.add(next);
-                }
-                i = j;
+        for (int j = startIndex + 1; j < lines.size(); j++) {
+            String next = lines.get(j);
+            if (next.startsWith(" -- [") || next.startsWith("История") || next.startsWith("Окончание")
+                    || next.startsWith("Разбанен:") || next.startsWith("Размьючен:")) {
+                break;
+            }
+            entryLines.add(next);
+        }
 
-                String timeAgo = extractTimeAgo(entryLines.get(0));
-                String action = null;
-                String reason = null;
-                String by = getAdminFromEntry(entryLines);
+        return entryLines;
+    }
 
-                for (String el : entryLines) {
-                    if (el.startsWith("Игрок ") && el.contains(" был ")) {
-                        if (el.contains("был забанен")) action = "забанен";
-                        else if (el.contains("был кикнут")) action = "кикнут";
-                    }
-                    if (el.startsWith("по причина:")) {
-                        int first = el.indexOf('\'');
-                        int last = el.lastIndexOf('\'');
-                        if (first >= 0 && last > first) {
-                            reason = el.substring(first + 1, last);
-                        } else {
-                            reason = el.replaceFirst("^по причина:\\s*", "").trim();
-                        }
-                    }
-                }
+    private PunishmentEntry parsePunishmentEntry(List<String> entryLines, boolean filter30Days) {
+        String timeAgo = extractTimeAgo(entryLines.get(0));
+        if (timeAgo == null) return null;
 
-                if (action != null && (action.equals("забанен") || action.equals("кикнут")) && timeAgo != null
-                        && isWithin30Days(timeAgo)) {
-                    String actionType = action.equals("забанен") ? "БАН" : "КИК";
-                    if (reason == null) reason = StringUtils.EMPTY;
-                    punishments.add(String.format("%s (%s) by %s - %s назад",
-                            actionType, reason, by, timeAgo));
-                }
+        if (filter30Days && !isWithin30Days(timeAgo)) return null;
+
+        PunishmentType type = null;
+        String reason = StringUtils.EMPTY;
+
+        for (String line : entryLines) {
+            if (line.startsWith("Игрок ") && line.contains(" был ")) {
+                if (line.contains("был забанен")) type = PunishmentType.BAN;
+                else if (line.contains("был кикнут")) type = PunishmentType.KICK;
+                else if (line.contains("был замьючен")) type = PunishmentType.MUTE;
+            }
+            if (line.startsWith("по причина:")) {
+                reason = extractReason(line);
             }
         }
 
-        return punishments;
+        if (type == null) return null;
+
+        String by = getAdminFromEntry(entryLines);
+        boolean isActive = checkIsActive(entryLines);
+
+        return new PunishmentEntry(type, reason, by, timeAgo, isActive);
+    }
+
+    private String extractReason(String line) {
+        int first = line.indexOf('\'');
+        int last = line.lastIndexOf('\'');
+        if (first >= 0 && last > first) {
+            return line.substring(first + 1, last);
+        }
+        return line.replaceFirst("^по причина:\\s*", "").trim();
+    }
+
+    private boolean checkIsActive(List<String> entryLines) {
+        for (String line : entryLines) {
+            Matcher matcher = STATUS_PATTERN.matcher(line);
+            if (matcher.find()) {
+                return "Активный".equals(matcher.group(1));
+            }
+        }
+        return false;
     }
 
     private static String extractTimeAgo(String headerLine) {
@@ -340,78 +335,201 @@ public class TwinksCheckModule extends Module {
     private static String getAdminFromEntry(List<String> entryLines) {
         for (String line : entryLines) {
             if (line.contains("игроком ")) {
-                int idx = line.indexOf("игроком ");
-                return line.substring(idx + "игроком ".length()).trim();
-            } else if (line.contains("модератором ")) {
-                int idx = line.indexOf("модератором ");
-                return line.substring(idx + "модератором ".length()).trim();
+                return line.substring(line.indexOf("игроком ") + 8).trim();
+            }
+            if (line.contains("модератором ")) {
+                return line.substring(line.indexOf("модератором ") + 12).trim();
             }
         }
         return "Console";
     }
 
     private static boolean isWithin30Days(String timeAgo) {
-        int days = 0;
-        int hours = 0;
-        int minutes = 0;
-
+        int days = 0, hours = 0, minutes = 0;
         String[] parts = timeAgo.split(" ");
+
         for (int i = 0; i < parts.length; i++) {
-            if (parts[i].equals("дн.") && i > 0) {
-                try {
-                    days = Integer.parseInt(parts[i - 1]);
-                } catch (NumberFormatException e) {
-                    days = 0;
+            if (i == 0) continue;
+            try {
+                int value = Integer.parseInt(parts[i - 1]);
+                switch (parts[i]) {
+                    case "дн." -> days = value;
+                    case "ч." -> hours = value;
+                    case "мин." -> minutes = value;
                 }
-            } else if (parts[i].equals("ч.") && i > 0) {
-                try {
-                    hours = Integer.parseInt(parts[i - 1]);
-                } catch (NumberFormatException e) {
-                    hours = 0;
-                }
-            } else if (parts[i].equals("мин.") && i > 0) {
-                try {
-                    minutes = Integer.parseInt(parts[i - 1]);
-                } catch (NumberFormatException e) {
-                    minutes = 0;
-                }
-            }
+            } catch (NumberFormatException ignored) {}
         }
 
-        double totalDays = days + (hours / 24.0) + (minutes / (24.0 * 60.0));
-        return totalDays <= 30;
-    }
-
-    private void saveBlock(Path outputDir, String filename, List<String> content) {
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-
-        try {
-            boolean validBlock = false;
-            for (String line : content) {
-                if (line.startsWith("История " + filename) || line.startsWith("История не найдена.")) {
-                    validBlock = true;
-                    break;
-                }
-            }
-
-            if (!validBlock) {
-                return;
-            }
-
-            if (filename.isEmpty()) {
-                return;
-            }
-
-            Path outputFile = outputDir.resolve("%s.txt".formatted(filename));
-            Files.write(outputFile, content);
-        } catch (Exception e) {
-            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в TwinksCheckModule/saveBlock: %s%s".formatted(DARK_RED, e), 5f);
-        }
+        return days + (hours / 24.0) + (minutes / 1440.0) <= 30;
     }
 
     private static String sanitizeNickname(String nick) {
-        if (nick == null) return StringUtils.EMPTY;
-        return nick.replaceAll("[^A-Za-z0-9_]", "");
+        return nick == null ? StringUtils.EMPTY : nick.replaceAll("[^A-Za-z0-9_]", "");
+    }
+
+    private void saveResults(List<PlayerEntry> results) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < results.size(); i++) {
+                if (i > 0) sb.append(System.lineSeparator());
+                appendPlayerEntry(sb, results.get(i));
+            }
+
+            String content = sb.toString();
+            String hash = Hashing.sha256().hashString(content, StandardCharsets.UTF_8).toString();
+            File resultFile = workDir.resolve(hash + ".txt").toFile();
+            Files.writeString(resultFile.toPath(), content);
+
+            serviceContext.getNotificationsService().addNotification(NotificationType.SUCCESS,
+                    "%s%sУспех".formatted(GREEN, BOLD),
+                    "Результаты проверки твинков сохранены: %s".formatted(resultFile.getAbsolutePath()), 5f);
+        } catch (Exception e) {
+            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+                    "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/saveResults: %s%s".formatted(DARK_RED, e), 5f);
+        }
+    }
+
+    private void appendPlayerEntry(StringBuilder sb, PlayerEntry entry) {
+        sb.append("PLAYER: ").append(entry.nickname).append(System.lineSeparator());
+        sb.append("BANNED: ").append(entry.isBanned).append(System.lineSeparator());
+        sb.append("HISTORY_FOUND: ").append(entry.historyFound).append(System.lineSeparator());
+
+        sb.append("RECENT_HISTORY: ").append(entry.recentHistory.size()).append(System.lineSeparator());
+        for (PunishmentEntry p : entry.recentHistory) {
+            sb.append("RH: ").append(formatPunishment(p)).append(System.lineSeparator());
+        }
+
+        sb.append("FULL_HISTORY: ").append(entry.fullHistory.size()).append(System.lineSeparator());
+        for (PunishmentEntry p : entry.fullHistory) {
+            sb.append("FH: ").append(formatPunishment(p)).append(System.lineSeparator());
+        }
+    }
+
+    private String formatPunishment(PunishmentEntry p) {
+        return p.type().name() + "|" + escapePipe(p.reason()) + "|" + escapePipe(p.by()) + "|"
+                + escapePipe(p.timeAgo()) + "|" + p.isActive();
+    }
+
+    public List<PlayerEntry> loadResults(File file) {
+        List<PlayerEntry> results = new ArrayList<>();
+
+        try {
+            List<String> lines = Files.readAllLines(file.toPath());
+            PlayerEntryParser parser = new PlayerEntryParser();
+
+            for (String line : lines) {
+                parser.processLine(line);
+                if (parser.isComplete()) {
+                    results.add(parser.build());
+                    parser.reset();
+                }
+            }
+
+            PlayerEntry last = parser.build();
+            if (last != null) {
+                results.add(last);
+            }
+        } catch (Exception e) {
+            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+                    "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/loadResults: %s%s".formatted(DARK_RED, e), 5f);
+        }
+
+        return results;
+    }
+
+    private static String escapePipe(String s) {
+        return s.replace("|", "\\|");
+    }
+
+    private static String unescapePipe(String s) {
+        return s.replace("\\|", "|");
+    }
+
+    public static class PlayerEntry {
+        public final String nickname;
+        public boolean historyFound;
+        public boolean isBanned;
+        public List<PunishmentEntry> recentHistory = new ArrayList<>();
+        public List<PunishmentEntry> fullHistory = new ArrayList<>();
+
+        public PlayerEntry(String nickname) {
+            this.nickname = nickname;
+        }
+    }
+
+    public record PunishmentEntry(PunishmentType type, String reason, String by, String timeAgo, boolean isActive) {}
+
+    public enum PunishmentType {
+        BAN, MUTE, KICK
+    }
+
+    private static class PlayerEntryParser {
+        String nickname;
+        boolean isBanned;
+        boolean historyFound;
+        List<PunishmentEntry> recentHistory = new ArrayList<>();
+        List<PunishmentEntry> fullHistory = new ArrayList<>();
+        int recentCount;
+        int fullCount;
+        String section;
+
+        void processLine(String line) {
+            if (line.startsWith("PLAYER: ")) {
+                nickname = line.substring(8);
+            } else if (line.startsWith("BANNED: ")) {
+                isBanned = Boolean.parseBoolean(line.substring(8));
+            } else if (line.startsWith("HISTORY_FOUND: ")) {
+                historyFound = Boolean.parseBoolean(line.substring(15));
+            } else if (line.startsWith("RECENT_HISTORY: ")) {
+                recentCount = Integer.parseInt(line.substring(16));
+                section = "recent";
+            } else if (line.startsWith("FULL_HISTORY: ")) {
+                fullCount = Integer.parseInt(line.substring(14));
+                section = "full";
+            } else if (line.startsWith("RH: ") && "recent".equals(section) && recentHistory.size() < recentCount) {
+                recentHistory.add(parsePunishment(line.substring(4)));
+            } else if (line.startsWith("FH: ") && "full".equals(section) && fullHistory.size() < fullCount) {
+                fullHistory.add(parsePunishment(line.substring(4)));
+            }
+        }
+
+        boolean isComplete() {
+            return nickname != null && fullHistory.size() == fullCount && fullCount > 0;
+        }
+
+        PlayerEntry build() {
+            if (nickname == null) return null;
+            PlayerEntry entry = new PlayerEntry(nickname);
+            entry.isBanned = isBanned;
+            entry.historyFound = historyFound;
+            entry.recentHistory = new ArrayList<>(recentHistory);
+            entry.fullHistory = new ArrayList<>(fullHistory);
+            return entry;
+        }
+
+        void reset() {
+            nickname = null;
+            isBanned = false;
+            historyFound = false;
+            recentHistory.clear();
+            fullHistory.clear();
+            recentCount = 0;
+            fullCount = 0;
+            section = null;
+        }
+
+        private PunishmentEntry parsePunishment(String data) {
+            String[] parts = data.split("\\|", 5);
+            if (parts.length != 5) return null;
+            return new PunishmentEntry(
+                    PunishmentType.valueOf(parts[0]),
+                    unescapePipe(parts[1]),
+                    unescapePipe(parts[2]),
+                    unescapePipe(parts[3]),
+                    Boolean.parseBoolean(parts[4])
+            );
+        }
     }
 }

@@ -2,8 +2,6 @@ package me.yuugao.holymoderation.client.mixin;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -24,7 +24,7 @@ public class CheckoutsRenderStateProvider extends RenderStateProvider<CheckoutsR
 
         return switch (mode) {
             case LIVE -> new CheckoutsRenderState(stateService.getCheckoutPlayer());
-            case CONFIG -> new CheckoutsRenderState(!stateService.getCheckoutPlayer().isEmpty() ? 
+            case CONFIG -> new CheckoutsRenderState(!stateService.getCheckoutPlayer().isEmpty() ?
                     stateService.getCheckoutPlayer() : player != null ? player.getName().getString() : StringUtils.EMPTY);
         };
     }

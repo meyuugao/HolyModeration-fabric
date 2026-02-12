@@ -10,9 +10,7 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerSer
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.*;
-
-import java.util.List;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 
 public class GuiManagerModule extends Module {
     private static final Class<?>[] guiScreens = {

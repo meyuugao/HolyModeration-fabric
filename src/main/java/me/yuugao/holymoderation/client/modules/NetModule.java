@@ -78,7 +78,7 @@ public class NetModule extends Module {
                             .formatted(GREEN, BOLD), texts, 10f);
                 } catch (Exception e) {
                     notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                            "Исключение в SettingsManager/onMessageSend: %s%S".formatted(DARK_RED, e), 5f);
+                            "Исключение в SettingsManager/onCommandSend: %s%S".formatted(DARK_RED, e), 5f);
                 }
             });
 
@@ -144,7 +144,7 @@ public class NetModule extends Module {
                             .formatted(GREEN, BOLD), texts.toString(), 10f);
                 } catch (Exception e) {
                     notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                            "Исключение в SettingsManager/onMessageSend: %s%s".formatted(DARK_RED, e), 5f);
+                            "Исключение в SettingsManager/onCommandSend: %s%s".formatted(DARK_RED, e), 5f);
                 }
             }
         }
