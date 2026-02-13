@@ -33,7 +33,7 @@ public class HolyModerationClient implements ClientModInitializer {
         ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(),
                 new GoogleSheetsService(), new GuiManagerService(), new InputService(), new MinecraftService(),
                 new NetService(), new NotificationsService(), new PunishmentsService(), new Render2DService(),
-                new SchedulerService(), new SoundService(), new StateService(),
+                new SchedulerService(), new SoundService(), new SpyService(), new StateService(),
                 (Logger) LogManager.getLogger(HolyModerationClient.class));
         eventBusInitialize();
         commandsInitialize();

@@ -22,6 +22,7 @@ public class CheckoutsService extends Service {
         ChatService chatService = ServiceLocator.getChatService();
         NotificationsService notificationsService = ServiceLocator.getNotificationsService();
         SchedulerService schedulerService = ServiceLocator.getSchedulerService();
+        SpyService spyService = ServiceLocator.getSpyService();
 
         SettingsConfig settingsConfig = ServiceLocator.getConfigManager().getSettingsConfig();
         String checkoutPlayer = stateService.getCheckoutPlayer();
@@ -71,6 +72,9 @@ public class CheckoutsService extends Service {
                     "Проверка отменена, потому что игрок не был найден.", 5f);
         }
 
+        if (stateService.getSpyPlayer().equals(stateService.getCheckoutPlayer())) {
+            spyService.endSpy();
+        }
         stateService.setCheckoutPlayer(StringUtils.EMPTY);
     }
 

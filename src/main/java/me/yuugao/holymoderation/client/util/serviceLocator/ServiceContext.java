@@ -22,6 +22,7 @@ public class ServiceContext {
     private final Render2DService render2DService;
     private final SchedulerService schedulerService;
     private final SoundService soundService;
+    private final SpyService spyService;
     private final StateService stateService;
     private LoggerService loggerService;
 
@@ -40,6 +41,7 @@ public class ServiceContext {
         this.render2DService = ServiceLocator.getRender2DService();
         this.schedulerService = ServiceLocator.getSchedulerService();
         this.soundService = ServiceLocator.getSoundService();
+        this.spyService = ServiceLocator.getSpyService();
         this.stateService = ServiceLocator.getStateService();
     }
 

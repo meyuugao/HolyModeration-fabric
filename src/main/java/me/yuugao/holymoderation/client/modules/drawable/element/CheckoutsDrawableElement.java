@@ -22,7 +22,6 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
     private float currentHeight = 1f;
     private long checkoutStartMillis = 0L;
     private String lastPlayer = StringUtils.EMPTY;
-    private boolean clearDisplayWhenHidden = false;
 
     public CheckoutsDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
         super(serviceContext, positionMode, new CheckoutsRenderStateProvider(serviceContext));
@@ -40,12 +39,12 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
 
         String player = renderState.checkoutPlayer();
         if (!lastPlayer.equals(player)) {
-            if (lastPlayer.isEmpty() && !player.isEmpty()) {
+            if (!player.isEmpty()) {
                 checkoutStartMillis = System.currentTimeMillis();
                 animTarget = 1f;
-            } else if (!lastPlayer.isEmpty() && player.isEmpty()) {
+            } else {
+                checkoutStartMillis = 0L;
                 animTarget = 0f;
-                clearDisplayWhenHidden = true;
             }
             lastPlayer = player;
         }
@@ -63,12 +62,6 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         );
 
         renderContent(content, ctx, z);
-
-        if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
-            checkoutStartMillis = 0L;
-            clearDisplayWhenHidden = false;
-            lastPlayer = StringUtils.EMPTY;
-        }
     }
 
     private void renderContent(String display, DrawContext ctx, int z) {

@@ -19,9 +19,6 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
     private float anim = 0f;
     private float currentWidth = 1f;
     private float currentHeight = 1f;
-    private String display0 = StringUtils.EMPTY;
-    private String display1 = StringUtils.EMPTY;
-    private boolean clearDisplayWhenHidden = false;
 
     public SpyDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
         super(serviceContext, positionMode, new SpyRenderStateProvider(serviceContext));
@@ -43,16 +40,18 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
 
         String[] current = renderState.stringsToRender();
         float animTarget;
+        String display0, display1;
         if (!(current[0].isEmpty() && current[1].isEmpty())) {
             display0 = current[0];
             display1 = current[1];
             animTarget = 1f;
         } else {
+            display0 = display1 = StringUtils.EMPTY;
             animTarget = 0f;
         }
 
         anim = animate(anim, animTarget, 1f);
-        if (anim < 0.01f) return;
+        if (anim < 0.1f) return;
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;
@@ -91,14 +90,5 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         ms.pop();
 
         render2DService.endRender();
-
-        if (anim < 0.02f && animTarget == 0f && clearDisplayWhenHidden) {
-            display0 = display1 = StringUtils.EMPTY;
-            clearDisplayWhenHidden = false;
-        }
-    }
-
-    public void onStartSpy() {
-        clearDisplayWhenHidden = true;
     }
 }

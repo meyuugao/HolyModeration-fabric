@@ -38,6 +38,8 @@ public class ServiceLocator {
     @Getter
     private static SoundService soundService;
     @Getter
+    private static SpyService spyService;
+    @Getter
     private static StateService stateService;
     @Getter
     private static LoggerService loggerService;
@@ -48,7 +50,8 @@ public class ServiceLocator {
                                   MinecraftService minecraftService, NetService netService,
                                   NotificationsService notificationsService, PunishmentsService punishmentsService,
                                   Render2DService render2DService, SchedulerService schedulerService,
-                                  SoundService soundService, StateService stateService, Logger logger) {
+                                  SoundService soundService, SpyService spyService,
+                                  StateService stateService, Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
@@ -63,6 +66,7 @@ public class ServiceLocator {
         ServiceLocator.render2DService = render2DService;
         ServiceLocator.schedulerService = schedulerService;
         ServiceLocator.soundService = soundService;
+        ServiceLocator.spyService = spyService;
         ServiceLocator.stateService = stateService;
         logger.info("Base services has been initialized.");
         initializeLoggerService(logger);
@@ -83,6 +87,7 @@ public class ServiceLocator {
         render2DService.setLoggerService(loggerService);
         schedulerService.setLoggerService(loggerService);
         soundService.setLoggerService(loggerService);
+        spyService.setLoggerService(loggerService);
         stateService.setLoggerService(loggerService);
         loggerService.info("Logger service has been initialized.");
     }

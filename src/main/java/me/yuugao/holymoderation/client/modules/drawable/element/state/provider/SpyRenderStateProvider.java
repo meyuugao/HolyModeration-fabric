@@ -15,8 +15,6 @@ public class SpyRenderStateProvider extends RenderStateProvider<SpyRenderState> 
 
     @Override
     public SpyRenderState getState(RenderMode mode) {
-        StateService stateService = serviceContext.getStateService();
-
         return switch (mode) {
             case LIVE -> new SpyRenderState(getStringsToRender());
             case CONFIG -> new SpyRenderState(new String[]{"Модуль слежки", "Режим настройки"});
