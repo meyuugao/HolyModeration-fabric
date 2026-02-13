@@ -67,7 +67,6 @@ public class SpyService extends Service {
 
         stateService.setSpyPlayerStatus(status);
         stateService.setSpyPlayerActivity(StringUtils.EMPTY);
-        checkingSpy = false;
     }
 
     public void onPlaytimeComplete() {

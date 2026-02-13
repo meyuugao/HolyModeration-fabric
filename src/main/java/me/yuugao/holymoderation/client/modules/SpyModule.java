@@ -99,65 +99,68 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
         String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
-        if (!spyService.isCheckingSpy()) return;
+        boolean isChecking = spyService.isCheckingSpy();
 
-        if (receivedText.startsWith("----------")) {
-            if (processingPlaytimeInfo) {
-                spyService.onPlaytimeComplete();
-                shouldUpdate = true;
-                processingPlaytimeInfo = false;
-            } else {
-                processingPlaytimeInfo = true;
-            }
-        }
-
-        if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок %s".formatted(stateService.getUserNickname()))) {
-            event.setCancelled(true);
-            String status;
-            if (receivedText.equals("Игрок оффлайн")) {
-                status = "offline";
-            } else if (receivedText.split("сервере ")[1].startsWith("lobby")) {
-                status = "lobby";
-            } else {
-                status = chatService.formatLocation(receivedText.split("сервере ")[1]);
-            }
-            spyService.onFindResponse(status);
-            shouldUpdate = true;
-        }
-
-        if (receivedText.startsWith("Текущая")) {
-            String loc = receivedText.split(": ")[1];
-            loc = loc.substring(1, loc.length() - 1);
-            if (loc.equals("Оффлайн")) {
-                spyService.onFindResponse("offline");
-                instantUpdate = true;
-            } else {
-                if (lastKnownLocation.isEmpty()) lastKnownLocation = loc;
-                else if (!loc.equals(lastKnownLocation)) {
-                    stateService.setSpyPlayerStatus(StringUtils.EMPTY);
-                    lastKnownLocation = loc;
+        if (isChecking) {
+            if (receivedText.startsWith("----------")) {
+                if (processingPlaytimeInfo) {
+                    spyService.onPlaytimeComplete();
+                    shouldUpdate = true;
+                    processingPlaytimeInfo = false;
+                } else {
+                    processingPlaytimeInfo = true;
                 }
             }
-        }
 
-        if (receivedText.startsWith("Последняя") && !stateService.getSpyPlayerStatus().isEmpty()) {
-            stateService.setSpyPlayerActivity(receivedText.split(": ")[1]);
-        }
+            if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок %s".formatted(stateService.getUserNickname()))) {
+                event.setCancelled(true);
+                String status;
+                if (receivedText.equals("Игрок оффлайн")) {
+                    status = "offline";
+                } else if (receivedText.split("сервере ")[1].startsWith("lobby")) {
+                    status = "lobby";
+                } else {
+                    status = chatService.formatLocation(receivedText.split("сервере ")[1]);
+                }
+                spyService.onFindResponse(status);
+                shouldUpdate = true;
+            }
 
-        if (receivedText.startsWith("Активность") || receivedText.startsWith("Общее время") ||
-                receivedText.startsWith("Текущая") || receivedText.startsWith("Время") ||
-                receivedText.startsWith("Последняя") || receivedText.startsWith("Последний") ||
-                receivedText.startsWith("----------") || receivedText.isEmpty()) {
-            event.setCancelled(true);
-        }
+            if (receivedText.startsWith("Текущая")) {
+                String loc = receivedText.split(": ")[1];
+                loc = loc.substring(1, loc.length() - 1);
+                if (loc.equals("Оффлайн")) {
+                    processingPlaytimeInfo = true;
+                    spyService.onFindResponse("offline");
+                    instantUpdate = true;
+                } else {
+                    if (lastKnownLocation.isEmpty()) lastKnownLocation = loc;
+                    else if (!loc.equals(lastKnownLocation)) {
+                        stateService.setSpyPlayerStatus(StringUtils.EMPTY);
+                        lastKnownLocation = loc;
+                    }
+                }
+            }
 
-        if (shouldUpdate) {
-            instantUpdate |= stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
-                    && stateService.getSpyPlayerActivity().isEmpty();
-            schedulerService.getScheduler().schedule(spyService::update,
-                    instantUpdate ? 500 : configManager.getSettingsConfig().getSpyDelay(),
-                    instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
-            shouldUpdate = instantUpdate = false;
+            if (receivedText.startsWith("Последняя") && !stateService.getSpyPlayerStatus().isEmpty()) {
+                stateService.setSpyPlayerActivity(receivedText.split(": ")[1]);
+            }
+
+            if (receivedText.startsWith("Активность") || receivedText.startsWith("Общее время") ||
+                    receivedText.startsWith("Текущая") || receivedText.startsWith("Время") ||
+                    receivedText.startsWith("Последняя") || receivedText.startsWith("Последний") ||
+                    receivedText.startsWith("----------") || receivedText.isEmpty()) {
+                event.setCancelled(true);
+            }
+
+            if (shouldUpdate) {
+                instantUpdate |= stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
+                        && stateService.getSpyPlayerActivity().isEmpty();
+                schedulerService.getScheduler().schedule(spyService::update,
+                        instantUpdate ? 500 : configManager.getSettingsConfig().getSpyDelay(),
+                        instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
+                shouldUpdate = instantUpdate = false;
+            }
         }
     }
 
