@@ -3,7 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.SettingsConfig;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;
@@ -20,10 +20,10 @@ public class CheckoutsService extends Service {
     public void endCheckOut(boolean playerNotFound) {
         StateService stateService = ServiceLocator.getStateService();
         ChatService chatService = ServiceLocator.getChatService();
-        Config config = ServiceLocator.getConfigManager().getConfig();
         NotificationsService notificationsService = ServiceLocator.getNotificationsService();
         SchedulerService schedulerService = ServiceLocator.getSchedulerService();
 
+        SettingsConfig settingsConfig = ServiceLocator.getConfigManager().getSettingsConfig();
         String checkoutPlayer = stateService.getCheckoutPlayer();
 
         if (!checkoutPlayer.isEmpty()) {
@@ -31,11 +31,11 @@ public class CheckoutsService extends Service {
                 chatService.chatMessage("/freezing %s".formatted(checkoutPlayer));
             }
             chatService.chatMessage("/prova");
-            if (config.isAutoVanishEnabled() && !stateService.isVanishEnabled()) {
+            if (settingsConfig.isAutoVanishEnabled() && !stateService.isVanishEnabled()) {
                 chatService.chatMessage("/v");
                 stateService.setVanishEnabled(true);
             }
-            if (config.isAutoGm3Enabled() && !stateService.isGm3Enabled()) {
+            if (settingsConfig.isAutoGm3Enabled() && !stateService.isGm3Enabled()) {
                 chatService.chatMessage("/gm 3");
                 stateService.setGm3Enabled(true);
             }
@@ -77,10 +77,10 @@ public class CheckoutsService extends Service {
     public boolean startCheckOut(String player) {
         StateService stateService = ServiceLocator.getStateService();
         ChatService chatService = ServiceLocator.getChatService();
-        Config config = ServiceLocator.getConfigManager().getConfig();
         NotificationsService notificationsService = ServiceLocator.getNotificationsService();
         SchedulerService schedulerService = ServiceLocator.getSchedulerService();
 
+        SettingsConfig settingsConfig = ServiceLocator.getConfigManager().getSettingsConfig();
         ScheduledExecutorService scheduler = schedulerService.getScheduler();
 
         if (!stateService.getCheckoutPlayer().isEmpty()) {
@@ -96,7 +96,7 @@ public class CheckoutsService extends Service {
         stateService.setCheckoutPlayer(player);
 
         chatService.chatMessage("/freezing %s".formatted(stateService.getCheckoutPlayer()));
-        if (config.isAutoTpEnabled()) {
+        if (settingsConfig.isAutoTpEnabled()) {
             chatService.chatMessage("/warp logo");
         }
         chatService.chatMessage("/prova");
@@ -109,15 +109,15 @@ public class CheckoutsService extends Service {
 
         futures.add(scheduler.schedule(() -> {
             if (!stateService.getCheckoutPlayer().isEmpty()) {
-                if (config.isDupeIpEnabled()) {
+                if (settingsConfig.isDupeIpEnabled()) {
                     chatService.chatMessage("/dupeip %s".formatted(stateService.getCheckoutPlayer()));
                 }
                 chatService.chatMessage("/checkmute %s".formatted(stateService.getCheckoutPlayer()));
-                if (config.isAutoVanishEnabled() && stateService.isVanishEnabled()) {
+                if (settingsConfig.isAutoVanishEnabled() && stateService.isVanishEnabled()) {
                     chatService.chatMessage("/v");
                     stateService.setVanishEnabled(false);
                 }
-                if (config.isAutoGm3Enabled() && stateService.isGm3Enabled()) {
+                if (settingsConfig.isAutoGm3Enabled() && stateService.isGm3Enabled()) {
                     chatService.chatMessage("/gm 0");
                     stateService.setGm3Enabled(false);
                 }
@@ -152,11 +152,12 @@ public class CheckoutsService extends Service {
 
     public void sendTexts(String player) {
         ChatService chatService = ServiceLocator.getChatService();
-        Config config = ServiceLocator.getConfigManager().getConfig();
         NotificationsService notificationsService = ServiceLocator.getNotificationsService();
         SchedulerService schedulerService = ServiceLocator.getSchedulerService();
 
-        List<String> textsList = config.getTextsList();
+        SettingsConfig settingsConfig = ServiceLocator.getConfigManager().getSettingsConfig();
+
+        List<String> textsList = settingsConfig.getTextsList();
         if (textsList.isEmpty()) {
             notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                     "У вас нет настроенных текстов для отправки. Добавить текст --> %s%s%s%s%s"

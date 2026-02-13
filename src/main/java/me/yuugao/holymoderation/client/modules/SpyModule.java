@@ -3,7 +3,7 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
@@ -152,7 +152,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
                 instantUpdate |= stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
                         && stateService.getSpyPlayerActivity().isEmpty();
                 schedulerService.getScheduler().schedule(this::update, instantUpdate ? 500 :
-                        configManager.getConfig().getSpyDelay(), instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
+                        configManager.getSettingsConfig().getSpyDelay(), instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
             }
         }

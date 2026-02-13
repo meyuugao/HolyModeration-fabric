@@ -3,8 +3,8 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
@@ -243,7 +243,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
         NetService netService = serviceContext.getNetService();
 
         String checkoutPlayer = stateService.getCheckoutPlayer();
-        Config config = configManager.getConfig();
+        SettingsConfig settingsConfig = configManager.getSettingsConfig();
         String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
@@ -256,7 +256,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
             }
         }
 
-        if (!checkoutPlayer.isEmpty() && config.isAutoBanEnabled()) {
+        if (!checkoutPlayer.isEmpty() && settingsConfig.isAutoBanEnabled()) {
             if (receivedText.startsWith("▶ Замороженный игрок %s".formatted(checkoutPlayer))) {
                 punishmentsService.punish("/banip", checkoutPlayer,
                         "30d", "2.4 (Лив с проверки)", true);
@@ -264,7 +264,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
             }
         }
 
-        if (config.isAutoAnyDeskEnabled() && !checkoutPlayer.isEmpty() && receivedText.contains(checkoutPlayer)) {
+        if (settingsConfig.isAutoAnyDeskEnabled() && !checkoutPlayer.isEmpty() && receivedText.contains(checkoutPlayer)) {
             String chatText;
             String msgText;
             if (receivedText.startsWith("[%s ->".formatted(checkoutPlayer))

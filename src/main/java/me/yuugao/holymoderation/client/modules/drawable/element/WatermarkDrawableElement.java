@@ -55,7 +55,7 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         if (anim < 0.01f) return;
 
         String text = "HolyModeration v%s | %s | %s".formatted(
-                serviceContext.getConfigManager().getConfig().getCurrentVersion(),
+                serviceContext.getConfigManager().getApiConfig().getCurrentVersion(),
                 stateService.getUserNickname(),
                 new String(animBuffer)
         );

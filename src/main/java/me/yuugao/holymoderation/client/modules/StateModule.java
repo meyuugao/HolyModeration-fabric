@@ -3,8 +3,9 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.ApiConfig;
+import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
@@ -62,7 +63,7 @@ public class StateModule extends Module {
 
         ClientPlayerInteractionManager interactionManager = minecraftService.getClient().interactionManager;
         ClientWorld clientWorld = minecraftService.getWorld();
-        Config config = configManager.getConfig();
+        SettingsConfig settingsConfig = configManager.getSettingsConfig();
 
         if (stateService.isBlocked()) return;
 
@@ -83,34 +84,34 @@ public class StateModule extends Module {
 
             stateService.setGm3Enabled(interactionManager.getCurrentGameMode() == GameMode.SPECTATOR);
 
-            if (config.isAutoVanishEnabled() && !stateService.isVanishEnabled()
-                    || !config.isAutoVanishEnabled() && stateService.isVanishEnabled()) {
+            if (settingsConfig.isAutoVanishEnabled() && !stateService.isVanishEnabled()
+                    || !settingsConfig.isAutoVanishEnabled() && stateService.isVanishEnabled()) {
                 chatService.chatMessage("/v");
                 stateService.setVanishEnabled(stateService.isVanishEnabled());
             }
 
-            if (config.isAutoGm3Enabled() && !stateService.isGm3Enabled()
-                    || !config.isAutoGm3Enabled() && stateService.isGm3Enabled()) {
+            if (settingsConfig.isAutoGm3Enabled() && !stateService.isGm3Enabled()
+                    || !settingsConfig.isAutoGm3Enabled() && stateService.isGm3Enabled()) {
                 chatService.chatMessage("/gm 3");
                 stateService.setGm3Enabled(stateService.isGm3Enabled());
             }
 
-            if (config.isAutoFlyEnabled() && !stateService.isFlyEnabled()
-                    || !config.isAutoFlyEnabled() && stateService.isFlyEnabled()) {
+            if (settingsConfig.isAutoFlyEnabled() && !stateService.isFlyEnabled()
+                    || !settingsConfig.isAutoFlyEnabled() && stateService.isFlyEnabled()) {
                 if (!stateService.isGm3Enabled()) {
                     chatService.chatMessage("/fly");
                     stateService.setFlyEnabled(stateService.isFlyEnabled());
                 }
             }
 
-            if (config.isAutoGodEnabled() && !stateService.isGodEnabled()
-                    || !config.isAutoGodEnabled() && stateService.isGodEnabled()) {
+            if (settingsConfig.isAutoGodEnabled() && !stateService.isGodEnabled()
+                    || !settingsConfig.isAutoGodEnabled() && stateService.isGodEnabled()) {
                 chatService.chatMessage("/god");
                 stateService.setGodEnabled(stateService.isGodEnabled());
             }
 
-            if (config.isAutoHacAlertsEnabled() && !stateService.isHacAlertsEnabled()
-                    || !config.isAutoHacAlertsEnabled() && stateService.isHacAlertsEnabled()) {
+            if (settingsConfig.isAutoHacAlertsEnabled() && !stateService.isHacAlertsEnabled()
+                    || !settingsConfig.isAutoHacAlertsEnabled() && stateService.isHacAlertsEnabled()) {
                 chatService.chatMessage("/hac alerts");
                 stateService.setHacAlertsEnabled(stateService.isHacAlertsEnabled());
             }
@@ -140,7 +141,7 @@ public class StateModule extends Module {
 
         ClientWorld clientWorld = minecraftService.getWorld();
         ClientPlayNetworkHandler clientPlayNetworkHandler = minecraftService.getClient().getNetworkHandler();
-        Config config = configManager.getConfig();
+        ApiConfig apiConfig = configManager.getApiConfig();
 
         if (!stateService.isOnHW()) return;
 
@@ -272,8 +273,8 @@ public class StateModule extends Module {
                             "В API токене обнаружены пробелы, пожалуйста, указывайте его без пробелов.", 5f);
                     return;
                 }
-                config.setApiToken(apiToken);
-                configManager.saveCfg(config);
+                apiConfig.setApiToken(apiToken);
+                configManager.saveConfig(apiConfig);
                 soundService.playSound("success.wav");
 
                 if (clientPlayNetworkHandler != null) {

@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.util.serviceLocator;
 
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 

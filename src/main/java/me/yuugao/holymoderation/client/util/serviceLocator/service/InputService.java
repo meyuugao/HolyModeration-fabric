@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
-import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.KeyBindsConfig;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.lwjgl.glfw.GLFW;
@@ -29,17 +29,17 @@ public class InputService extends Service {
     }
 
     private void updateKeyStates() {
-        Config config = ServiceLocator.getConfigManager().getConfig();
+        KeyBindsConfig keyBindsConfig = ServiceLocator.getConfigManager().getKeyBindsConfig();
 
-        for (Map.Entry<String, Config.KeyBindConfig> entry : config.getKeyBinds().entrySet()) {
+        for (Map.Entry<String, KeyBindsConfig.KeyBindConfig> entry : keyBindsConfig.getKeyBinds().entrySet()) {
             String actionName = entry.getKey();
-            Config.KeyBindConfig keyBind = entry.getValue();
+            KeyBindsConfig.KeyBindConfig keyBind = entry.getValue();
 
             boolean mainKeyPressed = pressedKeys.contains(keyBind.getMainKey());
             boolean modifiersPressed = keyBind.getModifierKeys() != null && pressedKeys.containsAll(keyBind.getModifierKeys());
             boolean combinationPressed = mainKeyPressed && modifiersPressed;
 
-            if (keyBind.getType() == Config.KeyBindType.SINGLE_PRESS) {
+            if (keyBind.getType() == KeyBindsConfig.KeyBindType.SINGLE_PRESS) {
                 if (combinationPressed && !keyStates.getOrDefault(actionName, false)) {
                     keyStates.put(actionName, true);
                 }
@@ -50,11 +50,11 @@ public class InputService extends Service {
     }
 
     public boolean isKeyBindHeld(String actionName) {
-        Config config = ServiceLocator.getConfigManager().getConfig();
+        KeyBindsConfig keyBindsConfig = ServiceLocator.getConfigManager().getKeyBindsConfig();
 
-        Config.KeyBindConfig keyBind = config.getKeyBind(actionName);
+        KeyBindsConfig.KeyBindConfig keyBind = keyBindsConfig.getKeyBind(actionName);
         if (keyBind == null) return false;
-        if (keyBind.getType() != Config.KeyBindType.HOLD) return false;
+        if (keyBind.getType() != KeyBindsConfig.KeyBindType.HOLD) return false;
 
         boolean mainKeyPressed = pressedKeys.contains(keyBind.getMainKey());
         boolean modifiersPressed = keyBind.getModifierKeys() != null && pressedKeys.containsAll(keyBind.getModifierKeys());
@@ -63,16 +63,16 @@ public class InputService extends Service {
     }
 
     public boolean wasKeyBindPressed(String actionName) {
-        Config config = ServiceLocator.getConfigManager().getConfig();
+        KeyBindsConfig keyBindsConfig = ServiceLocator.getConfigManager().getKeyBindsConfig();
 
-        Config.KeyBindConfig keyBind = config.getKeyBind(actionName);
+        KeyBindsConfig.KeyBindConfig keyBind = keyBindsConfig.getKeyBind(actionName);
         if (keyBind == null) return false;
 
-        if (keyBind.getType() == Config.KeyBindType.SINGLE_PRESS) {
+        if (keyBind.getType() == KeyBindsConfig.KeyBindType.SINGLE_PRESS) {
             boolean pressed = keyStates.getOrDefault(actionName, false);
             if (pressed) keyStates.put(actionName, false);
             return pressed;
-        } else if (keyBind.getType() == Config.KeyBindType.HOLD) {
+        } else if (keyBind.getType() == KeyBindsConfig.KeyBindType.HOLD) {
             return isKeyBindHeld(actionName);
         }
         return false;

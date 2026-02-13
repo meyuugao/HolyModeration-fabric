@@ -3,8 +3,8 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.ApiConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
@@ -161,7 +161,7 @@ public class NetModule extends Module {
 
             netService.downloadSounds();
 
-            if (configManager.getConfig().getApiToken().isEmpty()) {
+            if (configManager.getApiConfig().getApiToken().isEmpty()) {
                 notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                         "У вас не установлен API токен из журнала. Чтобы продолжить работу, его необходимо установить (%s%s%s/hm setapitoken %s%sapitoken%s) и перезайти на сервер."
                                 .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 3600f);
@@ -192,15 +192,15 @@ public class NetModule extends Module {
         ChatService chatService = serviceContext.getChatService();
         StateService stateService = serviceContext.getStateService();
 
-        Config config = configManager.getConfig();
+        ApiConfig apiConfig = configManager.getApiConfig();
         AbstractMap.SimpleEntry<String, String> lastUpdates = netService.getLastUpdates();
         String lastVersion = lastUpdates.getKey();
         String description = lastUpdates.getValue();
 
-        if (!config.getCurrentVersion().equals(lastVersion)) {
+        if (!apiConfig.getCurrentVersion().equals(lastVersion)) {
             notificationsService.addNotification(NotificationType.WARNING,
                     "%s%sВаша версия HolyModeration устарела. Новейшая версия: %s%s%s%s%s, ваша: %s%s%s".formatted(
-                            GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, config.getCurrentVersion()
+                            GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, apiConfig.getCurrentVersion()
                     ),
                     "%s%sОписание обновления: %s%s%s".formatted(AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n")),
                     3600f, "update.wav");

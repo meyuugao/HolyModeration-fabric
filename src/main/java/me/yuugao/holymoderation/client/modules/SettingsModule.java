@@ -3,8 +3,8 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -50,7 +50,7 @@ public class SettingsModule extends Module {
         ConfigManager configManager = serviceContext.getConfigManager();
         NotificationsService notificationsService = serviceContext.getNotificationsService();
 
-        Config config = configManager.getConfig();
+        SettingsConfig settingsConfig = configManager.getSettingsConfig();
 
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
@@ -59,7 +59,7 @@ public class SettingsModule extends Module {
         String command = commandSplit[1];
 
         if (chatService.isArrayContains(settingsCommands, command)) {
-            List<String> textsList = config.getTextsList();
+            List<String> textsList = settingsConfig.getTextsList();
             if (chatService.isArrayContains(settingsWithoutArguments, command)) {
                 switch (command) {
                     case "textslist" -> {
@@ -82,59 +82,59 @@ public class SettingsModule extends Module {
                                 "Вы успешно очистили все тексты.", 5f);
                     }
                     case "autodupeip" -> {
-                        config.setDupeIpEnabled(!config.isDupeIpEnabled());
+                        settingsConfig.setDupeIpEnabled(!settingsConfig.isDupeIpEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический /dupeip %s.".formatted(config.isDupeIpEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический /dupeip %s.".formatted(settingsConfig.isDupeIpEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autocopy" -> {
-                        config.setAutoAnyDeskEnabled(!config.isAutoAnyDeskEnabled());
+                        settingsConfig.setAutoAnyDeskEnabled(!settingsConfig.isAutoAnyDeskEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматическое копирование айди AnyDesk %s.".formatted(config.isAutoAnyDeskEnabled() ? "включено" : "выключено"), 5f);
+                                "Автоматическое копирование айди AnyDesk %s.".formatted(settingsConfig.isAutoAnyDeskEnabled() ? "включено" : "выключено"), 5f);
                     }
                     case "autotp" -> {
-                        config.setAutoTpEnabled(!config.isAutoTpEnabled());
+                        settingsConfig.setAutoTpEnabled(!settingsConfig.isAutoTpEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический телепорт на /warp logo %s.".formatted(config.isAutoTpEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический телепорт на /warp logo %s.".formatted(settingsConfig.isAutoTpEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autoban" -> {
-                        config.setAutoBanEnabled(!config.isAutoBanEnabled());
+                        settingsConfig.setAutoBanEnabled(!settingsConfig.isAutoBanEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический бан игрока при ливе с проверки %s.".formatted(config.isAutoBanEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический бан игрока при ливе с проверки %s.".formatted(settingsConfig.isAutoBanEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autovanish" -> {
-                        config.setAutoVanishEnabled(!config.isAutoVanishEnabled());
+                        settingsConfig.setAutoVanishEnabled(!settingsConfig.isAutoVanishEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический ваниш %s.".formatted(config.isAutoVanishEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический ваниш %s.".formatted(settingsConfig.isAutoVanishEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autofly" -> {
-                        config.setAutoFlyEnabled(!config.isAutoFlyEnabled());
+                        settingsConfig.setAutoFlyEnabled(!settingsConfig.isAutoFlyEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический флай %s.".formatted(config.isAutoFlyEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический флай %s.".formatted(settingsConfig.isAutoFlyEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autogm3" -> {
-                        config.setAutoGm3Enabled(!config.isAutoGm3Enabled());
+                        settingsConfig.setAutoGm3Enabled(!settingsConfig.isAutoGm3Enabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический гм3 %s.".formatted(config.isAutoGm3Enabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический гм3 %s.".formatted(settingsConfig.isAutoGm3Enabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autoha" -> {
-                        config.setAutoHacAlertsEnabled(!config.isAutoHacAlertsEnabled());
+                        settingsConfig.setAutoHacAlertsEnabled(!settingsConfig.isAutoHacAlertsEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический hac alerts %s.".formatted(config.isAutoHacAlertsEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический hac alerts %s.".formatted(settingsConfig.isAutoHacAlertsEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autogod" -> {
-                        config.setAutoGodEnabled(!config.isAutoGodEnabled());
+                        settingsConfig.setAutoGodEnabled(!settingsConfig.isAutoGodEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический god %s.".formatted(config.isAutoGodEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический god %s.".formatted(settingsConfig.isAutoGodEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "copy" -> {
-                        config.setCopyButtonEnabled(!config.isCopyButtonEnabled());
+                        settingsConfig.setCopyButtonEnabled(!settingsConfig.isCopyButtonEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Кнопка копирования %s.".formatted(config.isCopyButtonEnabled() ? "включена" : "выключена"), 5f);
+                                "Кнопка копирования %s.".formatted(settingsConfig.isCopyButtonEnabled() ? "включена" : "выключена"), 5f);
                     }
                     case "sounds" -> {
-                        config.setSoundsEnabled(!config.isSoundsEnabled());
+                        settingsConfig.setSoundsEnabled(!settingsConfig.isSoundsEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Звуки мода %s.".formatted(config.isSoundsEnabled() ? "включены" : "выключены"), 5f);
+                                "Звуки мода %s.".formatted(settingsConfig.isSoundsEnabled() ? "включены" : "выключены"), 5f);
                     }
                 }
             } else if (chatService.isArrayContains(settingsWithOneArgument, command)) {
@@ -185,22 +185,22 @@ public class SettingsModule extends Module {
                     }
                     case "setcopy" -> {
                         if (commandSplit.length == 2) {
-                            config.setCopyButtonText("§f§l[§a§lcopy§f§l]");
+                            settingsConfig.setCopyButtonText("§f§l[§a§lcopy§f§l]");
                             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                                     "Текст кнопки был сброшен.", 5f);
                         } else {
-                            config.setCopyButtonText(commandSplit[2].replace("&", "§"));
+                            settingsConfig.setCopyButtonText(commandSplit[2].replace("&", "§"));
                             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                                     "Вы установили новый текст кнопки копирования.", 5f);
                         }
                     }
                     case "setmarker" -> {
                         if (commandSplit.length == 2) {
-                            config.setPlayerMarker("§d§l[CHECK]");
+                            settingsConfig.setPlayerMarker("§d§l[CHECK]");
                             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                                     "Текст метки был сброшен.", 5f);
                         } else {
-                            config.setPlayerMarker(commandSplit[2].replace("&", "§"));
+                            settingsConfig.setPlayerMarker(commandSplit[2].replace("&", "§"));
                             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
                                     "Вы установили новый текст маркера.", 5f);
                         }
@@ -213,9 +213,9 @@ public class SettingsModule extends Module {
                             return;
                         }
 
-                        config.setSpyDelay(Integer.parseInt(valueText));
+                        settingsConfig.setSpyDelay(Integer.parseInt(valueText));
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Вы установили новую задержку в spy: %s.".formatted(config.getSpyDelay()), 5f);
+                                "Вы установили новую задержку в spy: %s.".formatted(settingsConfig.getSpyDelay()), 5f);
                     }
                     case "setsoundsvolume" -> {
                         String valueText;
@@ -225,9 +225,9 @@ public class SettingsModule extends Module {
                             return;
                         }
 
-                        config.setSoundsVolume(Integer.parseInt(valueText));
+                        settingsConfig.setSoundsVolume(Integer.parseInt(valueText));
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Вы установили новую громкость звуков: %s.".formatted(config.getSoundsVolume()), 5f);
+                                "Вы установили новую громкость звуков: %s.".formatted(settingsConfig.getSoundsVolume()), 5f);
                     }
                 }
             } else if (chatService.isArrayContains(settingsWithTwoArguments, command)) {
@@ -271,7 +271,7 @@ public class SettingsModule extends Module {
                             "Вы изменили текст номер %s.".formatted((index + 1)), 5f);
                 }
             }
-            configManager.saveCfg(config);
+            configManager.saveConfig(settingsConfig);
         }
     }
 

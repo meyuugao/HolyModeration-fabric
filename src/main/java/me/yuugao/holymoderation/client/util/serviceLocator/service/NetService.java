@@ -3,7 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;
@@ -80,7 +80,7 @@ public class NetService extends Service {
                             });
                 }
             } else {
-                Files.createDirectories(soundsDir);
+                Files.createDirectory(soundsDir);
             }
 
             for (String sound : getSoundsList()) {
@@ -227,9 +227,9 @@ public class NetService extends Service {
     }
 
     private void setAuthHeaders(@NotNull HttpsURLConnection connection) {
-        Config config = ServiceLocator.getConfigManager().getConfig();
+        ConfigManager configManager = ServiceLocator.getConfigManager();
 
-        connection.setRequestProperty("x-token", config.getApiToken());
+        connection.setRequestProperty("x-token", configManager.getApiConfig().getApiToken());
         connection.setRequestProperty("Content-Type", "application/json");
     }
 

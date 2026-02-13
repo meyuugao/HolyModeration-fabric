@@ -1,8 +1,8 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import java.io.ByteArrayInputStream;
@@ -19,9 +19,9 @@ public class SoundService extends Service {
     public void playSound(String soundName) {
         ConfigManager configManager = ServiceLocator.getConfigManager();
 
-        Config config = configManager.getConfig();
+        SettingsConfig settingsConfig = configManager.getSettingsConfig();
 
-        if (config.isSoundsEnabled()) {
+        if (settingsConfig.isSoundsEnabled()) {
             try {
                 Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
                 byte[] audioData = Files.readAllBytes(soundPath);
@@ -33,7 +33,7 @@ public class SoundService extends Service {
                     FloatControl gainControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
                     float minGain = gainControl.getMinimum();
                     float maxGain = gainControl.getMaximum();
-                    float gain = minGain + (config.getSoundsVolume() / 100.0f) * (maxGain - minGain);
+                    float gain = minGain + (settingsConfig.getSoundsVolume() / 100.0f) * (maxGain - minGain);
                     gainControl.setValue(gain);
                 }
 

@@ -3,8 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -66,8 +65,6 @@ public class ChatService extends Service {
     public String formatReceivedText(String text) {
         ConfigManager configManager = ServiceLocator.getConfigManager();
 
-        Config config = configManager.getConfig();
-
         text = text.replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY);
         for (String ignoredString : new String[]{"[ALL] ʟ", "[Тихий] ❖", "SC |",
                 "HW >", " ▬▬▬", "▬▬▬", "[PMS]:", "◀", "[HM]", "[HAC]", "[я"}) {
@@ -75,7 +72,7 @@ public class ChatService extends Service {
                 return null;
             }
         }
-        text = text.replace(config.getCopyButtonText().replaceAll(
+        text = text.replace(configManager.getSettingsConfig().getCopyButtonText().replaceAll(
                 "§[0-9a-zA-Z]", StringUtils.EMPTY), StringUtils.EMPTY);
         return text;
     }

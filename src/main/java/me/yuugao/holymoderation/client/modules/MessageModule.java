@@ -1,7 +1,7 @@
 package me.yuugao.holymoderation.client.modules;
 
-import me.yuugao.holymoderation.client.config.Config;
-import me.yuugao.holymoderation.client.config.ConfigManager;
+import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -27,7 +27,7 @@ public class MessageModule extends Module {
         ConfigManager configManager = serviceContext.getConfigManager();
 
         String checkoutPlayer = stateService.getCheckoutPlayer();
-        Config config = configManager.getConfig();
+        SettingsConfig settingsConfig = configManager.getSettingsConfig();
 
         Text component = event.getMessage();
         String message = component.getString().replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY);
@@ -38,13 +38,13 @@ public class MessageModule extends Module {
             String playerPart = message.split(": ")[message.split(": ").length - 1];
             String originalTip = "Оригинальное сообщение: %s\nНажмите, чтобы скопировать сообщение игрока.".formatted(message);
             event.setMessage(chatService.generateComponent(
-                    Text.literal("%s §f%s §5-> ".formatted(config.getPlayerMarker(), checkoutPlayer)),
+                    Text.literal("%s §f%s §5-> ".formatted(settingsConfig.getPlayerMarker(), checkoutPlayer)),
                     chatService.copyTextComponent(playerPart, originalTip, message.split(": ")[1])
             ));
-        } else if (config.isCopyButtonEnabled() && !message.startsWith("[HM]")) {
+        } else if (settingsConfig.isCopyButtonEnabled() && !message.startsWith("[HM]")) {
             MutableText copyComponent = Text.literal(" ")
                     .append(chatService.copyTextComponent(
-                            config.getCopyButtonText(),
+                            settingsConfig.getCopyButtonText(),
                             "Нажмите, чтобы скопировать сообщение.",
                             message
                     ));
