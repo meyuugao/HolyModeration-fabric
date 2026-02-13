@@ -100,7 +100,7 @@ public class CheckoutsService extends Service {
         stateService.setCheckoutPlayer(player);
 
         chatService.chatMessage("/freezing %s".formatted(stateService.getCheckoutPlayer()));
-        if (settingsConfig.isAutoTpEnabled()) {
+        if (settingsConfig.isAutoCheckoutTpEnabled()) {
             chatService.chatMessage("/warp logo");
         }
         chatService.chatMessage("/prova");

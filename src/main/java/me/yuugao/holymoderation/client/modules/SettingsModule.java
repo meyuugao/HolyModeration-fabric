@@ -28,7 +28,7 @@ public class SettingsModule extends Module {
     };
 
     private final String[] settingsWithoutArguments = {
-            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
+            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish", //tip: autotp --> autocheckouttp & autospytp
             "copy", "sounds", "textsclear", "textslist"
     };
 
@@ -92,9 +92,9 @@ public class SettingsModule extends Module {
                                 "Автоматическое копирование айди AnyDesk %s.".formatted(settingsConfig.isAutoAnyDeskEnabled() ? "включено" : "выключено"), 5f);
                     }
                     case "autotp" -> {
-                        settingsConfig.setAutoTpEnabled(!settingsConfig.isAutoTpEnabled());
+                        settingsConfig.setAutoCheckoutTpEnabled(!settingsConfig.isAutoCheckoutTpEnabled());
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                                "Автоматический телепорт на /warp logo %s.".formatted(settingsConfig.isAutoTpEnabled() ? "включён" : "выключен"), 5f);
+                                "Автоматический телепорт на /warp logo %s.".formatted(settingsConfig.isAutoCheckoutTpEnabled() ? "включён" : "выключен"), 5f);
                     }
                     case "autoban" -> {
                         settingsConfig.setAutoBanEnabled(!settingsConfig.isAutoBanEnabled());

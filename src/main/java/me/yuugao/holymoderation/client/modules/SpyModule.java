@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.modules;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
+import me.yuugao.holymoderation.client.config.SettingsConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
@@ -13,6 +14,8 @@ import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.modules.drawable.element.SpyDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+
+import net.minecraft.text.Text;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -96,6 +99,8 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
         SpyService spyService = serviceContext.getSpyService();
         ConfigManager configManager = serviceContext.getConfigManager();
 
+        SettingsConfig settingsConfig = configManager.getSettingsConfig();
+
         String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
@@ -154,10 +159,16 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
             }
 
             if (shouldUpdate) {
-                instantUpdate |= stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
-                        && stateService.getSpyPlayerActivity().isEmpty();
+                if (stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
+                        && stateService.getSpyPlayerActivity().isEmpty()) {
+                    instantUpdate = true;
+                    if (!settingsConfig.isAutoSpyTpEnabled()) {
+                        chatService.chatMessage("/tpo " + stateService.getSpyPlayer());
+                    }
+                }
+
                 schedulerService.getScheduler().schedule(spyService::update,
-                        instantUpdate ? 500 : configManager.getSettingsConfig().getSpyDelay(),
+                        instantUpdate ? 500 : settingsConfig.getSpyDelay(),
                         instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
             }

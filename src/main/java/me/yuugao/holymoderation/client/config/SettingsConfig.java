@@ -20,8 +20,6 @@ public class SettingsConfig extends Config {
     private int soundsVolume = 70;
 
     @Expose
-    private int spyDelay = 2;
-    @Expose
     private boolean copyButtonEnabled = false;
     @Expose
     private String copyButtonText = "§f§l[§a§lcopy§f§l]";
@@ -47,7 +45,12 @@ public class SettingsConfig extends Config {
     @Expose
     private boolean autoAnyDeskEnabled = true;
     @Expose
-    private boolean autoTpEnabled = true;
+    private boolean autoCheckoutTpEnabled = true;
     @Expose
     private boolean autoBanEnabled = true;
+
+    @Expose
+    private int spyDelay = 2;
+    @Expose
+    private boolean autoSpyTpEnabled = false;
 }
