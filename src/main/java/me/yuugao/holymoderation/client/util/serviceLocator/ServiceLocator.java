@@ -18,6 +18,8 @@ public class ServiceLocator {
     @Getter
     private static CheckoutsService checkoutsService;
     @Getter
+    private static GoogleSheetsService googleSheetsService;
+    @Getter
     private static GuiManagerService guiManagerService;
     @Getter
     private static InputService inputService;
@@ -41,8 +43,9 @@ public class ServiceLocator {
     private static LoggerService loggerService;
 
     public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService,
-                                  CheckoutsService checkoutsService, GuiManagerService guiManagerService,
-                                  InputService inputService, MinecraftService minecraftService, NetService netService,
+                                  CheckoutsService checkoutsService, GoogleSheetsService googleSheetsService,
+                                  GuiManagerService guiManagerService, InputService inputService,
+                                  MinecraftService minecraftService, NetService netService,
                                   NotificationsService notificationsService, PunishmentsService punishmentsService,
                                   Render2DService render2DService, SchedulerService schedulerService,
                                   SoundService soundService, StateService stateService, Logger logger) {
@@ -50,6 +53,7 @@ public class ServiceLocator {
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
         ServiceLocator.checkoutsService = checkoutsService;
+        ServiceLocator.googleSheetsService = googleSheetsService;
         ServiceLocator.guiManagerService = guiManagerService;
         ServiceLocator.inputService = inputService;
         ServiceLocator.minecraftService = minecraftService;
@@ -69,6 +73,7 @@ public class ServiceLocator {
         eventBus.setLogger(loggerService);
         chatService.setLoggerService(loggerService);
         checkoutsService.setLoggerService(loggerService);
+        googleSheetsService.setLoggerService(loggerService);
         guiManagerService.setLoggerService(loggerService);
         inputService.setLoggerService(loggerService);
         minecraftService.setLoggerService(loggerService);

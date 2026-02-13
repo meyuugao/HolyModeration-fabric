@@ -30,11 +30,11 @@ public class HolyModerationClient implements ClientModInitializer {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
-        Logger logger = (Logger) LogManager.getLogger(HolyModerationClient.class);
         ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(),
-                new GuiManagerService(), new InputService(), new MinecraftService(), new NetService(),
-                new NotificationsService(), new PunishmentsService(), new Render2DService(), new SchedulerService(),
-                new SoundService(), new StateService(), logger);
+                new GoogleSheetsService(), new GuiManagerService(), new InputService(), new MinecraftService(),
+                new NetService(), new NotificationsService(), new PunishmentsService(), new Render2DService(),
+                new SchedulerService(), new SoundService(), new StateService(),
+                (Logger) LogManager.getLogger(HolyModerationClient.class));
         eventBusInitialize();
         commandsInitialize();
     }

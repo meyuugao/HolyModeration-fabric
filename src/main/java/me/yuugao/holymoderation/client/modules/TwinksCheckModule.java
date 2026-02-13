@@ -2,13 +2,12 @@ package me.yuugao.holymoderation.client.modules;
 
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
+
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
 import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
-
-import com.google.common.hash.Hashing;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,13 +21,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.hash.Hashing;
+
 public class TwinksCheckModule extends Module {
-    private static final Pattern STATUS_PATTERN = Pattern.compile("\\[(Активный|Истёкший)]");
+    private final Pattern STATUS_PATTERN = Pattern.compile("\\[(Активный|Истёкший)]");
 
     private final Path workDir = Paths.get("C:\\HolyModeration\\Twinks");
     private final File checkFile = workDir.resolve("checktwinks.txt").toFile();
@@ -49,6 +53,9 @@ public class TwinksCheckModule extends Module {
         NotificationsService notificationsService = serviceContext.getNotificationsService();
         ChatService chatService = serviceContext.getChatService();
         SchedulerService schedulerService = serviceContext.getSchedulerService();
+        GoogleSheetsService googleSheetsService = serviceContext.getGoogleSheetsService();
+
+        ScheduledExecutorService scheduler = schedulerService.getScheduler();
 
         String[] parts = event.getCommand().split(" ");
         if (parts.length < 2 || !parts[0].equals("hm") || !parts[1].equals("twinks")) return;
@@ -87,22 +94,59 @@ public class TwinksCheckModule extends Module {
         stateService.setCheckingTwinks(true);
         int lastIndex = nicknames.size() - 1;
 
-        for (int i = 0; i <= lastIndex; i++) {
-            String nickname = nicknames.get(i);
+        scheduler.submit(() -> {
+            Set<String> blopNicknames = loadBlopNicknames(googleSheetsService, notificationsService);
 
-            schedulerService.getScheduler().schedule(() -> {
-                writeTempPlayer(nickname);
-                chatService.chatMessage("/history %s 100".formatted(nickname));
-            }, i, TimeUnit.SECONDS);
+            for (int i = 0; i <= lastIndex; i++) {
+                String nickname = nicknames.get(i);
+                boolean isInBLOP = checkIsInBLOP(nickname, blopNicknames);
 
-            if (i == lastIndex) {
-                schedulerService.getScheduler().schedule(() -> {
-                    stateService.setCheckingTwinks(false);
-                    List<PlayerEntry> results = parseHistory();
-                    saveResults(results);
-                }, i + 1, TimeUnit.SECONDS);
+                scheduler.schedule(() -> {
+                    writeTempPlayer(nickname, isInBLOP);
+                    chatService.chatMessage("/history %s 100".formatted(nickname));
+                }, i, TimeUnit.SECONDS);
+
+                if (i == lastIndex) {
+                    scheduler.schedule(() -> {
+                        stateService.setCheckingTwinks(false);
+                        List<PlayerEntry> results = parseHistory();
+                        saveResults(results);
+                    }, i + 1, TimeUnit.SECONDS);
+                }
+            }
+        });
+    }
+
+    private Set<String> loadBlopNicknames(GoogleSheetsService googleSheetsService, NotificationsService notificationsService) {
+        Set<String> nicknames = new HashSet<>();
+
+        GoogleSheetsService.Spreadsheet spreadsheet = googleSheetsService.getPublicSpreadsheet(
+                "https://docs.google.com/spreadsheets/d/1UiUszqOVKgtIuMKfihMq-Soc9gRvXIi4CI2lVsYe5Ug");
+        if (spreadsheet == null) {
+            notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                    "Не удалось загрузить BLOP таблицу. Проверка BLOP пропущена.", 5f);
+            return nicknames;
+        }
+
+        List<GoogleSheetsService.CellData> columnA = spreadsheet.getColumn("A");
+        for (int i = 3; i < columnA.size(); i++) {
+            String text = columnA.get(i).text().trim();
+            if (text.isEmpty()) continue;
+
+            for (String part : text.split("/")) {
+                String nickname = part.trim().toLowerCase();
+                if (!nickname.isEmpty()) {
+                    nicknames.add(nickname);
+                }
             }
         }
+
+        return nicknames;
+    }
+
+    private boolean checkIsInBLOP(String nickname, Set<String> blopNicknames) {
+        if (blopNicknames.isEmpty()) return false;
+        return blopNicknames.contains(nickname.toLowerCase().trim());
     }
 
     @Subscribe(priority = 97)
@@ -149,10 +193,12 @@ public class TwinksCheckModule extends Module {
         return nicknames;
     }
 
-    private void writeTempPlayer(String nickname) {
+    private void writeTempPlayer(String nickname, boolean isInBLOP) {
         try {
             boolean isEmpty = tempFile.length() == 0;
-            String header = isEmpty ? "PLAYER: " + nickname : System.lineSeparator() + "PLAYER: " + nickname;
+            String header = isEmpty
+                    ? "PLAYER: " + nickname + " | BLOP: " + isInBLOP
+                    : System.lineSeparator() + "PLAYER: " + nickname + " | BLOP: " + isInBLOP;
             Files.writeString(tempFile.toPath(), header, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (Exception e) {
             serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
@@ -181,14 +227,17 @@ public class TwinksCheckModule extends Module {
             Files.deleteIfExists(tempFile.toPath());
 
             String currentNickname = null;
+            boolean currentIsInBLOP = false;
             List<String> currentBlock = new ArrayList<>();
 
             for (String line : lines) {
                 if (line.startsWith("PLAYER: ")) {
                     if (currentNickname != null && !currentBlock.isEmpty()) {
-                        results.add(buildPlayerEntry(currentNickname, currentBlock));
+                        results.add(buildPlayerEntry(currentNickname, currentIsInBLOP, currentBlock));
                     }
-                    currentNickname = line.substring(8);
+                    String[] playerParts = line.substring(8).split(" \\| BLOP: ");
+                    currentNickname = playerParts[0];
+                    currentIsInBLOP = playerParts.length > 1 && Boolean.parseBoolean(playerParts[1]);
                     currentBlock.clear();
                 } else if (line.startsWith("DATA: ")) {
                     currentBlock.add(line.substring(6));
@@ -196,7 +245,7 @@ public class TwinksCheckModule extends Module {
             }
 
             if (currentNickname != null && !currentBlock.isEmpty()) {
-                results.add(buildPlayerEntry(currentNickname, currentBlock));
+                results.add(buildPlayerEntry(currentNickname, currentIsInBLOP, currentBlock));
             }
         } catch (Exception e) {
             serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
@@ -207,8 +256,9 @@ public class TwinksCheckModule extends Module {
         return results;
     }
 
-    private PlayerEntry buildPlayerEntry(String nickname, List<String> lines) {
+    private PlayerEntry buildPlayerEntry(String nickname, boolean isInBLOP, List<String> lines) {
         PlayerEntry entry = new PlayerEntry(nickname);
+        entry.isInBLOP = isInBLOP;
 
         if (isNoHistory(lines)) return entry;
 
@@ -348,8 +398,7 @@ public class TwinksCheckModule extends Module {
         int days = 0, hours = 0, minutes = 0;
         String[] parts = timeAgo.split(" ");
 
-        for (int i = 0; i < parts.length; i++) {
-            if (i == 0) continue;
+        for (int i = 1; i < parts.length; i++) {
             try {
                 int value = Integer.parseInt(parts[i - 1]);
                 switch (parts[i]) {
@@ -357,7 +406,8 @@ public class TwinksCheckModule extends Module {
                     case "ч." -> hours = value;
                     case "мин." -> minutes = value;
                 }
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
 
         return days + (hours / 24.0) + (minutes / 1440.0) <= 30;
@@ -382,7 +432,7 @@ public class TwinksCheckModule extends Module {
 
             serviceContext.getNotificationsService().addNotification(NotificationType.SUCCESS,
                     "%s%sУспех".formatted(GREEN, BOLD),
-                    "Результаты проверки твинков сохранены: %s".formatted(resultFile.getAbsolutePath()), 5f);
+                    "Результат проверки твинков сохранены: %s".formatted(resultFile.getName()), 5f);
         } catch (Exception e) {
             serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
@@ -393,6 +443,7 @@ public class TwinksCheckModule extends Module {
     private void appendPlayerEntry(StringBuilder sb, PlayerEntry entry) {
         sb.append("PLAYER: ").append(entry.nickname).append(System.lineSeparator());
         sb.append("BANNED: ").append(entry.isBanned).append(System.lineSeparator());
+        sb.append("IN_BLOP: ").append(entry.isInBLOP).append(System.lineSeparator());
         sb.append("HISTORY_FOUND: ").append(entry.historyFound).append(System.lineSeparator());
 
         sb.append("RECENT_HISTORY: ").append(entry.recentHistory.size()).append(System.lineSeparator());
@@ -449,6 +500,7 @@ public class TwinksCheckModule extends Module {
 
     public static class PlayerEntry {
         public final String nickname;
+        public boolean isInBLOP;
         public boolean historyFound;
         public boolean isBanned;
         public List<PunishmentEntry> recentHistory = new ArrayList<>();
@@ -459,7 +511,8 @@ public class TwinksCheckModule extends Module {
         }
     }
 
-    public record PunishmentEntry(PunishmentType type, String reason, String by, String timeAgo, boolean isActive) {}
+    public record PunishmentEntry(PunishmentType type, String reason, String by, String timeAgo, boolean isActive) {
+    }
 
     public enum PunishmentType {
         BAN, MUTE, KICK
@@ -467,6 +520,7 @@ public class TwinksCheckModule extends Module {
 
     private static class PlayerEntryParser {
         String nickname;
+        boolean isInBLOP;
         boolean isBanned;
         boolean historyFound;
         List<PunishmentEntry> recentHistory = new ArrayList<>();
@@ -480,6 +534,8 @@ public class TwinksCheckModule extends Module {
                 nickname = line.substring(8);
             } else if (line.startsWith("BANNED: ")) {
                 isBanned = Boolean.parseBoolean(line.substring(8));
+            } else if (line.startsWith("IN_BLOP: ")) {
+                isInBLOP = Boolean.parseBoolean(line.substring(9));
             } else if (line.startsWith("HISTORY_FOUND: ")) {
                 historyFound = Boolean.parseBoolean(line.substring(15));
             } else if (line.startsWith("RECENT_HISTORY: ")) {
@@ -502,6 +558,7 @@ public class TwinksCheckModule extends Module {
         PlayerEntry build() {
             if (nickname == null) return null;
             PlayerEntry entry = new PlayerEntry(nickname);
+            entry.isInBLOP = isInBLOP;
             entry.isBanned = isBanned;
             entry.historyFound = historyFound;
             entry.recentHistory = new ArrayList<>(recentHistory);
@@ -511,6 +568,7 @@ public class TwinksCheckModule extends Module {
 
         void reset() {
             nickname = null;
+            isInBLOP = false;
             isBanned = false;
             historyFound = false;
             recentHistory.clear();

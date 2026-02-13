@@ -12,6 +12,7 @@ public class ServiceContext {
     private final EventBus eventBus;
     private final ChatService chatService;
     private final CheckoutsService checkoutsService;
+    private final GoogleSheetsService googleSheetsService;
     private final GuiManagerService guiManagerService;
     private final InputService inputService;
     private final MinecraftService minecraftService;
@@ -29,6 +30,7 @@ public class ServiceContext {
         this.eventBus = ServiceLocator.getEventBus();
         this.chatService = ServiceLocator.getChatService();
         this.checkoutsService = ServiceLocator.getCheckoutsService();
+        this.googleSheetsService = ServiceLocator.getGoogleSheetsService();
         this.guiManagerService = ServiceLocator.getGuiManagerService();
         this.inputService = ServiceLocator.getInputService();
         this.minecraftService = ServiceLocator.getMinecraftService();
