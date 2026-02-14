@@ -60,45 +60,23 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
                 new String(animBuffer)
         );
 
-        width = tr.getWidth(text) + 12f;
-        height = tr.fontHeight + 8f;
+        setWidth(tr.getWidth(text) + 12f);
+        setHeight(tr.fontHeight + 8f);
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
-
-        float[] pv = scalePivotLocal();
 
         render2DService.setupRender();
 
         ms.push();
 
         ms.scale(anim, anim, 1f);
-        ms.translate(-pv[0], -pv[1], 0f);
 
-        render2DService.renderSoftRoundedRectOutline(
-                ms,
-                0f,
-                0f,
-                width,
-                height,
-                z,
-                8f,
-                bg,
-                outline,
-                1.2f,
-                3
-        );
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(),
+                getHeight(), z, 8f, bg, outline, 1.2f, 3);
 
-        render2DService.renderText(
-                tr,
-                text,
-                (int) (width / 2f - tr.getWidth(text) / 2f),
-                (int) (height / 2f - tr.fontHeight / 2f + 0.5f),
-                z,
-                0xffffffff,
-                false,
-                ctx
-        );
+        render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),
+                (int) (getHeight() / 2f - tr.fontHeight / 2f + 0.5f), z, 0xffffffff, false, ctx);
 
         ms.pop();
 

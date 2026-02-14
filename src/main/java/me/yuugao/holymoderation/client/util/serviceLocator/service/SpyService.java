@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 import static me.yuugao.holymoderation.client.util.Colors.BOLD;
 import static me.yuugao.holymoderation.client.util.Colors.GREEN;
 
+
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import org.apache.commons.lang3.StringUtils;

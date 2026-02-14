@@ -77,31 +77,28 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         currentWidth = animate(currentWidth, targetWidth, 1.2f);
         currentHeight = animate(currentHeight, targetHeight, 1.2f);
 
-        width = Math.max(1f, currentWidth);
-        height = Math.max(1f, currentHeight);
+        setWidth(Math.max(1f, currentWidth));
+        setHeight(Math.max(1f, currentHeight));
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
-
-        float[] pv = scalePivotLocal();
 
         render2DService.setupRender();
 
         ms.push();
 
         ms.scale(anim, anim, 1f);
-        ms.translate(-pv[0], -pv[1], 0f);
 
         render2DService.renderSoftRoundedRectOutline(
-                ms, 0f, 0f, width, height, z,
+                ms, 0f, 0f, getWidth(), getHeight(), z,
                 10f, bg, outline, 1.5f, 3
         );
 
         render2DService.renderText(
                 tr,
                 display,
-                (int) (width / 2f - tr.getWidth(display) / 2f),
-                (int) (height / 2f - tr.fontHeight / 2f + 0.5f),
+                (int) (getWidth() / 2f - tr.getWidth(display) / 2f),
+                (int) (getHeight() / 2f - tr.fontHeight / 2f + 0.5f),
                 z,
                 0xffffffff,
                 false,

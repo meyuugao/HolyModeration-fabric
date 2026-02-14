@@ -15,8 +15,6 @@ import me.yuugao.holymoderation.client.modules.drawable.element.SpyDrawableEleme
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
 
-import net.minecraft.text.Text;
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;

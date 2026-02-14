@@ -41,7 +41,9 @@ public class TwinksCheckModule extends Module {
     public TwinksCheckModule(ServiceContext serviceContext) {
         super(serviceContext);
         try {
-            Files.createDirectory(workDir);
+            if (!Files.exists(workDir)) {
+                Files.createDirectory(workDir);
+            }
         } catch (IOException e) {
             serviceContext.getLoggerService().exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
         }
