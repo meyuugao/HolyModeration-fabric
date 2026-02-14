@@ -11,6 +11,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 
 import lombok.Getter;
+import lombok.Setter;
 
 public abstract class DrawableElement<T extends RenderState> {
     protected final ServiceContext serviceContext;
@@ -20,7 +21,8 @@ public abstract class DrawableElement<T extends RenderState> {
     protected float relY;
 
     @Getter
-    protected float width, height;
+    @Setter
+    private float width, height;
 
     @Getter
     protected float widthScale = 1f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
@@ -39,15 +41,17 @@ public abstract class DrawableElement<T extends RenderState> {
 
     protected abstract void render(DrawContext ctx, int z, T state);
 
-    public final void updateRender(DrawContext ctx, int z, RenderMode mode) {
+    public void updateRender(DrawContext ctx, int z, RenderMode mode) {
         if (!positioned) {
             initPosition(ctx);
             positioned = true;
         }
 
+        float[] pv = scalePivotLocal();
+
         MatrixStack ms = ctx.getMatrices();
         ms.push();
-        ms.translate(getX(ctx), getY(ctx), 0f);
+        ms.translate(getX(ctx) - pv[0], getY(ctx) - pv[1], 0f);
         ms.scale(widthScale, heightScale, 1f);
 
         T state = stateProvider.getState(mode);
@@ -74,17 +78,25 @@ public abstract class DrawableElement<T extends RenderState> {
         relY = pixelY / ctx.getScaledWindowHeight();
     }
 
+    public float getScaledWidth() {
+        return width * widthScale;
+    }
+
+    public float getScaledHeight() {
+        return height * heightScale;
+    }
+
     public float[] scalePivotLocal() {
         return switch (positionMode) {
-            case CENTER -> new float[]{width / 2f, height / 2f};
+            case CENTER -> new float[]{getScaledWidth() / 2f, getScaledHeight() / 2f};
             case LEFT_UP -> new float[]{0f, 0f};
-            case LEFT_DOWN -> new float[]{0f, height};
-            case RIGHT_UP -> new float[]{width, 0f};
-            case RIGHT_DOWN -> new float[]{width, height};
-            case UP -> new float[]{width / 2f, 0f};
-            case DOWN -> new float[]{width / 2f, height};
-            case LEFT -> new float[]{0f, height / 2f};
-            case RIGHT -> new float[]{width, height / 2f};
+            case LEFT_DOWN -> new float[]{0f, getScaledHeight()};
+            case RIGHT_UP -> new float[]{getScaledWidth(), 0f};
+            case RIGHT_DOWN -> new float[]{getScaledWidth(), getScaledHeight()};
+            case UP -> new float[]{getScaledWidth() / 2f, 0f};
+            case DOWN -> new float[]{getScaledWidth() / 2f, getScaledHeight()};
+            case LEFT -> new float[]{0f, getScaledHeight() / 2f};
+            case RIGHT -> new float[]{getScaledWidth(), getScaledHeight() / 2f};
         };
     }
 

@@ -94,7 +94,7 @@ public class HolyModerationClient implements ClientModInitializer {
         eventBus.register(new KeyBindingModule(serviceContext));
         eventBus.register(new MessageModule(serviceContext));
         eventBus.register(new NetModule(serviceContext));
-        eventBus.register(new NotificationsModule(serviceContext, new NotificationsDrawableElement(serviceContext, PositionMode.CENTER)));
+        eventBus.register(new NotificationsModule(serviceContext, new NotificationsDrawableElement(serviceContext, PositionMode.RIGHT_DOWN)));
         eventBus.register(new PunishmentsModule(serviceContext));
         eventBus.register(new ReportCopyModule(serviceContext));
         eventBus.register(new SettingsModule(serviceContext));

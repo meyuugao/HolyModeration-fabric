@@ -41,14 +41,14 @@ public class NotificationsService extends Service {
         notificationPool.clear();
     }
 
-    public void renderNotifications(DrawContext ctx, int z) {
+    public void renderNotificationsLocal(DrawContext ctx, int z, float stackDirY, float hideDirX, float hideDirY,
+                                         float screenLeft, float screenRight, float screenTop, float screenBottom,
+                                         float localW) {
+
         MinecraftService minecraftService = ServiceLocator.getMinecraftService();
         Render2DService render2DService = ServiceLocator.getRender2DService();
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
-
-        float screenW = ctx.getScaledWindowWidth();
-        float screenH = ctx.getScaledWindowHeight();
 
         long now = System.nanoTime();
         float delta = (now - lastNano) / 1_000_000_000f;
@@ -56,7 +56,7 @@ public class NotificationsService extends Service {
 
         float margin = 8f;
         float spacing = 10f;
-        float width = screenW / 6f;
+        float width = localW / 6f;
         float radius = 6f;
         float blur = 6f;
         float outline = 1.5f;
@@ -83,56 +83,72 @@ public class NotificationsService extends Service {
             }
         }
 
-        notificationPool.removeIf(n ->
-                n.state == State.HIDING && n.x > screenW
-        );
+        notificationPool.removeIf(n -> {
+            if (n.state != State.HIDING) return false;
+            if (hideDirX > 0) return n.x > screenRight + n.width;
+            if (hideDirX < 0) return n.x + n.width < screenLeft;
+            if (hideDirY < 0) return n.y + n.height < screenTop;
+            if (hideDirY > 0) return n.y > screenBottom;
+            return false;
+        });
 
-        float yCursor = screenH - margin;
+        float cursor = margin;
         for (int i = notificationPool.size() - 1; i >= 0; i--) {
             Notification n = notificationPool.get(i);
 
             if (n.state != State.HIDING) {
-                n.targetY = yCursor - n.height;
-                yCursor -= n.height + spacing;
+                if (hideDirX > 0) {
+                    n.targetX = screenRight - margin - n.width;
+                } else if (hideDirX < 0) {
+                    n.targetX = screenLeft + margin;
+                } else {
+                    n.targetX = (screenLeft + screenRight - n.width) / 2;
+                }
+
+                if (stackDirY < 0) {
+                    n.targetY = screenBottom - cursor - n.height;
+                } else if (stackDirY > 0) {
+                    n.targetY = screenTop + cursor;
+                } else {
+                    n.targetY = (screenTop + screenBottom - n.height) / 2;
+                }
+                cursor += n.height + spacing;
             }
 
-            n.targetX = screenW - margin - n.width;
             if (n.state == State.HIDING) {
-                n.targetX = screenW + n.width * 2;
+                if (hideDirX > 0) n.targetX = screenRight + n.width + margin;
+                else if (hideDirX < 0) n.targetX = screenLeft - n.width - margin;
+                if (hideDirY < 0) n.targetY = screenTop - n.height - margin;
+                else if (hideDirY > 0) n.targetY = screenBottom + n.height + margin;
             }
         }
 
         for (Notification n : notificationPool) {
             if (n.state == State.SPAWNING && !n.initialized) {
-                n.x = screenW + n.width;
-                n.y = screenH + n.height;
+                n.x = n.targetX;
+                if (stackDirY < 0) n.y = screenBottom + n.height;
+                else if (stackDirY > 0) n.y = screenTop - n.height;
+                else n.y = n.targetY;
                 n.initialized = true;
             }
 
-            float speedY = n.state == State.SPAWNING ? 14f : 8f;
-            n.y += (n.targetY - n.y) * Math.min(1f, speedY * delta);
+            n.y += (n.targetY - n.y) * Math.min(1f, (n.state == State.SPAWNING ? 14f : 8f) * delta);
+            n.x += (n.targetX - n.x) * Math.min(1f, (n.state == State.HIDING ? 12f : 10f) * delta);
 
-            float speedX = n.state == State.HIDING ? 12f : 10f;
-            n.x += (n.targetX - n.x) * Math.min(1f, speedX * delta);
-
-            if (n.state == State.SPAWNING && Math.abs(n.y - n.targetY) < 0.5f) {
+            if (n.state == State.SPAWNING && Math.abs(n.y - n.targetY) < 0.5f && Math.abs(n.x - n.targetX) < 0.5f) {
                 n.state = State.IDLE;
             }
         }
 
         for (Notification n : notificationPool) {
-            if (n.y + n.height < 0) continue;
+            if (n.y + n.height < screenTop || n.y > screenBottom) continue;
 
             MatrixStack ms = ctx.getMatrices();
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
 
             render2DService.setupRender();
-
-            render2DService.renderSoftRoundedRectOutline(
-                    ms, n.x, n.y, n.width, n.height, z,
-                    radius, bg, ol, outline, blur
-            );
+            render2DService.renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
 
             ms.push();
             ms.translate(n.x, n.y, 0);
@@ -159,12 +175,9 @@ public class NotificationsService extends Service {
         String text;
         float liveTime;
         float elapsed;
-        float x;
-        float y;
-        float targetX;
-        float targetY;
-        float width;
-        float height;
+        float x, y;
+        float targetX, targetY;
+        float width, height;
         boolean initialized;
         State state = State.SPAWNING;
         List<OrderedText> titleLines = new ArrayList<>();

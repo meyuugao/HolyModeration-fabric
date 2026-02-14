@@ -51,7 +51,7 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         }
 
         anim = animate(anim, animTarget, 1f);
-        if (anim < 0.1f) return;
+        if (anim < 0.01f) return;
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;
@@ -61,29 +61,26 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         currentWidth = animate(currentWidth, targetWidth, 1.2f);
         currentHeight = animate(currentHeight, targetHeight, 1.2f);
 
-        width = Math.max(1f, currentWidth);
-        height = Math.max(1f, currentHeight);
+        setWidth(Math.max(1f, currentWidth));
+        setHeight(Math.max(1f, currentHeight));
 
         Color bg = new Color(10, 20, 40, 220);
         Color outline = new Color(60, 120, 220);
-
-        float[] pv = scalePivotLocal();
 
         render2DService.setupRender();
 
         ms.push();
 
         ms.scale(anim, anim, 1f);
-        ms.translate(-pv[0], -pv[1], 0f);
 
-        float baseY = (height - textBlockHeight) / 2f + 0.5f;
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, width, height, z,
+        float baseY = (getHeight() - textBlockHeight) / 2f + 0.5f;
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
                 10f, bg, outline, 1.5f, 3);
 
-        render2DService.renderText(tr, display0, (int) (width / 2f - tr.getWidth(display0) / 2f),
+        render2DService.renderText(tr, display0, (int) (getWidth() / 2f - tr.getWidth(display0) / 2f),
                 (int) baseY, z, 0xffffffff, false, ctx);
         if (!display1.isEmpty()) {
-            render2DService.renderText(tr, display1, (int) (width / 2f - tr.getWidth(display1) / 2f),
+            render2DService.renderText(tr, display1, (int) (getWidth() / 2f - tr.getWidth(display1) / 2f),
                     (int) (baseY + tr.fontHeight + 4), z, 0xffffffff, false, ctx);
         }
 
