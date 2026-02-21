@@ -142,12 +142,6 @@ public class CheckoutsService extends Service {
                         "Нажмите, чтобы внести проверку автоселлера", "/hm startcheckout %s autosell".formatted(stateService.getCheckoutPlayer())));
                 chatService.clientMessage(chatService.suggestTextComponent("%s%sВнести проверку кандидата".formatted(AQUA, BOLD),
                         "Нажмите, чтобы внести проверку кандидата", "/hm startcheckout %s candidate".formatted(stateService.getCheckoutPlayer())));
-                chatService.clientMessage(chatService.suggestTextComponent("%s%sВнести проверку кастомки".formatted(AQUA, BOLD),
-                        "Нажмите, чтобы внести проверку кастомки", "/hm startcheckout %s customka".formatted(stateService.getCheckoutPlayer())));
-                chatService.clientMessage(chatService.suggestTextComponent("%s%sВнести проверку персонала".formatted(AQUA, BOLD),
-                        "Нажмите, чтобы внести проверку персонала", "/hm startcheckout %s personal".formatted(stateService.getCheckoutPlayer())));
-                chatService.clientMessage(chatService.suggestTextComponent("%s%sВнести проверку игрока, у которого много пройденных проверок".formatted(AQUA, BOLD),
-                        "Нажмите, чтобы внести проверку игрока, у которого много пройденных проверок", "/hm startcheckout %s toManyChecks".formatted(stateService.getCheckoutPlayer())));
             }
         }, 9, TimeUnit.SECONDS));
 
