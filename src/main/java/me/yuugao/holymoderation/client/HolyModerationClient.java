@@ -27,14 +27,33 @@ import obfuscator.DontObf;
 import obfuscator.ObfRule;
 
 public class HolyModerationClient implements ClientModInitializer {
+    public static void registerEventListeners(EventBus eventBus) {
+        ServiceContext serviceContext = new ServiceContext();
+
+        eventBus.register(new MainGuiModule(serviceContext));
+        eventBus.register(new CheckoutsModule(serviceContext, new CheckoutsDrawableElement(serviceContext, PositionMode.CENTER)));
+        eventBus.register(new GuiManagerModule(serviceContext));
+        eventBus.register(new KeyBindingModule(serviceContext));
+        eventBus.register(new MessageModule(serviceContext));
+        eventBus.register(new NetModule(serviceContext));
+        eventBus.register(new NotificationsModule(serviceContext, new NotificationsDrawableElement(serviceContext, PositionMode.RIGHT_DOWN)));
+        eventBus.register(new PunishmentsModule(serviceContext));
+        eventBus.register(new ReportCopyModule(serviceContext));
+        eventBus.register(new SettingsModule(serviceContext));
+        eventBus.register(new StateModule(serviceContext));
+        eventBus.register(new SpyModule(serviceContext, new SpyDrawableElement(serviceContext, PositionMode.UP)));
+        eventBus.register(new TwinksCheckModule(serviceContext));
+        eventBus.register(new WaterMarkModule(serviceContext, new WatermarkDrawableElement(serviceContext, PositionMode.LEFT_UP)));
+    }
+
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
         ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(),
                 new GoogleSheetsService(), new GuiManagerService(), new InputService(), new MinecraftService(),
                 new NetService(), new NotificationsService(), new PunishmentsService(), new Render2DService(),
-                new SchedulerService(), new SoundService(), new SpyService(), new StateService(),
-                (Logger) LogManager.getLogger(HolyModerationClient.class));
+                new SchedulerService(), new ScreenHandlerService(), new SoundService(), new SpyService(),
+                new StateService(), (Logger) LogManager.getLogger(HolyModerationClient.class));
         eventBusInitialize();
         commandsInitialize();
     }
@@ -83,24 +102,5 @@ public class HolyModerationClient implements ClientModInitializer {
             dispatcher.register(ClientCommandManager.literal("frz")
                     .then(ClientCommandManager.argument("player", EntityArgumentType.player())));
         });
-    }
-
-    public static void registerEventListeners(EventBus eventBus) {
-        ServiceContext serviceContext = new ServiceContext();
-
-        eventBus.register(new MainGuiModule(serviceContext));
-        eventBus.register(new CheckoutsModule(serviceContext, new CheckoutsDrawableElement(serviceContext, PositionMode.CENTER)));
-        eventBus.register(new GuiManagerModule(serviceContext));
-        eventBus.register(new KeyBindingModule(serviceContext));
-        eventBus.register(new MessageModule(serviceContext));
-        eventBus.register(new NetModule(serviceContext));
-        eventBus.register(new NotificationsModule(serviceContext, new NotificationsDrawableElement(serviceContext, PositionMode.RIGHT_DOWN)));
-        eventBus.register(new PunishmentsModule(serviceContext));
-        eventBus.register(new ReportCopyModule(serviceContext));
-        eventBus.register(new SettingsModule(serviceContext));
-        eventBus.register(new StateModule(serviceContext));
-        eventBus.register(new SpyModule(serviceContext, new SpyDrawableElement(serviceContext, PositionMode.UP)));
-        eventBus.register(new TwinksCheckModule(serviceContext));
-        eventBus.register(new WaterMarkModule(serviceContext, new WatermarkDrawableElement(serviceContext, PositionMode.LEFT_UP)));
     }
 }

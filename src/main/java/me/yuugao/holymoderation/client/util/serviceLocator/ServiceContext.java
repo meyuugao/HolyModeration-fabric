@@ -21,6 +21,7 @@ public class ServiceContext {
     private final PunishmentsService punishmentsService;
     private final Render2DService render2DService;
     private final SchedulerService schedulerService;
+    private final ScreenHandlerService screenHandlerService;
     private final SoundService soundService;
     private final SpyService spyService;
     private final StateService stateService;
@@ -40,6 +41,7 @@ public class ServiceContext {
         this.punishmentsService = ServiceLocator.getPunishmentsService();
         this.render2DService = ServiceLocator.getRender2DService();
         this.schedulerService = ServiceLocator.getSchedulerService();
+        this.screenHandlerService = ServiceLocator.getScreenHandlerService();
         this.soundService = ServiceLocator.getSoundService();
         this.spyService = ServiceLocator.getSpyService();
         this.stateService = ServiceLocator.getStateService();

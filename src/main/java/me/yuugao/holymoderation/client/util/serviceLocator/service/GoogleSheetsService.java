@@ -13,6 +13,28 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class GoogleSheetsService extends Service {
+    static int parseColumnToIndex(String col) {
+        int result = 0;
+        for (char c : col.toUpperCase().toCharArray()) {
+            result = result * 26 + (c - 'A' + 1);
+        }
+        return result - 1;
+    }
+
+    static int @Nullable [] parseCellReference(String ref) {
+        Pattern columnPattern = Pattern.compile("^([A-Z]+)(\\d*)$");
+        Matcher matcher = columnPattern.matcher(ref.toUpperCase());
+        if (!matcher.find()) return null;
+
+        String colPart = matcher.group(1);
+        String rowPart = matcher.group(2);
+
+        int col = parseColumnToIndex(colPart);
+        int row = rowPart.isEmpty() ? 0 : Integer.parseInt(rowPart) - 1;
+
+        return new int[]{col, row};
+    }
+
     @Nullable
     public Spreadsheet getPublicSpreadsheet(String url) {
         String spreadsheetId = extractSpreadsheetId(url);
@@ -117,28 +139,6 @@ public class GoogleSheetsService extends Service {
             return new CellData(matcher.group(2), matcher.group(1));
         }
         return new CellData(raw, null);
-    }
-
-    static int parseColumnToIndex(String col) {
-        int result = 0;
-        for (char c : col.toUpperCase().toCharArray()) {
-            result = result * 26 + (c - 'A' + 1);
-        }
-        return result - 1;
-    }
-
-    static int @Nullable [] parseCellReference(String ref) {
-        Pattern columnPattern = Pattern.compile("^([A-Z]+)(\\d*)$");
-        Matcher matcher = columnPattern.matcher(ref.toUpperCase());
-        if (!matcher.find()) return null;
-
-        String colPart = matcher.group(1);
-        String rowPart = matcher.group(2);
-
-        int col = parseColumnToIndex(colPart);
-        int row = rowPart.isEmpty() ? 0 : Integer.parseInt(rowPart) - 1;
-
-        return new int[]{col, row};
     }
 
     public static class Spreadsheet {

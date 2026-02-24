@@ -36,6 +36,8 @@ public class ServiceLocator {
     @Getter
     private static SchedulerService schedulerService;
     @Getter
+    private static ScreenHandlerService screenHandlerService;
+    @Getter
     private static SoundService soundService;
     @Getter
     private static SpyService spyService;
@@ -50,8 +52,8 @@ public class ServiceLocator {
                                   MinecraftService minecraftService, NetService netService,
                                   NotificationsService notificationsService, PunishmentsService punishmentsService,
                                   Render2DService render2DService, SchedulerService schedulerService,
-                                  SoundService soundService, SpyService spyService,
-                                  StateService stateService, Logger logger) {
+                                  ScreenHandlerService screenHandlerService, SoundService soundService,
+                                  SpyService spyService, StateService stateService, Logger logger) {
         ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
@@ -65,6 +67,7 @@ public class ServiceLocator {
         ServiceLocator.punishmentsService = punishmentsService;
         ServiceLocator.render2DService = render2DService;
         ServiceLocator.schedulerService = schedulerService;
+        ServiceLocator.screenHandlerService = screenHandlerService;
         ServiceLocator.soundService = soundService;
         ServiceLocator.spyService = spyService;
         ServiceLocator.stateService = stateService;

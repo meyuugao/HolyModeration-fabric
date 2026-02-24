@@ -7,12 +7,13 @@
   ],
   "client": [
     "ClientPlayNetworkHandlerMixin",
-    "render.GameRendererMixin",
     "KeyBoardMixin",
     "MessageHandlerMixin",
     "MinecraftClientMixin",
     "MouseMixin",
-    "render.ScreenMixin"
+    "render.GameRendererMixin",
+    "render.ScreenMixin",
+    "render.SMixin"
   ],
   "injectors": {
     "defaultRequire": 1

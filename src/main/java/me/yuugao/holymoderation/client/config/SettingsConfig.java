@@ -10,10 +10,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class SettingsConfig extends Config {
-    public SettingsConfig() {
-        super("settings");
-    }
-
+    @Expose
+    private final List<String> textsList = new ArrayList<>();
     @Expose
     private boolean soundsEnabled = true;
     @Expose
@@ -25,10 +23,6 @@ public class SettingsConfig extends Config {
     private String copyButtonText = "§f§l[§a§lcopy§f§l]";
     @Expose
     private String playerMarker = "§d§l[CHECK]";
-
-    @Expose
-    private final List<String> textsList = new ArrayList<>();
-
     @Expose
     private boolean autoVanishEnabled = true;
     @Expose
@@ -39,7 +33,6 @@ public class SettingsConfig extends Config {
     private boolean autoHacAlertsEnabled = false;
     @Expose
     private boolean autoGodEnabled = false;
-
     @Expose
     private boolean dupeIpEnabled = false;
     @Expose
@@ -48,9 +41,11 @@ public class SettingsConfig extends Config {
     private boolean autoCheckoutTpEnabled = true;
     @Expose
     private boolean autoBanEnabled = true;
-
     @Expose
     private int spyDelay = 2;
     @Expose
     private boolean autoSpyTpEnabled = false;
+    public SettingsConfig() {
+        super("settings");
+    }
 }

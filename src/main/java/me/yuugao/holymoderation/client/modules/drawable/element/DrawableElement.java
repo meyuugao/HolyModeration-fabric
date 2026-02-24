@@ -19,16 +19,13 @@ public abstract class DrawableElement<T extends RenderState> {
 
     protected float relX;
     protected float relY;
-
+    @Getter
+    protected float widthScale = 1f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
+    protected PositionMode positionMode;
+    protected boolean positioned = false;
     @Getter
     @Setter
     private float width, height;
-
-    @Getter
-    protected float widthScale = 1f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
-
-    protected PositionMode positionMode;
-    protected boolean positioned = false;
 
     protected DrawableElement(ServiceContext serviceContext, PositionMode positionMode,
                               RenderStateProvider<T> stateProvider) {

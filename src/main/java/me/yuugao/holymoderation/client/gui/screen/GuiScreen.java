@@ -12,10 +12,10 @@ import java.util.HashMap;
 import lombok.Getter;
 
 public abstract class GuiScreen extends Screen {
-    @Getter
-    protected float x, y, width, height;
     protected final ServiceContext serviceContext;
     protected final HashMap<String, Tab<? extends GuiScreen>> tabs = new HashMap<>();
+    @Getter
+    protected float x, y, width, height;
 
     protected GuiScreen(Text title, ServiceContext serviceContext) {
         super(title);

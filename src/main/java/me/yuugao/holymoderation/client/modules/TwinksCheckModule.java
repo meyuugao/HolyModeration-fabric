@@ -49,6 +49,58 @@ public class TwinksCheckModule extends Module {
         }
     }
 
+    private static String extractTimeAgo(String headerLine) {
+        int start = headerLine.indexOf('[');
+        int end = headerLine.indexOf(" назад");
+        if (start >= 0 && end > start) {
+            return headerLine.substring(start + 1, end).trim();
+        }
+        return null;
+    }
+
+    private static String getAdminFromEntry(List<String> entryLines) {
+        for (String line : entryLines) {
+            if (line.contains("игроком ")) {
+                return line.substring(line.indexOf("игроком ") + 8).trim();
+            }
+            if (line.contains("модератором ")) {
+                return line.substring(line.indexOf("модератором ") + 12).trim();
+            }
+        }
+        return "Console";
+    }
+
+    private static boolean isWithin30Days(String timeAgo) {
+        int days = 0, hours = 0, minutes = 0;
+        String[] parts = timeAgo.split(" ");
+
+        for (int i = 1; i < parts.length; i++) {
+            try {
+                int value = Integer.parseInt(parts[i - 1]);
+                switch (parts[i]) {
+                    case "дн." -> days = value;
+                    case "ч." -> hours = value;
+                    case "мин." -> minutes = value;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return days + (hours / 24.0) + (minutes / 1440.0) <= 30;
+    }
+
+    private static String sanitizeNickname(String nick) {
+        return nick == null ? StringUtils.EMPTY : nick.replaceAll("[^A-Za-z0-9_]", "");
+    }
+
+    private static String escapePipe(String s) {
+        return s.replace("|", "\\|");
+    }
+
+    private static String unescapePipe(String s) {
+        return s.replace("\\|", "|");
+    }
+
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
         StateService stateService = serviceContext.getStateService();
@@ -375,50 +427,6 @@ public class TwinksCheckModule extends Module {
         return false;
     }
 
-    private static String extractTimeAgo(String headerLine) {
-        int start = headerLine.indexOf('[');
-        int end = headerLine.indexOf(" назад");
-        if (start >= 0 && end > start) {
-            return headerLine.substring(start + 1, end).trim();
-        }
-        return null;
-    }
-
-    private static String getAdminFromEntry(List<String> entryLines) {
-        for (String line : entryLines) {
-            if (line.contains("игроком ")) {
-                return line.substring(line.indexOf("игроком ") + 8).trim();
-            }
-            if (line.contains("модератором ")) {
-                return line.substring(line.indexOf("модератором ") + 12).trim();
-            }
-        }
-        return "Console";
-    }
-
-    private static boolean isWithin30Days(String timeAgo) {
-        int days = 0, hours = 0, minutes = 0;
-        String[] parts = timeAgo.split(" ");
-
-        for (int i = 1; i < parts.length; i++) {
-            try {
-                int value = Integer.parseInt(parts[i - 1]);
-                switch (parts[i]) {
-                    case "дн." -> days = value;
-                    case "ч." -> hours = value;
-                    case "мин." -> minutes = value;
-                }
-            } catch (NumberFormatException ignored) {
-            }
-        }
-
-        return days + (hours / 24.0) + (minutes / 1440.0) <= 30;
-    }
-
-    private static String sanitizeNickname(String nick) {
-        return nick == null ? StringUtils.EMPTY : nick.replaceAll("[^A-Za-z0-9_]", "");
-    }
-
     private void saveResults(List<PlayerEntry> results) {
         try {
             StringBuilder sb = new StringBuilder();
@@ -492,12 +500,8 @@ public class TwinksCheckModule extends Module {
         return results;
     }
 
-    private static String escapePipe(String s) {
-        return s.replace("|", "\\|");
-    }
-
-    private static String unescapePipe(String s) {
-        return s.replace("\\|", "|");
+    public enum PunishmentType {
+        BAN, MUTE, KICK
     }
 
     public static class PlayerEntry {
@@ -514,10 +518,6 @@ public class TwinksCheckModule extends Module {
     }
 
     public record PunishmentEntry(PunishmentType type, String reason, String by, String timeAgo, boolean isActive) {
-    }
-
-    public enum PunishmentType {
-        BAN, MUTE, KICK
     }
 
     private static class PlayerEntryParser {

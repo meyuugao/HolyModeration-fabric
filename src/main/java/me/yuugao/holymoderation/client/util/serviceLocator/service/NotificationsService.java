@@ -169,6 +169,12 @@ public class NotificationsService extends Service {
         }
     }
 
+    private enum State {
+        SPAWNING,
+        IDLE,
+        HIDING
+    }
+
     private static class Notification {
         NotificationType type;
         String title;
@@ -189,11 +195,5 @@ public class NotificationsService extends Service {
             this.text = text;
             this.liveTime = liveTime;
         }
-    }
-
-    private enum State {
-        SPAWNING,
-        IDLE,
-        HIDING
     }
 }

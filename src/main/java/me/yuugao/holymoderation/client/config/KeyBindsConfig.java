@@ -47,15 +47,21 @@ public class KeyBindsConfig extends Config {
         }
     }
 
+    @DontObf({ObfRule.MAP_METHOD, ObfRule.MAP_FIELD})
+    public enum KeyBindType {
+        SINGLE_PRESS,
+        HOLD
+    }
+
     @Getter
     @Setter
     public static class KeyBindConfig {
         @Expose
         @DontObf(ObfRule.MAP_FIELD)
-        private int mainKey;
+        private final Set<Integer> modifierKeys = new HashSet<>();
         @Expose
         @DontObf(ObfRule.MAP_FIELD)
-        private final Set<Integer> modifierKeys = new HashSet<>();
+        private int mainKey;
         @Expose
         @DontObf(ObfRule.MAP_FIELD)
         private KeyBindType type;
@@ -67,11 +73,5 @@ public class KeyBindsConfig extends Config {
                 this.modifierKeys.add(mod);
             }
         }
-    }
-
-    @DontObf({ObfRule.MAP_METHOD, ObfRule.MAP_FIELD})
-    public enum KeyBindType {
-        SINGLE_PRESS,
-        HOLD
     }
 }

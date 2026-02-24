@@ -8,13 +8,12 @@ import lombok.Setter;
 
 @Getter
 public class ApiConfig extends Config {
-    public ApiConfig() {
-        super("api");
-    }
-
     private final String currentVersion = "2.10alpha"; //tip: измени перед релизом если нужно
-
     @Expose
     @Setter
     private String apiToken = StringUtils.EMPTY;
+
+    public ApiConfig() {
+        super("api");
+    }
 }

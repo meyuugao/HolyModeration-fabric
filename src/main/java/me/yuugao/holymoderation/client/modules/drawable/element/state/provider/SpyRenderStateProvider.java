@@ -8,6 +8,8 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.StateService;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+
 public class SpyRenderStateProvider extends RenderStateProvider<SpyRenderState> {
     public SpyRenderStateProvider(ServiceContext serviceContext) {
         super(serviceContext);
@@ -17,7 +19,9 @@ public class SpyRenderStateProvider extends RenderStateProvider<SpyRenderState> 
     public SpyRenderState getState(RenderMode mode) {
         return switch (mode) {
             case LIVE -> new SpyRenderState(getStringsToRender());
-            case CONFIG -> new SpyRenderState(new String[]{"Модуль слежки", "Режим настройки"});
+            case CONFIG ->
+                    new SpyRenderState(Arrays.equals(getStringsToRender(), new String[]{StringUtils.EMPTY, StringUtils.EMPTY}) ?
+                            new String[]{"Модуль слежки", "Режим настройки"} : getStringsToRender());
         };
     }
 
