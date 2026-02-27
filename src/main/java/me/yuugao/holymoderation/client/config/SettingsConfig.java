@@ -45,6 +45,7 @@ public class SettingsConfig extends Config {
     private int spyDelay = 2;
     @Expose
     private boolean autoSpyTpEnabled = false;
+
     public SettingsConfig() {
         super("settings");
     }
