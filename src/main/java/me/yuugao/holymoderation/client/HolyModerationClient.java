@@ -49,11 +49,11 @@ public class HolyModerationClient implements ClientModInitializer {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
-        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new CheckoutsService(),
-                new GoogleSheetsService(), new GuiManagerService(), new InputService(), new MinecraftService(),
-                new NetService(), new NotificationsService(), new PunishmentsService(), new Render2DService(),
-                new SchedulerService(), new ScreenHandlerService(), new SoundService(), new SpyService(),
-                new StateService(), (Logger) LogManager.getLogger(HolyModerationClient.class));
+        ServiceLocator.initialize(new EventBus(), new ChatService(), new CheckoutsService(), new GoogleSheetsService(),
+                new GuiManagerService(), new InputService(), new MinecraftService(), new NetService(),
+                new NotificationsService(), new PunishmentsService(), new Render2DService(), new SchedulerService(),
+                new ScreenHandlerService(), new SoundService(), new SpyService(), new StateService(),
+                (Logger) LogManager.getLogger(HolyModerationClient.class));
         eventBusInitialize();
         commandsInitialize();
     }

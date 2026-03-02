@@ -80,7 +80,7 @@ public class NetService extends Service {
                             });
                 }
             } else {
-                Files.createDirectory(soundsDir);
+                Files.createDirectories(soundsDir);
             }
 
             for (String sound : getSoundsList()) {

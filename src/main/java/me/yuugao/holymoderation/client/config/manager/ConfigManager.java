@@ -4,6 +4,7 @@ import me.yuugao.holymoderation.client.config.*;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
 
+import java.io.File;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
@@ -17,7 +18,7 @@ import com.google.gson.stream.JsonReader;
 import lombok.Getter;
 
 public class ConfigManager {
-    private static final Path configsDir = Paths.get("C:\\HolyModeration\\Config");
+    private static final Path configsDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Config");
 
     private static final String HEADER = """
             /*
@@ -74,6 +75,8 @@ public class ConfigManager {
 
     private final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
+    private final LoggerService loggerService;
+
     @Getter
     private final ApiConfig apiConfig;
     @Getter
@@ -83,7 +86,9 @@ public class ConfigManager {
     @Getter
     private final SettingsConfig settingsConfig;
 
-    public ConfigManager() {
+    public ConfigManager(LoggerService loggerService) {
+        this.loggerService = loggerService;
+
         ensureConfigDirectory();
         apiConfig = loadOrCreate(new ApiConfig());
         guiConfig = loadOrCreate(new GuiConfig());
@@ -94,15 +99,14 @@ public class ConfigManager {
     private void ensureConfigDirectory() {
         try {
             if (!Files.exists(configsDir)) {
-                Files.createDirectory(configsDir);
+                Files.createDirectories(configsDir);
             }
         } catch (Exception e) {
-            ServiceLocator.getLoggerService().exception("ConfigManager/ensureConfigDirectory: %s".formatted(e));
+            loggerService.exception("ConfigManager/ensureConfigDirectory: %s".formatted(e));
         }
     }
 
     private <T extends Config> T loadOrCreate(T defaultConfig) {
-        LoggerService loggerService = ServiceLocator.getLoggerService();
         Path configPath = configsDir.resolve("%sConfig.json".formatted(defaultConfig.getConfigName()));
 
         if (!Files.exists(configPath)) {
@@ -125,7 +129,6 @@ public class ConfigManager {
     }
 
     public void saveConfig(Config config) {
-        LoggerService loggerService = ServiceLocator.getLoggerService();
         Path configPath = configsDir.resolve("%sConfig.json".formatted(config.getConfigName()));
 
         try (OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(configPath), StandardCharsets.UTF_8)) {

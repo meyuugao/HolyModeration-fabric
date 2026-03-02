@@ -46,7 +46,7 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService,
+    public static void initialize(EventBus eventBus, ChatService chatService,
                                   CheckoutsService checkoutsService, GoogleSheetsService googleSheetsService,
                                   GuiManagerService guiManagerService, InputService inputService,
                                   MinecraftService minecraftService, NetService netService,
@@ -54,7 +54,6 @@ public class ServiceLocator {
                                   Render2DService render2DService, SchedulerService schedulerService,
                                   ScreenHandlerService screenHandlerService, SoundService soundService,
                                   SpyService spyService, StateService stateService, Logger logger) {
-        ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
         ServiceLocator.checkoutsService = checkoutsService;
@@ -77,6 +76,7 @@ public class ServiceLocator {
 
     private static void initializeLoggerService(Logger logger) {
         loggerService = new LoggerService(logger);
+        ServiceLocator.configManager = new ConfigManager(loggerService);
         eventBus.setLogger(loggerService);
         chatService.setLoggerService(loggerService);
         checkoutsService.setLoggerService(loggerService);

@@ -23,7 +23,7 @@ public class SoundService extends Service {
 
         if (settingsConfig.isSoundsEnabled()) {
             try {
-                Path soundPath = Paths.get("C:\\HolyModeration\\Sounds", soundName);
+                Path soundPath = Paths.get(System.getProperty("user.home"), "HolyModeration", "Config", soundName);
                 byte[] audioData = Files.readAllBytes(soundPath);
 
                 Clip clip = AudioSystem.getClip();

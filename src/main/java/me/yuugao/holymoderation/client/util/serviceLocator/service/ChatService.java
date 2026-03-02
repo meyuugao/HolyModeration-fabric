@@ -120,9 +120,17 @@ public class ChatService extends Service {
             } else if (osName.contains("mac")) {
                 Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo \"%s\" | pbcopy".formatted(text)});
             } else if (osName.contains("nix") || osName.contains("nux") || osName.contains("aix")) {
-                Runtime.getRuntime().exec(new String[]{"sh", "-c", "echo \"%s\" | xclip -selection clipboard".formatted(text)});
+                try {
+                    Runtime.getRuntime().exec(new String[]{"sh", "-c", "printf \"%s\" \"" + text.replace("\"", "\\\"") + "\" | xclip -selection clipboard"}).waitFor();
+                } catch (Exception e) {
+                    try {
+                        Runtime.getRuntime().exec(new String[]{"sh", "-c", "printf \"%s\" \"" + text.replace("\"", "\\\"") + "\" | wl-copy"}).waitFor();
+                    } catch (Exception e3) {
+                        throw new UnsupportedOperationException("Ни одна утилита для буфера обмена не найдена (xclip для X11 или wl-copy для WayLand).");
+                    }
+                }
             } else {
-                throw new Exception("Неизвестная OS.");
+                throw new UnsupportedOperationException("Неизвестная OS.");
             }
         } catch (Exception e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),

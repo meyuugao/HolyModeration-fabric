@@ -34,7 +34,7 @@ import com.google.common.hash.Hashing;
 public class TwinksCheckModule extends Module {
     private final Pattern STATUS_PATTERN = Pattern.compile("\\[(Активный|Истёкший)]");
 
-    private final Path workDir = Paths.get("C:\\HolyModeration\\Twinks");
+    private final Path workDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Twinks");
     private final File checkFile = workDir.resolve("checktwinks.txt").toFile();
     private final File tempFile = workDir.resolve("temp.txt").toFile();
 
@@ -42,7 +42,7 @@ public class TwinksCheckModule extends Module {
         super(serviceContext);
         try {
             if (!Files.exists(workDir)) {
-                Files.createDirectory(workDir);
+                Files.createDirectories(workDir);
             }
         } catch (IOException e) {
             serviceContext.getLoggerService().exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
