@@ -4,7 +4,7 @@ import me.yuugao.holymoderation.client.config.GuiConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.SpyRenderStateProvider;
-import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
@@ -15,14 +15,11 @@ import net.minecraft.client.util.math.MatrixStack;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.awt.Color;
-
 public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
-    private float anim = 0f;
     private float currentWidth = 1f;
     private float currentHeight = 1f;
 
-    public SpyDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
+    public SpyDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new SpyRenderStateProvider(serviceContext));
     }
 
@@ -54,8 +51,8 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
             animTarget = 0f;
         }
 
-        anim = animate(anim, animTarget, 1f);
-        if (anim < 0.01f) return;
+        globalScale = animate(globalScale, animTarget, 1f);
+        if (globalScale < 0.01f) return;
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;
@@ -86,10 +83,5 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         ms.pop();
 
         render2DService.endRender();
-    }
-
-    @Override
-    protected float getCurrentScale() {
-        return anim;
     }
 }

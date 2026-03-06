@@ -16,16 +16,4 @@ public abstract class GuiModule {
         this.relX = relX;
         this.relY = relY;
     }
-
-    public float getX(float parentX, float parentWidth) {
-        return parentX + relX * parentWidth;
-    }
-
-    public float getY(float parentY, float parentHeight) {
-        return parentY + relY * parentHeight;
-    }
-
-    public float getScale(float parentWidth, float parentHeight) {
-        return Math.min(parentWidth, parentHeight) / 200f;
-    }
 }

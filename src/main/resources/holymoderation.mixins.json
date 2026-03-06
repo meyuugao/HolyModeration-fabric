@@ -12,8 +12,7 @@
     "MinecraftClientMixin",
     "MouseMixin",
     "render.GameRendererMixin",
-    "render.ScreenMixin",
-    "render.SMixin"
+    "render.ScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

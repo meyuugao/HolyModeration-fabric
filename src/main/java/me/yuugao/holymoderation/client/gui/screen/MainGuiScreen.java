@@ -10,6 +10,7 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
 
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
 import java.awt.Color;
@@ -35,43 +36,53 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
     @Override
     @DontObf(ObfRule.MAP_METHOD)
-    public void render(DrawContext drawContext, int mouseX, int mouseY, float tickDelta) {
-        super.render(drawContext, mouseX, mouseY, tickDelta);
+    public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
+        super.render(ctx, mouseX, mouseY, tickDelta);
 
         Render2DService render2DService = serviceContext.getRender2DService();
         ConfigManager configManager = serviceContext.getConfigManager();
         InputService inputService = serviceContext.getInputService();
         GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
 
+        MatrixStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManager.getGuiConfig();
 
-        float windowWidth = drawContext.getScaledWindowWidth();
-        float windowHeight = drawContext.getScaledWindowHeight();
+        float targetWidth = 435f;
+        float targetHeight = 300f;
 
-        float targetW = windowWidth / 2.2f;
-        float targetH = windowHeight / 1.8f;
-
-        this.width = targetW * getAnimValue();
-        this.height = targetH * getAnimValue();
-
-        this.x = (windowWidth - this.width) / 2f;
-        this.y = (windowHeight - this.height) / 2f;
+        this.width = targetWidth * getAnimValue();
+        this.height = targetHeight * getAnimValue();
 
         float baseOutline = 1f;
         float scaleFactor = Math.min(this.width, this.height) / 100f;
         float scaledOutline = baseOutline * scaleFactor;
 
+        this.screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
+
         render2DService.setupRender();
 
+        ms.push();
+
+        float windowWidth = ctx.getScaledWindowWidth();
+        float windowHeight = ctx.getScaledWindowHeight();
+
+        this.x = (windowWidth - width * screenScale) / 2f;
+        this.y = (windowHeight - height * screenScale) / 2f;
+
+        ms.translate(x, y, 0);
+        ms.scale(screenScale, screenScale, 1f); //tip: делаем локальные координаты окна
+
         render2DService.renderSoftRoundedRectOutline(
-                drawContext.getMatrices(),
-                this.x, this.y, Math.max(1, this.width), Math.max(1, this.height),
-                renderPriority,
-                10f,
-                guiConfig.getSecondColor(),
-                outlineColor,
+                ms, 0f, 0f,
+                Math.max(1, this.width), Math.max(1, this.height),
+                renderPriority, 10f,
+                guiConfig.getSecondColor(), outlineColor,
                 scaledOutline, 3
         );
+
+        renderTabs(ctx, (int) ((mouseX - x) / screenScale), (int) ((mouseY - y) / screenScale), tickDelta);
+
+        ms.pop();
 
         render2DService.endRender();
 
@@ -80,23 +91,21 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
                 Collections.reverse(list);
                 for (DrawableModule<?> d : list) {
-                    if (d.isMouseOver(mouseX, mouseY, drawContext)) {
+                    if (d.isMouseOver(mouseX, mouseY, ctx)) {
                         dragging = d;
-                        dragOffsetX = mouseX - d.getDrawableElement().getX(drawContext);
-                        dragOffsetY = mouseY - d.getDrawableElement().getY(drawContext);
+                        dragOffsetX = mouseX - d.getDrawableElement().getX(ctx);
+                        dragOffsetY = mouseY - d.getDrawableElement().getY(ctx);
                         break;
                     }
                 }
             }
 
             if (dragging != null) {
-                dragging.getDrawableElement().setX(mouseX - dragOffsetX, drawContext);
-                dragging.getDrawableElement().setY(mouseY - dragOffsetY, drawContext);
+                dragging.getDrawableElement().setX(mouseX - dragOffsetX, ctx);
+                dragging.getDrawableElement().setY(mouseY - dragOffsetY, ctx);
             }
         } else {
             dragging = null;
         }
-
-        renderTabs(drawContext, mouseX, mouseY, tickDelta);
     }
 }

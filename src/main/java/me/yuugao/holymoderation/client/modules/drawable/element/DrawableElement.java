@@ -2,7 +2,7 @@ package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.modules.drawable.element.state.RenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.RenderStateProvider;
-import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
@@ -21,13 +21,15 @@ public abstract class DrawableElement<T extends RenderState> {
     protected float relY;
     @Getter
     protected float widthScale = 1f, heightScale = 1f; //tip: todo: сделай возможность изменять scale от 0.3 до 3 +-
-    protected PositionMode positionMode;
+    protected float screenScale = 1f;
+    protected float globalScale = 0f;
+    protected PivotMode positionMode;
     protected boolean positioned = false;
     @Getter
     @Setter
     private float width, height;
 
-    protected DrawableElement(ServiceContext serviceContext, PositionMode positionMode,
+    protected DrawableElement(ServiceContext serviceContext, PivotMode positionMode,
                               RenderStateProvider<T> stateProvider) {
         this.serviceContext = serviceContext;
         this.positionMode = positionMode;
@@ -47,7 +49,6 @@ public abstract class DrawableElement<T extends RenderState> {
         T state = stateProvider.getState(mode);
         if (state == null) return;
 
-        float scale = getCurrentScale();
         float[] scalePivot = getScalePivot();
 
         MatrixStack ms = ctx.getMatrices();
@@ -56,8 +57,14 @@ public abstract class DrawableElement<T extends RenderState> {
         float x = getX(ctx);
         float y = getY(ctx);
 
-        ms.translate(x - scalePivot[0] * scale, y - scalePivot[1] * scale, 0);
-        ms.scale(scale, scale, 1f);
+        this.screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
+
+        ms.translate(x, y, 0);
+        ms.scale(screenScale, screenScale, 1f);
+        ms.translate(-x, -y, 0);
+
+        ms.translate(x - scalePivot[0] / screenScale, y - scalePivot[1] / screenScale, 0);
+        ms.scale(globalScale, globalScale, 1f);
 
         render(ctx, z, state);
 
@@ -81,11 +88,11 @@ public abstract class DrawableElement<T extends RenderState> {
     }
 
     public float getScaledWidth() {
-        return width * widthScale;
+        return width * widthScale * globalScale * screenScale;
     }
 
     public float getScaledHeight() {
-        return height * heightScale;
+        return height * heightScale * globalScale * screenScale;
     }
 
     public float[] getScalePivot() {
@@ -98,11 +105,8 @@ public abstract class DrawableElement<T extends RenderState> {
             case DOWN -> new float[]{getScaledWidth() / 2f, getScaledHeight()};
             case LEFT -> new float[]{0f, getScaledHeight() / 2f};
             case RIGHT -> new float[]{getScaledWidth(), getScaledHeight() / 2f};
+            case CENTER -> new float[]{getScaledWidth() / 2f, getScaledHeight() / 2f};
         };
-    }
-
-    protected float getCurrentScale() {
-        return 1f;
     }
 
     protected float animate(float current, float target, float speed) {

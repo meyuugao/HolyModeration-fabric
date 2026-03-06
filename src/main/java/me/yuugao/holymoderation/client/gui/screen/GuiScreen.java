@@ -16,6 +16,8 @@ public abstract class GuiScreen extends Screen {
     protected final HashMap<String, Tab<? extends GuiScreen>> tabs = new HashMap<>();
     @Getter
     protected float x, y, width, height;
+    @Getter
+    protected float screenScale;
 
     protected GuiScreen(Text title, ServiceContext serviceContext) {
         super(title);

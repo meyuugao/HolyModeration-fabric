@@ -2,13 +2,13 @@ package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.modules.drawable.element.state.NotificationsRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.NotificationsRenderStateProvider;
-import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;
 
 public class NotificationsDrawableElement extends DrawableElement<NotificationsRenderState> {
-    public NotificationsDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
+    public NotificationsDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new NotificationsRenderStateProvider(serviceContext));
     }
 
@@ -48,7 +48,7 @@ public class NotificationsDrawableElement extends DrawableElement<NotificationsR
 
     private float[] getConfig() {
         return switch (positionMode) {
-            case RIGHT_DOWN, RIGHT, DOWN, UP -> new float[]{-1f, 1f, 0f};
+            case RIGHT_DOWN, RIGHT, DOWN, UP, CENTER -> new float[]{-1f, 1f, 0f};
             case RIGHT_UP -> new float[]{1f, 1f, 0f};
             case LEFT_DOWN, LEFT -> new float[]{-1f, -1f, 0f};
             case LEFT_UP -> new float[]{1f, -1f, 0f};

@@ -11,6 +11,6 @@ public class NotificationsModule extends DrawableModule<NotificationsDrawableEle
 
     @Override
     public int getRenderPriority() {
-        return 1003;
+        return 1004;
     }
 }

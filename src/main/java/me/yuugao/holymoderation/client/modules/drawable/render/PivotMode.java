@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.modules.drawable.render;
 
-public enum PositionMode {
+public enum PivotMode {
     UP,
     DOWN,
     LEFT,
@@ -9,4 +9,5 @@ public enum PositionMode {
     RIGHT,
     RIGHT_UP,
     RIGHT_DOWN,
+    CENTER
 }

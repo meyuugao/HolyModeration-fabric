@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.gui.tabs.main;
 
-import me.yuugao.holymoderation.client.gui.modules.ColorPickerModule;
+import me.yuugao.holymoderation.client.gui.modules.child.ColorPickerModule;
 import me.yuugao.holymoderation.client.gui.screen.MainGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.Tab;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -17,14 +17,18 @@ public class GeneralTab extends Tab<MainGuiScreen> {
     }
 
     @Override
-    public void onRender(DrawContext context, int mouseX, int mouseY, float tickDelta) {
-        MainGuiScreen mainGuiScreen = parent;
+    public void onRender(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
         ColorPickerModule colorPickerModule = (ColorPickerModule) modules.get("ColorPicker");
 
         float relRadius = 0.15f;
-        float animatedRelRadius = relRadius * mainGuiScreen.getAnimValue();
-        colorPickerModule.render(context.getMatrices(), mainGuiScreen.getX(), mainGuiScreen.getY(),
-                mainGuiScreen.getWidth(), mainGuiScreen.getHeight(), parent.getRenderPriority(),
-                animatedRelRadius, new Color(0x000000), 2f);
+        float animatedRelRadius = relRadius * parent.getAnimValue();
+
+        colorPickerModule.render(ctx.getMatrices(), parent.getWidth(), parent.getHeight(),
+                parent.getRenderPriority(), animatedRelRadius, new Color(0x000000), 2f);
+
+        Color color = colorPickerModule.getColorFromMouse(mouseX, mouseY);
+
+        serviceContext.getRender2DService().renderRect(ctx.getMatrices(), 0, 0, 100, 100,
+                parent.getRenderPriority(), color == null ? Color.WHITE : color);
     }
 }

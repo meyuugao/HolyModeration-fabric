@@ -1,5 +1,6 @@
-package me.yuugao.holymoderation.client.gui.modules;
+package me.yuugao.holymoderation.client.gui.modules.child;
 
+import me.yuugao.holymoderation.client.gui.modules.ChildGuiModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
 
@@ -14,9 +15,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ColorPickerModule extends GuiModule {
-    private float centerX;
-    private float centerY;
+public class ColorPickerModule extends ChildGuiModule {
+    private float x;
+    private float y;
     private float radius;
     private float outlineWidth;
     private Color outlineColor;
@@ -25,27 +26,27 @@ public class ColorPickerModule extends GuiModule {
         super(serviceContext, relX, relY);
     }
 
-    public void render(MatrixStack matrices, float parentX, float parentY, float parentWidth, float parentHeight, int z, float relScale, Color outlineColor, float outlineWidth) {
+    public void render(MatrixStack matrices, float parentWidth, float parentHeight, int z,
+                       float relScale, Color outlineColor, float outlineWidth) {
         Render2DService render2DService = serviceContext.getRender2DService();
 
-        float x = getX(parentX, parentWidth);
-        float y = getY(parentY, parentHeight);
-
-        this.centerX = x;
-        this.centerY = y;
         this.radius = Math.min(parentWidth, parentHeight) * relScale;
-        this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
+        this.x = relX * parentWidth - this.radius - this.outlineWidth;
+        this.y = relY * parentHeight - this.radius - this.outlineWidth;
+        this.outlineColor = outlineColor;
 
+        render2DService.setupRender();
         matrices.push();
-
-        render2DService.renderRGBPalette(matrices, x - this.radius - outlineWidth,
-                y - this.radius - outlineWidth, z, this.radius, outlineColor, outlineWidth);
-
+        render2DService.renderRGBPalette(matrices, this.x, this.y, z, this.radius, outlineColor, outlineWidth);
         matrices.pop();
+        render2DService.endRender();
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {
+        float centerX = x + radius + outlineWidth;
+        float centerY = y + radius + outlineWidth;
+
         float dx = (float) (mouseX - centerX);
         float dy = (float) (mouseY - centerY);
         float dist = (float) Math.sqrt(dx * dx + dy * dy);
@@ -54,6 +55,9 @@ public class ColorPickerModule extends GuiModule {
 
     @Nullable
     public Color getColorFromMouse(double mouseX, double mouseY) {
+        float centerX = x + radius + outlineWidth;
+        float centerY = y + radius + outlineWidth;
+
         float dx = (float) (mouseX - centerX);
         float dy = (float) (mouseY - centerY);
         float dist = (float) Math.sqrt(dx * dx + dy * dy);

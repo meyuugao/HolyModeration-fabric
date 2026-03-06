@@ -2,10 +2,9 @@ package me.yuugao.holymoderation.client.modules.drawable.element;
 
 import me.yuugao.holymoderation.client.config.GuiConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
-import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.WatermarkRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.WatermarkRenderStateProvider;
-import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
@@ -15,7 +14,6 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 
-import java.awt.Color;
 import java.util.Random;
 
 public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderState> {
@@ -27,9 +25,8 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
     private final char[] baseAnimText = "made for holyworld".toCharArray();
     private final char[] animBuffer = baseAnimText.clone();
     private int tickCounter;
-    private float anim = 0f;
 
-    public WatermarkDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
+    public WatermarkDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new WatermarkRenderStateProvider(serviceContext));
     }
 
@@ -56,8 +53,8 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         if (tickCounter % 18 == 0) updateAnimText();
 
         float animTarget = state.animTarget();
-        anim = animate(anim, animTarget, 1f);
-        if (anim < 0.01f) return;
+        globalScale = animate(globalScale, animTarget, 1f);
+        if (globalScale < 0.01f) return;
 
         String text = "HolyModeration v%s | %s | %s".formatted(
                 serviceContext.getConfigManager().getApiConfig().getCurrentVersion(),
@@ -71,8 +68,6 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         render2DService.setupRender();
 
         ms.push();
-
-        ms.scale(anim, anim, 1f);
 
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(),
                 getHeight(), z, 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.2f, 3);
@@ -99,10 +94,5 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
             }
         }
         animBuffer[i] = base;
-    }
-
-    @Override
-    protected float getCurrentScale() {
-        return anim;
     }
 }

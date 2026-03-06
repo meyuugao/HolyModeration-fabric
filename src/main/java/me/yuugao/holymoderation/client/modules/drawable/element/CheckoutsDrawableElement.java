@@ -3,9 +3,8 @@ package me.yuugao.holymoderation.client.modules.drawable.element;
 import me.yuugao.holymoderation.client.config.GuiConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.CheckoutsRenderState;
-import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.CheckoutsRenderStateProvider;
-import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
@@ -16,17 +15,14 @@ import net.minecraft.client.util.math.MatrixStack;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.awt.Color;
-
 public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderState> {
-    private float anim = 0f;
     private float animTarget = 0f;
     private float currentWidth = 1f;
     private float currentHeight = 1f;
     private long checkoutStartMillis = 0L;
     private String lastPlayer = StringUtils.EMPTY;
 
-    public CheckoutsDrawableElement(ServiceContext serviceContext, PositionMode positionMode) {
+    public CheckoutsDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new CheckoutsRenderStateProvider(serviceContext));
     }
 
@@ -38,7 +34,7 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
 
     @Override
     protected void render(DrawContext ctx, int z, CheckoutsRenderState renderState) {
-        anim = animate(anim, animTarget, 1f);
+        globalScale = animate(globalScale, animTarget, 1f);
 
         String player = renderState.checkoutPlayer();
         if (!lastPlayer.equals(player)) {
@@ -52,7 +48,7 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
             lastPlayer = player;
         }
 
-        if (anim < 0.01f) return;
+        if (globalScale < 0.01f) return;
 
         long elapsed = checkoutStartMillis == 0L
                 ? 0L
@@ -113,10 +109,5 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         checkoutStartMillis = System.currentTimeMillis();
         lastPlayer = player;
         animTarget = 1f;
-    }
-
-    @Override
-    protected float getCurrentScale() {
-        return anim;
     }
 }

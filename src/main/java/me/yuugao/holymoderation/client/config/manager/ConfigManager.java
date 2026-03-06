@@ -1,10 +1,8 @@
 package me.yuugao.holymoderation.client.config.manager;
 
 import me.yuugao.holymoderation.client.config.*;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
 
-import java.io.File;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;

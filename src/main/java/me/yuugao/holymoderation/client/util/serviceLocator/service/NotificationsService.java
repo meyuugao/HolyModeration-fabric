@@ -151,6 +151,7 @@ public class NotificationsService extends Service {
             render2DService.renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
 
             ms.push();
+
             ms.translate(n.x, n.y, 0);
 
             float ty = padding;
@@ -165,6 +166,7 @@ public class NotificationsService extends Service {
             }
 
             ms.pop();
+
             render2DService.endRender();
         }
     }
