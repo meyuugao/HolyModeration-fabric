@@ -22,8 +22,8 @@ public class ButtonModule extends GuiModule {
     private ButtonAction action;
     private boolean enabled;
 
-    public ButtonModule(ButtonAction action, boolean enabled, ServiceContext serviceContext) {
-        super(serviceContext);
+    public ButtonModule(ButtonAction action, boolean enabled, ServiceContext serviceContext, float relX, float relY) {
+        super(serviceContext, relX, relY);
 
         this.action = action;
         this.enabled = enabled;

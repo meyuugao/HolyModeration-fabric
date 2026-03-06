@@ -1,5 +1,7 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
+import me.yuugao.holymoderation.client.config.GuiConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.SpyRenderStateProvider;
 import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
@@ -34,9 +36,11 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
     protected void render(DrawContext ctx, int z, SpyRenderState renderState) {
         MinecraftService minecraftService = serviceContext.getMinecraftService();
         Render2DService render2DService = serviceContext.getRender2DService();
+        ConfigManager configManager = serviceContext.getConfigManager();
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
+        GuiConfig guiConfig = configManager.getGuiConfig();
 
         String[] current = renderState.stringsToRender();
         float animTarget;
@@ -64,18 +68,13 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         setWidth(Math.max(1f, currentWidth));
         setHeight(Math.max(1f, currentHeight));
 
-        Color bg = new Color(10, 20, 40, 220);
-        Color outline = new Color(60, 120, 220);
-
         render2DService.setupRender();
 
         ms.push();
 
-        ms.scale(anim, anim, 1f);
-
         float baseY = (getHeight() - textBlockHeight) / 2f + 0.5f;
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
-                10f, bg, outline, 1.5f, 3);
+                10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
 
         render2DService.renderText(tr, display0, (int) (getWidth() / 2f - tr.getWidth(display0) / 2f),
                 (int) baseY, z, 0xffffffff, false, ctx);
@@ -87,5 +86,10 @@ public class SpyDrawableElement extends DrawableElement<SpyRenderState> {
         ms.pop();
 
         render2DService.endRender();
+    }
+
+    @Override
+    protected float getCurrentScale() {
+        return anim;
     }
 }

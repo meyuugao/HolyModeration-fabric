@@ -31,7 +31,7 @@ public class HolyModerationClient implements ClientModInitializer {
         ServiceContext serviceContext = new ServiceContext();
 
         eventBus.register(new MainGuiModule(serviceContext));
-        eventBus.register(new CheckoutsModule(serviceContext, new CheckoutsDrawableElement(serviceContext, PositionMode.CENTER)));
+        eventBus.register(new CheckoutsModule(serviceContext, new CheckoutsDrawableElement(serviceContext, PositionMode.DOWN)));
         eventBus.register(new GuiManagerModule(serviceContext));
         eventBus.register(new KeyBindingModule(serviceContext));
         eventBus.register(new MessageModule(serviceContext));

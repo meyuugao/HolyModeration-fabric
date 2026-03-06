@@ -44,17 +44,22 @@ public abstract class DrawableElement<T extends RenderState> {
             positioned = true;
         }
 
-        float[] pv = scalePivotLocal();
+        T state = stateProvider.getState(mode);
+        if (state == null) return;
+
+        float scale = getCurrentScale();
+        float[] scalePivot = getScalePivot();
 
         MatrixStack ms = ctx.getMatrices();
         ms.push();
-        ms.translate(getX(ctx) - pv[0], getY(ctx) - pv[1], 0f);
-        ms.scale(widthScale, heightScale, 1f);
 
-        T state = stateProvider.getState(mode);
-        if (state != null) {
-            render(ctx, z, state);
-        }
+        float x = getX(ctx);
+        float y = getY(ctx);
+
+        ms.translate(x - scalePivot[0] * scale, y - scalePivot[1] * scale, 0);
+        ms.scale(scale, scale, 1f);
+
+        render(ctx, z, state);
 
         ms.pop();
     }
@@ -83,9 +88,8 @@ public abstract class DrawableElement<T extends RenderState> {
         return height * heightScale;
     }
 
-    public float[] scalePivotLocal() {
+    public float[] getScalePivot() {
         return switch (positionMode) {
-            case CENTER -> new float[]{getScaledWidth() / 2f, getScaledHeight() / 2f};
             case LEFT_UP -> new float[]{0f, 0f};
             case LEFT_DOWN -> new float[]{0f, getScaledHeight()};
             case RIGHT_UP -> new float[]{getScaledWidth(), 0f};
@@ -95,6 +99,10 @@ public abstract class DrawableElement<T extends RenderState> {
             case LEFT -> new float[]{0f, getScaledHeight() / 2f};
             case RIGHT -> new float[]{getScaledWidth(), getScaledHeight() / 2f};
         };
+    }
+
+    protected float getCurrentScale() {
+        return 1f;
     }
 
     protected float animate(float current, float target, float speed) {

@@ -1,5 +1,8 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
+import me.yuugao.holymoderation.client.config.GuiConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.WatermarkRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.WatermarkRenderStateProvider;
 import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
@@ -43,9 +46,11 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         StateService stateService = serviceContext.getStateService();
         MinecraftService minecraftService = serviceContext.getMinecraftService();
         Render2DService render2DService = serviceContext.getRender2DService();
+        ConfigManager configManager = serviceContext.getConfigManager();
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
+        GuiConfig guiConfig = configManager.getGuiConfig();
 
         tickCounter++;
         if (tickCounter % 18 == 0) updateAnimText();
@@ -63,9 +68,6 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         setWidth(tr.getWidth(text) + 12f);
         setHeight(tr.fontHeight + 8f);
 
-        Color bg = new Color(10, 20, 40, 220);
-        Color outline = new Color(60, 120, 220);
-
         render2DService.setupRender();
 
         ms.push();
@@ -73,7 +75,7 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
         ms.scale(anim, anim, 1f);
 
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(),
-                getHeight(), z, 8f, bg, outline, 1.2f, 3);
+                getHeight(), z, 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.2f, 3);
 
         render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),
                 (int) (getHeight() / 2f - tr.fontHeight / 2f + 0.5f), z, 0xffffffff, false, ctx);
@@ -97,5 +99,10 @@ public class WatermarkDrawableElement extends DrawableElement<WatermarkRenderSta
             }
         }
         animBuffer[i] = base;
+    }
+
+    @Override
+    protected float getCurrentScale() {
+        return anim;
     }
 }

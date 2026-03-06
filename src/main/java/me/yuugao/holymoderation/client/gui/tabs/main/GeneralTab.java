@@ -13,7 +13,7 @@ public class GeneralTab extends Tab<MainGuiScreen> {
     public GeneralTab(MainGuiScreen parent, ServiceContext serviceContext) {
         super(parent, serviceContext);
 
-        modules.put("ColorPicker", new ColorPickerModule(serviceContext));
+        modules.put("ColorPicker", new ColorPickerModule(serviceContext, 0.5f, 0.5f));
     }
 
     @Override
@@ -21,12 +21,10 @@ public class GeneralTab extends Tab<MainGuiScreen> {
         MainGuiScreen mainGuiScreen = parent;
         ColorPickerModule colorPickerModule = (ColorPickerModule) modules.get("ColorPicker");
 
-        float radius = 25f;
-        float totalRadius = radius * mainGuiScreen.getAnimValue();
-        colorPickerModule.render(context.getMatrices(),
-                mainGuiScreen.getX() + mainGuiScreen.getWidth() / 2 - totalRadius - colorPickerModule.getOutlineWidth(),
-                mainGuiScreen.getY() + mainGuiScreen.getHeight() / 2 - totalRadius - colorPickerModule.getOutlineWidth(),
-                parent.getRenderPriority(), totalRadius, new Color(0x000000), 3);
-        colorPickerModule.updateColorFromMouse(mouseX, mouseY);
+        float relRadius = 0.15f;
+        float animatedRelRadius = relRadius * mainGuiScreen.getAnimValue();
+        colorPickerModule.render(context.getMatrices(), mainGuiScreen.getX(), mainGuiScreen.getY(),
+                mainGuiScreen.getWidth(), mainGuiScreen.getHeight(), parent.getRenderPriority(),
+                animatedRelRadius, new Color(0x000000), 2f);
     }
 }

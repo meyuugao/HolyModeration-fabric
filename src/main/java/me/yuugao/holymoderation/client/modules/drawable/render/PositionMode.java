@@ -9,5 +9,4 @@ public enum PositionMode {
     RIGHT,
     RIGHT_UP,
     RIGHT_DOWN,
-    CENTER
 }

@@ -42,13 +42,13 @@ public class NotificationsDrawableElement extends DrawableElement<NotificationsR
     }
 
     @Override
-    public float[] scalePivotLocal() {
+    public float[] getScalePivot() {
         return new float[]{0f, 0f};
     }
 
     private float[] getConfig() {
         return switch (positionMode) {
-            case RIGHT_DOWN, RIGHT, DOWN, UP, CENTER -> new float[]{-1f, 1f, 0f};
+            case RIGHT_DOWN, RIGHT, DOWN, UP -> new float[]{-1f, 1f, 0f};
             case RIGHT_UP -> new float[]{1f, 1f, 0f};
             case LEFT_DOWN, LEFT -> new float[]{-1f, -1f, 0f};
             case LEFT_UP -> new float[]{1f, -1f, 0f};

@@ -1,6 +1,9 @@
 package me.yuugao.holymoderation.client.modules.drawable.element;
 
+import me.yuugao.holymoderation.client.config.GuiConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.CheckoutsRenderState;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.SpyRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.CheckoutsRenderStateProvider;
 import me.yuugao.holymoderation.client.modules.drawable.render.PositionMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -65,11 +68,13 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
     }
 
     private void renderContent(String display, DrawContext ctx, int z) {
-        Render2DService render2DService = serviceContext.getRender2DService();
         MinecraftService minecraftService = serviceContext.getMinecraftService();
+        Render2DService render2DService = serviceContext.getRender2DService();
+        ConfigManager configManager = serviceContext.getConfigManager();
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
+        GuiConfig guiConfig = configManager.getGuiConfig();
 
         float targetWidth = tr.getWidth(display) + 16f;
         float targetHeight = tr.fontHeight + 12f;
@@ -80,19 +85,13 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         setWidth(Math.max(1f, currentWidth));
         setHeight(Math.max(1f, currentHeight));
 
-        Color bg = new Color(10, 20, 40, 220);
-        Color outline = new Color(60, 120, 220);
-
         render2DService.setupRender();
 
         ms.push();
 
-        ms.scale(anim, anim, 1f);
-
         render2DService.renderSoftRoundedRectOutline(
                 ms, 0f, 0f, getWidth(), getHeight(), z,
-                10f, bg, outline, 1.5f, 3
-        );
+                10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
 
         render2DService.renderText(
                 tr,
@@ -114,5 +113,10 @@ public class CheckoutsDrawableElement extends DrawableElement<CheckoutsRenderSta
         checkoutStartMillis = System.currentTimeMillis();
         lastPlayer = player;
         animTarget = 1f;
+    }
+
+    @Override
+    protected float getCurrentScale() {
+        return anim;
     }
 }

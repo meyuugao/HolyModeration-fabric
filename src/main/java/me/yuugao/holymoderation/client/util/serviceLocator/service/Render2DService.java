@@ -31,7 +31,6 @@ public class Render2DService extends Service {
 
     public void initializeShaders() {
         MinecraftClient mc = ServiceLocator.getMinecraftService().getClient();
-        NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
             ResourceManager rm = mc.getResourceManager();

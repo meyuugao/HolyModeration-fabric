@@ -5,6 +5,8 @@ import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DServi
 
 import net.minecraft.client.util.math.MatrixStack;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.awt.Color;
 
 import lombok.Getter;
@@ -18,47 +20,51 @@ public class ColorPickerModule extends GuiModule {
     private float radius;
     private float outlineWidth;
     private Color outlineColor;
-    private Color selectedColor;
 
-    public ColorPickerModule(ServiceContext serviceContext) {
-        super(serviceContext);
-
-        this.selectedColor = Color.WHITE;
+    public ColorPickerModule(ServiceContext serviceContext, float relX, float relY) {
+        super(serviceContext, relX, relY);
     }
 
-    public void render(MatrixStack matrices, float x, float y, int z, float radius, Color outlineColor, float outlineWidth) {
+    public void render(MatrixStack matrices, float parentX, float parentY, float parentWidth, float parentHeight, int z, float relScale, Color outlineColor, float outlineWidth) {
         Render2DService render2DService = serviceContext.getRender2DService();
+
+        float x = getX(parentX, parentWidth);
+        float y = getY(parentY, parentHeight);
 
         this.centerX = x;
         this.centerY = y;
-        this.radius = radius;
+        this.radius = Math.min(parentWidth, parentHeight) * relScale;
         this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
 
-        render2DService.renderRGBPalette(matrices, x, y, z, radius, outlineColor, outlineWidth);
+        matrices.push();
+
+        render2DService.renderRGBPalette(matrices, x - this.radius - outlineWidth,
+                y - this.radius - outlineWidth, z, this.radius, outlineColor, outlineWidth);
+
+        matrices.pop();
     }
 
     public boolean isMouseOver(double mouseX, double mouseY) {
         float dx = (float) (mouseX - centerX);
         float dy = (float) (mouseY - centerY);
         float dist = (float) Math.sqrt(dx * dx + dy * dy);
-        return dist <= radius + outlineWidth;
+        return dist <= radius;
     }
 
-    public void updateColorFromMouse(double mouseX, double mouseY) {
+    @Nullable
+    public Color getColorFromMouse(double mouseX, double mouseY) {
         float dx = (float) (mouseX - centerX);
         float dy = (float) (mouseY - centerY);
         float dist = (float) Math.sqrt(dx * dx + dy * dy);
 
-        if (dist > radius) {
-            return;
-        }
+        if (dist > radius) return null;
 
         float angle = (float) Math.atan2(dy, dx);
         float hue = (angle + (float) Math.PI) / (2.0f * (float) Math.PI);
-        float saturation = Math.min(dist / radius, 1.0f);
+        float saturation = dist / radius;
         float value = 1.0f;
 
-        selectedColor = Color.getHSBColor(hue, saturation, value);
+        return Color.getHSBColor(hue, saturation, value);
     }
 }

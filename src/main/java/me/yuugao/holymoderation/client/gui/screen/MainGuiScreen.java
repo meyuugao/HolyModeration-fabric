@@ -1,5 +1,7 @@
 package me.yuugao.holymoderation.client.gui.screen;
 
+import me.yuugao.holymoderation.client.config.GuiConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.gui.tabs.main.GeneralTab;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
@@ -37,17 +39,23 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         super.render(drawContext, mouseX, mouseY, tickDelta);
 
         Render2DService render2DService = serviceContext.getRender2DService();
+        ConfigManager configManager = serviceContext.getConfigManager();
         InputService inputService = serviceContext.getInputService();
         GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
 
-        float targetW = (float) drawContext.getScaledWindowWidth() / 2.2f;
-        float targetH = (float) drawContext.getScaledWindowHeight() / 1.8f;
+        GuiConfig guiConfig = configManager.getGuiConfig();
+
+        float windowWidth = drawContext.getScaledWindowWidth();
+        float windowHeight = drawContext.getScaledWindowHeight();
+
+        float targetW = windowWidth / 2.2f;
+        float targetH = windowHeight / 1.8f;
 
         this.width = targetW * getAnimValue();
         this.height = targetH * getAnimValue();
 
-        this.x = (float) drawContext.getScaledWindowWidth() / 2 - this.width / 2f;
-        this.y = (float) drawContext.getScaledWindowHeight() / 2 - this.height / 2f;
+        this.x = (windowWidth - this.width) / 2f;
+        this.y = (windowHeight - this.height) / 2f;
 
         float baseOutline = 1f;
         float scaleFactor = Math.min(this.width, this.height) / 100f;
@@ -60,7 +68,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 this.x, this.y, Math.max(1, this.width), Math.max(1, this.height),
                 renderPriority,
                 10f,
-                new Color(0xB3002AFF, true),
+                guiConfig.getSecondColor(),
                 outlineColor,
                 scaledOutline, 3
         );
