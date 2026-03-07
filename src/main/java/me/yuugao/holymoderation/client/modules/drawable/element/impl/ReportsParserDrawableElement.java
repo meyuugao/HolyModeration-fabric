@@ -1,0 +1,69 @@
+package me.yuugao.holymoderation.client.modules.drawable.element.impl;
+
+import me.yuugao.holymoderation.client.config.GuiConfig;
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
+import me.yuugao.holymoderation.client.modules.drawable.element.StatefulDrawableElement;
+import me.yuugao.holymoderation.client.modules.drawable.element.impl.button.ButtonDrawableElement;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.impl.ReportsParserRenderState;
+import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.impl.ReportsParserRenderStateProvider;
+import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
+import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
+
+import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.Text;
+
+public class ReportsParserDrawableElement extends StatefulDrawableElement<ReportsParserRenderState> {
+    private final ButtonDrawableElement startButton;
+
+    public ReportsParserDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
+        super(serviceContext, positionMode, new ReportsParserRenderStateProvider(serviceContext));
+        this.startButton = new ButtonDrawableElement(serviceContext, PivotMode.CENTER,
+                () -> System.out.println("button clicked"), true);
+    }
+
+    @Override
+    protected void initPosition(DrawContext ctx) {
+        this.relX = 0.3f;
+        this.relY = 0.4f;
+        this.globalScale = 0f;
+    }
+
+    @Override
+    protected void render(DrawContext ctx, int z, ReportsParserRenderState state) {
+        ConfigManager configManager = serviceContext.getConfigManager();
+        Render2DService render2DService = serviceContext.getRender2DService();
+
+        MatrixStack ms = ctx.getMatrices();
+        GuiConfig guiConfig = configManager.getGuiConfig();
+
+        float animTarget = state.animTarget();
+
+        this.globalScale = animate(globalScale, animTarget, 1f);
+        if (globalScale < 0.01f) return;
+
+        setWidth(430f);
+        setHeight(360f);
+
+        render2DService.setupRender();
+
+        ms.push();
+
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z, getHeight() / 8f,
+                guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
+
+        float buttonWidth = 280;
+        float buttonHeight = 50;
+
+        startButton.updateRender(ctx, Text.literal("пропарсить"), 0.5f, 0.5f,
+                buttonWidth, buttonHeight, getWidth(), getHeight(), z, buttonHeight / 4f,
+                guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
+
+        ms.pop();
+
+        render2DService.endRender();
+
+        System.out.println("buttonWidth: " + buttonWidth + " " + buttonHeight);
+    }
+}

@@ -43,7 +43,7 @@ public class AnimatedGuiScreen extends GuiScreen {
 
         stopAnimation();
 
-        task = schedulerService.getScheduler().scheduleAtFixedRate(() -> {
+        this.task = schedulerService.getScheduler().scheduleAtFixedRate(() -> {
             if (opening) {
                 progress += speed;
                 if (progress > 1f) progress = 1f;

@@ -1,9 +1,9 @@
 package me.yuugao.holymoderation.client;
 
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.modules.*;
-import me.yuugao.holymoderation.client.modules.drawable.element.*;
+import me.yuugao.holymoderation.client.modules.drawable.element.impl.*;
 import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
+import me.yuugao.holymoderation.client.modules.impl.*;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.*;

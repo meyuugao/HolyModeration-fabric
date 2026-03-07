@@ -2,8 +2,8 @@ package me.yuugao.holymoderation.client.util.serviceLocator.service;
 
 import me.yuugao.holymoderation.client.HolyModerationClient;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.modules.GuiManagerModule;
-import me.yuugao.holymoderation.client.modules.StateModule;
+import me.yuugao.holymoderation.client.modules.impl.GuiManagerModule;
+import me.yuugao.holymoderation.client.modules.impl.StateModule;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
