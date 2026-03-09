@@ -7,15 +7,14 @@ import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 
-public abstract class StatefulDrawableElement<T extends RenderState> extends Drawable {
+public abstract class StatefulDrawableElement<T extends RenderState> extends DrawableElement {
     protected final RenderStateProvider<T> stateProvider;
-
     protected boolean positioned = false;
 
-    protected StatefulDrawableElement(ServiceContext serviceContext, PivotMode positionMode,
-                                      RenderStateProvider<T> stateProvider) {
+    private T activeState;
+
+    protected StatefulDrawableElement(ServiceContext serviceContext, PivotMode positionMode, RenderStateProvider<T> stateProvider) {
         super(serviceContext, positionMode);
         this.stateProvider = stateProvider;
     }
@@ -24,24 +23,11 @@ public abstract class StatefulDrawableElement<T extends RenderState> extends Dra
 
     protected abstract void render(DrawContext ctx, int z, T state);
 
-    public void updateRenderForParent(DrawContext ctx, float parentWidth, float parentHeight, int z, RenderMode mode) {
-        if (!positioned) {
-            initPosition(ctx);
-            positioned = true;
+    @Override
+    protected void render(DrawContext ctx, int z) {
+        if (activeState != null) {
+            render(ctx, z, activeState);
         }
-
-        T state = stateProvider.getState(mode);
-        if (state == null) return;
-
-        MatrixStack ms = ctx.getMatrices();
-
-        ms.push();
-
-        prepareMatrixForParent(ctx, parentWidth, parentHeight);
-
-        render(ctx, z, state);
-
-        ms.pop();
     }
 
     public void updateRenderForScreen(DrawContext ctx, int z, RenderMode mode) {
@@ -50,17 +36,26 @@ public abstract class StatefulDrawableElement<T extends RenderState> extends Dra
             positioned = true;
         }
 
-        T state = stateProvider.getState(mode);
-        if (state == null) return;
+        activeState = stateProvider.getState(mode);
+        if (activeState == null) return;
 
-        MatrixStack ms = ctx.getMatrices();
+        float screenScale = Math.min(ctx.getScaledWindowWidth() / 1920f, ctx.getScaledWindowHeight() / 1080f);
+        super.updateRenderForScreen(ctx, z, screenScale);
 
-        ms.push();
+        activeState = null;
+    }
 
-        prepareMatrixForScreen(ctx);
+    public void updateRenderForParent(DrawContext ctx, float parW, float parH, int z, RenderMode mode) {
+        if (!positioned) {
+            initPosition(ctx);
+            positioned = true;
+        }
 
-        render(ctx, z, state);
+        activeState = stateProvider.getState(mode);
+        if (activeState == null) return;
 
-        ms.pop();
+        super.updateRenderForParent(ctx, parW, parH, z);
+
+        activeState = null;
     }
 }

@@ -25,7 +25,7 @@ public abstract class GuiScreen extends Screen {
         this.serviceContext = serviceContext;
     }
 
-    protected void renderTabs(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
-        tabs.forEach((key, tab) -> tab.onRender(ctx, mouseX, mouseY, tickDelta));
+    protected void renderTabs(DrawContext ctx, int relMouseX, int relMouseY, float tickDelta) {
+        tabs.forEach((key, tab) -> tab.onRender(ctx, relMouseX, relMouseY, tickDelta));
     }
 }

@@ -16,28 +16,18 @@ public abstract class DrawableModule<T extends StatefulDrawableElement<?>> exten
 
     public DrawableModule(ServiceContext serviceContext, T drawableElement) {
         super(serviceContext);
-
         GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
-
         this.drawableElement = drawableElement;
         guiManagerService.addDrawableModule(this);
-    }
-
-    public boolean isMouseOver(int mouseX, int mouseY, DrawContext ctx) {
-        float[] pv = drawableElement.getScalePivot();
-
-        float left = drawableElement.getX(ctx.getScaledWindowWidth()) - pv[0];
-        float top = drawableElement.getY(ctx.getScaledWindowHeight()) - pv[1];
-
-        float right = left + drawableElement.getScaledWidth();
-        float bottom = top + drawableElement.getScaledHeight();
-
-        return mouseX >= left && mouseX <= right && mouseY >= top && mouseY <= bottom;
     }
 
     public abstract int getRenderPriority();
 
     public void render(DrawContext ctx, RenderMode mode) {
+        float sw = ctx.getScaledWindowWidth();
+        float sh = ctx.getScaledWindowHeight();
+        float screenScale = Math.min(sw / 1920f, sh / 1080f);
+
         drawableElement.updateRenderForScreen(ctx, getRenderPriority(), mode);
     }
 }

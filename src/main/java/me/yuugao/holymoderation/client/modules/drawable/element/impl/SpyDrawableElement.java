@@ -26,9 +26,8 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
 
     @Override
     protected void initPosition(DrawContext ctx) {
-        this.relX = 0.5f;
-        this.relY = 0.02f;
-        this.globalScale = 0f;
+        setRelativePos(0.5f, 0.02f);
+        this.scale = 0f;
     }
 
     @Override
@@ -53,8 +52,8 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
             animTarget = 0f;
         }
 
-        this.globalScale = animate(globalScale, animTarget, 1f);
-        if (globalScale < 0.01f) return;
+        this.scale = animate(scale, animTarget, 1f);
+        if (scale < 0.01f) return;
 
         float targetWidth = Math.max(tr.getWidth(display0), tr.getWidth(display1)) + 16f;
         int lines = display1.isEmpty() ? 1 : 2;

@@ -15,7 +15,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
 public class ReportsParserDrawableElement extends StatefulDrawableElement<ReportsParserRenderState> {
-    private final ButtonDrawableElement startButton;
+    public final ButtonDrawableElement startButton;
 
     public ReportsParserDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new ReportsParserRenderStateProvider(serviceContext));
@@ -25,9 +25,8 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
     @Override
     protected void initPosition(DrawContext ctx) {
-        this.relX = 0.3f;
-        this.relY = 0.4f;
-        this.globalScale = 0f;
+        setRelativePos(0.3f, 0.4f);
+        this.scale = 0f;
     }
 
     @Override
@@ -40,8 +39,8 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
         float animTarget = state.animTarget();
 
-        this.globalScale = animate(globalScale, animTarget, 1f);
-        if (globalScale < 0.01f) return;
+        this.scale = animate(scale, animTarget, 1f);
+        if (scale < 0.01f) return;
 
         setWidth(430f);
         setHeight(360f);
@@ -56,14 +55,12 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         float buttonWidth = 280;
         float buttonHeight = 50;
 
-        startButton.updateRender(ctx, Text.literal("пропарсить"), 0.5f, 0.5f,
-                buttonWidth, buttonHeight, getWidth(), getHeight(), z, buttonHeight / 4f,
+        startButton.updateRenderForParent(ctx, Text.literal("пропарсить"), 0.5f, 0.5f,
+                buttonWidth, buttonHeight, getWidth(), getHeight(), z, buttonHeight / 8f,
                 guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
 
         ms.pop();
 
         render2DService.endRender();
-
-        System.out.println("buttonWidth: " + buttonWidth + " " + buttonHeight);
     }
 }

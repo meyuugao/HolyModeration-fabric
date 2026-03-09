@@ -14,8 +14,8 @@ import net.minecraft.text.Text;
 import java.awt.Color;
 
 public class ButtonDrawableElement extends DrawableElement {
-    private ButtonAction action;
-    private boolean enabled;
+    private final ButtonAction action;
+    private final boolean enabled;
     private TextRenderer tr;
     private Text text;
     private float radius;
@@ -26,7 +26,6 @@ public class ButtonDrawableElement extends DrawableElement {
 
     public ButtonDrawableElement(ServiceContext serviceContext, PivotMode pivotMode, ButtonAction action, boolean enabled) {
         super(serviceContext, pivotMode);
-
         this.action = action;
         this.enabled = enabled;
     }
@@ -44,7 +43,9 @@ public class ButtonDrawableElement extends DrawableElement {
 
         ms.push();
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0, 0,
+        ms.scale(getWidth() / buttonWidth, getHeight() / buttonHeight, 1f);
+
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f,
                 buttonWidth, buttonHeight, z, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
         render2DService.renderText(tr, text.asOrderedText(),
                 (int) (0 + (buttonWidth - textWidth) / 2f),
@@ -57,26 +58,33 @@ public class ButtonDrawableElement extends DrawableElement {
         ms.pop();
     }
 
-    public void updateRender(DrawContext ctx, Text text, float relX, float relY, float width, float height,
-                             float parentWidth, float parentHeight, int z, float radius,
-                             Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
+    public void updateRenderForScreen(DrawContext ctx, Text text, float relX, float relY, float width, float height,
+                                      int z, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
+        updateRender(text, relX, relY, width, height, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        float screenScale = Math.min(ctx.getScaledWindowWidth() / 1920f, ctx.getScaledWindowHeight() / 1080f);
+        super.updateRenderForScreen(ctx, z, screenScale);
+    }
+
+    public void updateRenderForParent(DrawContext ctx, Text text, float relX, float relY, float width, float height,
+                                      float parW, float parH, int z, float radius,
+                                      Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
+        updateRender(text, relX, relY, width, height, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        super.updateRenderForParent(ctx, parW, parH, z);
+    }
+
+    private void updateRender(Text text, float relX, float relY, float width, float height, float radius,
+                              Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
         MinecraftService minecraftService = serviceContext.getMinecraftService();
 
         this.tr = minecraftService.getClient().textRenderer;
         this.text = text;
-
-        this.relX = relX;
-        this.relY = relY;
-
-        setWidth(width);
-        setHeight(height);
-
+        setRelativePos(relX, relY);
+        this.width = width;
+        this.height = height;
         this.radius = radius;
         this.buttonColor = buttonColor;
         this.outlineColor = outlineColor;
         this.outlineWidth = outlineWidth;
         this.blurWidth = blurWidth;
-
-        super.updateRenderForParent(ctx, parentWidth, parentHeight, z);
     }
 }

@@ -5,6 +5,8 @@ import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
 import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
+import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
+import me.yuugao.holymoderation.client.modules.drawable.element.impl.ReportsParserDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
@@ -71,7 +73,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         this.y = (windowHeight - height * screenScale) / 2f;
 
         ms.translate(x, y, 0);
-        ms.scale(screenScale, screenScale, 1f); //tip: делаем локальные координаты окна
+        ms.scale(screenScale, screenScale, 1f);
 
         render2DService.renderSoftRoundedRectOutline(
                 ms, 0f, 0f,
@@ -81,9 +83,9 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 scaledOutline, 3
         );
 
-        int localMouseX = (int) ((mouseX - x) / screenScale);
-        int localMouseY = (int) ((mouseY - y) / screenScale);
-        renderTabs(ctx, localMouseX, localMouseY, tickDelta);
+        int relMouseX = (int) ((mouseX - x) / screenScale);
+        int relMouseY = (int) ((mouseY - y) / screenScale);
+        renderTabs(ctx, relMouseX, relMouseY, tickDelta);
 
         ms.pop();
 
@@ -94,18 +96,42 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
                 Collections.reverse(list);
                 for (DrawableModule<?> d : list) {
-                    if (d.isMouseOver(mouseX, mouseY, ctx)) {
+                    DrawableElement elem = d.getDrawableElement();
+
+                    float sw = ctx.getScaledWindowWidth();
+                    float sh = ctx.getScaledWindowHeight();
+                    float anchorX = elem.getAnchorX(sw);
+                    float anchorY = elem.getAnchorY(sh);
+
+                    float visW = elem.getScaledWidth() * screenScale;
+                    float visH = elem.getScaledHeight() * screenScale;
+                    float visPivotX = elem.getPivotOffsetX() * screenScale;
+                    float visPivotY = elem.getPivotOffsetY() * screenScale;
+
+                    float left = anchorX - visPivotX;
+                    float top = anchorY - visPivotY;
+
+                    if (mouseX >= left && mouseX <= left + visW && mouseY >= top && mouseY <= top + visH) {
                         dragging = d;
-                        dragOffsetX = mouseX - d.getDrawableElement().getX(ctx.getScaledWindowWidth());
-                        dragOffsetY = mouseY - d.getDrawableElement().getY(ctx.getScaledWindowHeight());
+                        dragOffsetX = mouseX - anchorX;
+                        dragOffsetY = mouseY - anchorY;
                         break;
                     }
                 }
             }
 
             if (dragging != null) {
-                dragging.getDrawableElement().setX(mouseX - dragOffsetX, ctx.getScaledWindowWidth());
-                dragging.getDrawableElement().setY(mouseY - dragOffsetY, ctx.getScaledWindowHeight());
+                DrawableElement elem = dragging.getDrawableElement();
+                float sw = ctx.getScaledWindowWidth();
+                float sh = ctx.getScaledWindowHeight();
+
+                float targetAnchorX = mouseX - dragOffsetX;
+                float targetAnchorY = mouseY - dragOffsetY;
+
+                float newRelX = targetAnchorX / sw;
+                float newRelY = targetAnchorY / sh;
+
+                elem.setRelativePos(newRelX, newRelY);
             }
         } else {
             dragging = null;

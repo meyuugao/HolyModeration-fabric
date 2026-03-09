@@ -29,14 +29,13 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
 
     @Override
     protected void initPosition(DrawContext ctx) {
-        this.relX = 0.5f;
-        this.relY = 0.9f;
-        this.globalScale = 0f;
+        setRelativePos(0.5f, 0.9f);
+        this.scale = 0f;
     }
 
     @Override
     protected void render(DrawContext ctx, int z, CheckoutsRenderState renderState) {
-        this.globalScale = animate(globalScale, animTarget, 1f);
+        this.scale = animate(scale, animTarget, 1f);
 
         String player = renderState.checkoutPlayer();
         if (!lastPlayer.equals(player)) {
@@ -50,7 +49,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
             lastPlayer = player;
         }
 
-        if (globalScale < 0.01f) return;
+        if (scale < 0.01f) return;
 
         long elapsed = checkoutStartMillis == 0L
                 ? 0L

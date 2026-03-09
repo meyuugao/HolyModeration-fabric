@@ -35,9 +35,10 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
     protected void initPosition(DrawContext ctx) {
         float rel = 0.01f;
         float minSide = Math.min(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
-        this.relX = rel * minSide / ctx.getScaledWindowWidth();
-        this.relY = rel * minSide / ctx.getScaledWindowHeight();
-        this.globalScale = 0f;
+        float relX = rel * minSide / ctx.getScaledWindowWidth();
+        float relY = rel * minSide / ctx.getScaledWindowHeight();
+        setRelativePos(relX, relY);
+        this.scale = 0f;
     }
 
     @Override
@@ -55,8 +56,8 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
         if (tickCounter % 18 == 0) updateAnimText();
 
         float animTarget = state.animTarget();
-        this.globalScale = animate(globalScale, animTarget, 1f);
-        if (globalScale < 0.01f) return;
+        this.scale = animate(scale, animTarget, 1f);
+        if (scale < 0.01f) return;
 
         String text = "HolyModeration v%s | %s | %s".formatted(
                 serviceContext.getConfigManager().getApiConfig().getCurrentVersion(),
