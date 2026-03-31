@@ -31,31 +31,30 @@ public abstract class StatefulDrawableElement<T extends RenderState> extends Dra
     }
 
     public void updateRenderForScreen(DrawContext ctx, int z, RenderMode mode) {
-        if (!positioned) {
-            initPosition(ctx);
-            positioned = true;
-        }
-
-        activeState = stateProvider.getState(mode);
+        updateStatefulRender(ctx, mode);
         if (activeState == null) return;
 
-        float screenScale = Math.min(ctx.getScaledWindowWidth() / 1920f, ctx.getScaledWindowHeight() / 1080f);
+        float screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
         super.updateRenderForScreen(ctx, z, screenScale);
 
-        activeState = null;
+        this.activeState = null;
     }
 
     public void updateRenderForParent(DrawContext ctx, float parW, float parH, int z, RenderMode mode) {
-        if (!positioned) {
-            initPosition(ctx);
-            positioned = true;
-        }
-
-        activeState = stateProvider.getState(mode);
+        updateStatefulRender(ctx, mode);
         if (activeState == null) return;
 
         super.updateRenderForParent(ctx, parW, parH, z);
 
-        activeState = null;
+        this.activeState = null;
+    }
+
+    private void updateStatefulRender(DrawContext ctx, RenderMode mode) {
+        if (!positioned) {
+            initPosition(ctx);
+            positioned = true;
+        }
+
+        this.activeState = stateProvider.getState(mode);
     }
 }

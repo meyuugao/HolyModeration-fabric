@@ -61,7 +61,7 @@ public class ButtonDrawableElement extends DrawableElement {
     public void updateRenderForScreen(DrawContext ctx, Text text, float relX, float relY, float width, float height,
                                       int z, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
         updateRender(text, relX, relY, width, height, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
-        float screenScale = Math.min(ctx.getScaledWindowWidth() / 1920f, ctx.getScaledWindowHeight() / 1080f);
+        float screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
         super.updateRenderForScreen(ctx, z, screenScale);
     }
 

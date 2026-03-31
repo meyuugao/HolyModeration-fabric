@@ -5,7 +5,13 @@ import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public abstract class DrawableElement extends Drawable {
+    @Getter @Setter
+    private boolean draggable = true;
+
     protected DrawableElement(ServiceContext serviceContext, PivotMode pivotMode) {
         super(serviceContext, pivotMode);
     }

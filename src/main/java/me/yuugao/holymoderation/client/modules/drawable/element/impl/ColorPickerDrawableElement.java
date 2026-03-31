@@ -38,7 +38,7 @@ public class ColorPickerDrawableElement extends DrawableElement {
     public void updateRenderForScreen(DrawContext ctx, float relX, float relY, int z,
                                       float radius, Color outlineColor, float outlineWidth) {
         updateRender(relX, relY, radius, outlineColor, outlineWidth);
-        float screenScale = Math.min(ctx.getScaledWindowWidth() / 1920f, ctx.getScaledWindowHeight() / 1080f);
+        float screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
         super.updateRenderForScreen(ctx, z, screenScale);
     }
 

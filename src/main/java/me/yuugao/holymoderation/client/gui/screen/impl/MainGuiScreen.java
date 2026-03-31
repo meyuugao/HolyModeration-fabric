@@ -60,7 +60,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         float scaleFactor = Math.min(width, height) / 100f;
         float scaledOutline = baseOutline * scaleFactor;
 
-        this.screenScale = Math.min(ctx.getScaledWindowWidth() / 1920f, ctx.getScaledWindowHeight() / 1080f);
+        this.screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
 
         render2DService.setupRender();
 

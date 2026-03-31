@@ -7,6 +7,7 @@ import me.yuugao.holymoderation.client.modules.drawable.element.impl.button.Butt
 import me.yuugao.holymoderation.client.modules.drawable.element.state.impl.ReportsParserRenderState;
 import me.yuugao.holymoderation.client.modules.drawable.element.state.provider.impl.ReportsParserRenderStateProvider;
 import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
+import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
 
@@ -42,8 +43,8 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         this.scale = animate(scale, animTarget, 1f);
         if (scale < 0.01f) return;
 
-        setWidth(430f);
-        setHeight(360f);
+        setWidth(150f);
+        setHeight(180f);
 
         render2DService.setupRender();
 
@@ -52,7 +53,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z, getHeight() / 8f,
                 guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
 
-        float buttonWidth = 280;
+        float buttonWidth = 100;
         float buttonHeight = 50;
 
         startButton.updateRenderForParent(ctx, Text.literal("пропарсить"), 0.5f, 0.5f,
