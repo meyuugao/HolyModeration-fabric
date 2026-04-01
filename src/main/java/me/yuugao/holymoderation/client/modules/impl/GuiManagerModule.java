@@ -4,14 +4,21 @@ import me.yuugao.holymoderation.client.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.eventbus.event.RenderEvent;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.Module;
+import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
+import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
 import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class GuiManagerModule extends Module {
     private static final Class<?>[] guiScreens = {
@@ -19,6 +26,9 @@ public class GuiManagerModule extends Module {
             ChatScreen.class,
             HandledScreen.class
     };
+    private DrawableModule<?> dragging;
+    private float dragOffsetX;
+    private float dragOffsetY;
 
     public GuiManagerModule(ServiceContext serviceContext) {
         super(serviceContext);
@@ -27,15 +37,57 @@ public class GuiManagerModule extends Module {
     @Subscribe
     public void onRender(RenderEvent event) {
         MinecraftClient mc = serviceContext.getMinecraftService().getClient();
+        InputService inputService = serviceContext.getInputService();
         GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
 
         Screen currentScreen = mc.currentScreen;
+        DrawContext ctx = event.getDrawContext();
 
         if (currentScreen != null && !shouldGuiRender(currentScreen)) return;
 
         guiManagerService.getDrawableModules().forEach((drawableModule) ->
                 drawableModule.render(event.getDrawContext(), currentScreen instanceof MainGuiScreen
                         ? RenderMode.CONFIG : RenderMode.LIVE));
+
+        if (inputService.isMouseButtonHeld(0)) {
+            if (dragging == null && inputService.wasMouseButtonPressed(0)) {
+                ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
+                Collections.reverse(list);
+                for (DrawableModule<?> d : list) {
+                    DrawableElement elem = d.getDrawableElement();
+
+                    if (elem.isDraggable()) {
+                        float sw = ctx.getScaledWindowWidth();
+                        float sh = ctx.getScaledWindowHeight();
+                        float anchorX = elem.getAnchorX(sw);
+                        float anchorY = elem.getAnchorY(sh);
+
+                        if (elem.isGlobalMouseOver(ctx, event.getMouseX(), event.getMouseY())) {
+                            dragging = d;
+                            dragOffsetX = event.getMouseX() - anchorX;
+                            dragOffsetY = event.getMouseY() - anchorY;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (dragging != null) {
+                DrawableElement elem = dragging.getDrawableElement();
+                float sw = ctx.getScaledWindowWidth();
+                float sh = ctx.getScaledWindowHeight();
+
+                float targetAnchorX = event.getMouseX() - dragOffsetX;
+                float targetAnchorY = event.getMouseY() - dragOffsetY;
+
+                float newRelX = targetAnchorX / sw;
+                float newRelY = targetAnchorY / sh;
+
+                elem.setRelativePos(newRelX, newRelY);
+            }
+        } else {
+            dragging = null;
+        }
     }
 
     private boolean shouldGuiRender(Screen screen) {

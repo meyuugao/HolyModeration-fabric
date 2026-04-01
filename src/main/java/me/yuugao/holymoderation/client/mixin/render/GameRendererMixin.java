@@ -39,7 +39,7 @@ public class GameRendererMixin {
         if (tick && client.world != null && !isScreenRendering) {
             EventBus eventBus = ServiceLocator.getEventBus();
 
-            eventBus.invokeEvent(new RenderEvent(drawContext, tickDelta));
+            eventBus.invokeEvent(new RenderEvent(drawContext, 0, 0, tickDelta));
         }
 
         isScreenRendering = false;

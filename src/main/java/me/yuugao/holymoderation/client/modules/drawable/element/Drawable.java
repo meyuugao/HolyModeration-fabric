@@ -14,6 +14,8 @@ public class Drawable implements MouseHoverable {
     @Getter
     @Setter
     protected float width, height;
+    @Getter
+    protected float screenScale;
 
     @Getter
     protected float scale = 1f;
@@ -34,11 +36,11 @@ public class Drawable implements MouseHoverable {
     }
 
     public float getScaledWidth() {
-        return width * scale;
+        return width * scale * screenScale;
     }
 
     public float getScaledHeight() {
-        return height * scale;
+        return height * scale * screenScale;
     }
 
     public float getBasePivotX() {
@@ -105,5 +107,16 @@ public class Drawable implements MouseHoverable {
     @Override
     public boolean isRelMouseOver(float parW, float parH, double mouseX, double mouseY) {
         return isMouseOver(parW, parH, mouseX, mouseY);
+    }
+
+    public float[] screenToLocal(float parW, float parH, float mouseX, float mouseY) {
+        float anchorX = getAnchorX(parW);
+        float anchorY = getAnchorY(parH);
+        float totalScale = scale * screenScale;
+
+        float localX = (mouseX - anchorX) / totalScale + getBasePivotX();
+        float localY = (mouseY - anchorY) / totalScale + getBasePivotY();
+
+        return new float[]{localX, localY};
     }
 }

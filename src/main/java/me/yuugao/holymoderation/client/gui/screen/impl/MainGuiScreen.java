@@ -28,9 +28,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     @Getter
     private final int renderPriority = 2000;
     private final Color outlineColor = Color.WHITE;
-    private DrawableModule<?> dragging;
-    private float dragOffsetX;
-    private float dragOffsetY;
 
     public MainGuiScreen(ServiceContext serviceContext) {
         super(Text.of("HolyModeration Main Gui Screen"), serviceContext);
@@ -44,8 +41,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         Render2DService render2DService = serviceContext.getRender2DService();
         ConfigManager configManager = serviceContext.getConfigManager();
-        InputService inputService = serviceContext.getInputService();
-        GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
 
         MatrixStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManager.getGuiConfig();
@@ -90,51 +85,5 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         ms.pop();
 
         render2DService.endRender();
-
-        if (inputService.isMouseButtonHeld(0)) {
-            if (dragging == null && inputService.wasMouseButtonPressed(0)) {
-                ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
-                Collections.reverse(list);
-                for (DrawableModule<?> d : list) {
-                    DrawableElement elem = d.getDrawableElement();
-
-                    float sw = ctx.getScaledWindowWidth();
-                    float sh = ctx.getScaledWindowHeight();
-                    float anchorX = elem.getAnchorX(sw);
-                    float anchorY = elem.getAnchorY(sh);
-
-                    float visW = elem.getScaledWidth() * screenScale;
-                    float visH = elem.getScaledHeight() * screenScale;
-                    float visPivotX = elem.getPivotOffsetX() * screenScale;
-                    float visPivotY = elem.getPivotOffsetY() * screenScale;
-
-                    float left = anchorX - visPivotX;
-                    float top = anchorY - visPivotY;
-
-                    if (mouseX >= left && mouseX <= left + visW && mouseY >= top && mouseY <= top + visH) {
-                        dragging = d;
-                        dragOffsetX = mouseX - anchorX;
-                        dragOffsetY = mouseY - anchorY;
-                        break;
-                    }
-                }
-            }
-
-            if (dragging != null) {
-                DrawableElement elem = dragging.getDrawableElement();
-                float sw = ctx.getScaledWindowWidth();
-                float sh = ctx.getScaledWindowHeight();
-
-                float targetAnchorX = mouseX - dragOffsetX;
-                float targetAnchorY = mouseY - dragOffsetY;
-
-                float newRelX = targetAnchorX / sw;
-                float newRelY = targetAnchorY / sh;
-
-                elem.setRelativePos(newRelX, newRelY);
-            }
-        } else {
-            dragging = null;
-        }
     }
 }

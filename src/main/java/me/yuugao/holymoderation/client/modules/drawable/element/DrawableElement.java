@@ -18,7 +18,9 @@ public abstract class DrawableElement extends Drawable {
 
     protected abstract void render(DrawContext ctx, int z);
 
-    public void updateRender(DrawContext ctx, float parentW, float parentH, int z, float externalScale) {
+    public void updateRender(DrawContext ctx, float parentW, float parentH, int z, float screenScale) {
+        this.screenScale = screenScale;
+
         MatrixStack ms = ctx.getMatrices();
         ms.push();
 
@@ -26,7 +28,7 @@ public abstract class DrawableElement extends Drawable {
         float anchorY = getAnchorY(parentH);
 
         ms.translate(anchorX, anchorY, 0);
-        ms.scale(externalScale, externalScale, 1f);
+        ms.scale(screenScale, screenScale, 1f);
         ms.scale(scale, scale, 1f);
         ms.translate(-getBasePivotX(), -getBasePivotY(), 0);
 
@@ -41,16 +43,5 @@ public abstract class DrawableElement extends Drawable {
 
     public void updateRenderForParent(DrawContext ctx, float parW, float parH, int z) {
         updateRender(ctx, parW, parH, z, 1f);
-    }
-
-    public float[] screenToLocal(float mouseX, float mouseY, float parentW, float parentH, float externalScale) {
-        float anchorX = getAnchorX(parentW);
-        float anchorY = getAnchorY(parentH);
-        float totalScale = this.scale * externalScale;
-
-        float localX = (mouseX - anchorX) / totalScale + getBasePivotX();
-        float localY = (mouseY - anchorY) / totalScale + getBasePivotY();
-
-        return new float[]{localX, localY};
     }
 }

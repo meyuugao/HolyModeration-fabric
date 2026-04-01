@@ -26,7 +26,7 @@ public class ScreenMixin {
         if (client != null && client.world != null) {
             EventBus eventBus = ServiceLocator.getEventBus();
 
-            eventBus.invokeEvent(new RenderEvent(drawContext, tickDelta));
+            eventBus.invokeEvent(new RenderEvent(drawContext, mouseX, mouseY, tickDelta));
         }
     }
 }

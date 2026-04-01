@@ -20,7 +20,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
     public ReportsParserDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new ReportsParserRenderStateProvider(serviceContext));
-        this.startButton = new ButtonDrawableElement(serviceContext, PivotMode.CENTER,
+        this.startButton = new ButtonDrawableElement(serviceContext, PivotMode.DOWN,
                 () -> System.out.println("button clicked"), true);
     }
 
@@ -53,11 +53,10 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z, getHeight() / 8f,
                 guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
 
-        float buttonWidth = 100;
-        float buttonHeight = 50;
+        float buttonWidth = 110f;
 
-        startButton.updateRenderForParent(ctx, Text.literal("пропарсить"), 0.5f, 0.5f,
-                buttonWidth, buttonHeight, getWidth(), getHeight(), z, buttonHeight / 8f,
+        startButton.updateRenderForParent(ctx, Text.literal("пропарсить"), 0.5f, 0.95f,
+                buttonWidth, getWidth(), getHeight(), z, 6f, //tip: height / 8f
                 guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
 
         ms.pop();

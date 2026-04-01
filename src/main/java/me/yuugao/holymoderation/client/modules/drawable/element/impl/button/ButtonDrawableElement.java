@@ -38,41 +38,37 @@ public class ButtonDrawableElement extends DrawableElement {
         int textWidth = tr.getWidth(text);
         int textHeight = tr.fontHeight;
 
-        float buttonWidth = textWidth + 16f;
-        float buttonHeight = textHeight + 12f;
+        float padding = 16f;
+        float idealWidth = textWidth + padding;
+        float idealHeight = textHeight + 12f;
+
+        float scale = getWidth() / idealWidth;
 
         ms.push();
 
-        ms.scale(getWidth() / buttonWidth, getHeight() / buttonHeight, 1f);
+        ms.scale(scale, scale, 1f);
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f,
-                buttonWidth, buttonHeight, z, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
-        render2DService.renderText(tr, text.asOrderedText(),
-                (int) (0 + (buttonWidth - textWidth) / 2f),
-                (int) (0 + (buttonHeight - textHeight) / 2f),
-                z,
-                0xffffffff,
-                false,
-                ctx);
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, idealWidth, idealHeight, z, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        render2DService.renderText(tr, text.asOrderedText(), (int) (padding / 2f), (int) ((idealHeight - textHeight) / 2f), z, 0xffffffff, false, ctx);
 
         ms.pop();
     }
 
-    public void updateRenderForScreen(DrawContext ctx, Text text, float relX, float relY, float width, float height,
+    public void updateRenderForScreen(DrawContext ctx, Text text, float relX, float relY, float width,
                                       int z, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
-        updateRender(text, relX, relY, width, height, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        updateRender(text, relX, relY, width, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
         float screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
         super.updateRenderForScreen(ctx, z, screenScale);
     }
 
-    public void updateRenderForParent(DrawContext ctx, Text text, float relX, float relY, float width, float height,
+    public void updateRenderForParent(DrawContext ctx, Text text, float relX, float relY, float width,
                                       float parW, float parH, int z, float radius,
                                       Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
-        updateRender(text, relX, relY, width, height, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        updateRender(text, relX, relY, width, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
         super.updateRenderForParent(ctx, parW, parH, z);
     }
 
-    private void updateRender(Text text, float relX, float relY, float width, float height, float radius,
+    private void updateRender(Text text, float relX, float relY, float width, float radius,
                               Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
         MinecraftService minecraftService = serviceContext.getMinecraftService();
 
@@ -80,7 +76,13 @@ public class ButtonDrawableElement extends DrawableElement {
         this.text = text;
         setRelativePos(relX, relY);
         this.width = width;
-        this.height = height;
+
+        int textHeight = tr.fontHeight;
+        float idealHeight = textHeight + 12f;
+        float idealWidth = tr.getWidth(text) + 16f;
+        float scale = width / idealWidth;
+
+        this.height = idealHeight * scale;
         this.radius = radius;
         this.buttonColor = buttonColor;
         this.outlineColor = outlineColor;

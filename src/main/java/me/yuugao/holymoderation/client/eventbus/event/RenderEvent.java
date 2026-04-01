@@ -7,10 +7,13 @@ import lombok.Getter;
 @Getter
 public class RenderEvent extends Event {
     private final DrawContext drawContext;
+    private final int mouseX, mouseY;
     private final float tickDelta;
 
-    public RenderEvent(DrawContext drawContext, float tickDelta) {
+    public RenderEvent(DrawContext drawContext, int mouseX, int mouseY, float tickDelta) {
         this.drawContext = drawContext;
+        this.mouseX = mouseX;
+        this.mouseY = mouseY;
         this.tickDelta = tickDelta;
     }
 }
