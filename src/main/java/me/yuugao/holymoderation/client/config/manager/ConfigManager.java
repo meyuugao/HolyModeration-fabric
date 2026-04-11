@@ -1,6 +1,6 @@
 package me.yuugao.holymoderation.client.config.manager;
 
-import me.yuugao.holymoderation.client.config.*;
+import me.yuugao.holymoderation.client.config.Config;
 import me.yuugao.holymoderation.client.config.impl.ApiConfig;
 import me.yuugao.holymoderation.client.config.impl.GuiConfig;
 import me.yuugao.holymoderation.client.config.impl.KeyBindsConfig;
@@ -77,10 +77,6 @@ public class ConfigManager {
             """;
 
     private final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-
-    @Setter
-    private LoggerService loggerService;
-
     @Getter
     private final ApiConfig apiConfig;
     @Getter
@@ -89,6 +85,8 @@ public class ConfigManager {
     private final KeyBindsConfig keyBindsConfig;
     @Getter
     private final SettingsConfig settingsConfig;
+    @Setter
+    private LoggerService loggerService;
 
     public ConfigManager() {
         ensureConfigDirectory();

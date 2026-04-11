@@ -18,10 +18,9 @@ import net.minecraft.client.util.math.MatrixStack;
 import org.apache.commons.lang3.StringUtils;
 
 public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsRenderState> {
-    private float animTarget = 0f;
     private final AnimationService.Value currentWidth;
     private final AnimationService.Value currentHeight;
-
+    private float animTarget = 0f;
     private long checkoutStartMillis = 0L;
     private String lastPlayer = StringUtils.EMPTY;
 

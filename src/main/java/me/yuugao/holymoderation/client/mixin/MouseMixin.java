@@ -1,7 +1,6 @@
 package me.yuugao.holymoderation.client.mixin;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.Service;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.InputService;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
 

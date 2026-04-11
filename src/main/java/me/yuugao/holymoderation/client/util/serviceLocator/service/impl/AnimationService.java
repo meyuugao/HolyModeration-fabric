@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.util.serviceLocator.service.impl;
 
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 import me.yuugao.holymoderation.client.util.serviceLocator.service.Service;
 

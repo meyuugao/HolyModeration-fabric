@@ -100,13 +100,13 @@ public class ImageButtonDrawableElement extends ButtonDrawableElement {
                 try (NativeImage image = NativeImage.read(resource.getInputStream())) {
                     int width = image.getWidth();
                     int height = image.getHeight();
-                    return new int[] {width, height};
+                    return new int[]{width, height};
                 }
             }
-            return new int[] {0, 0};
+            return new int[]{0, 0};
         } catch (IOException e) {
             loggerService.exception("Исключение в ImageButtonDrawableElement/getImageSizes: %s".formatted(e));
-            return new int[] {0, 0};
+            return new int[]{0, 0};
         }
     }
 }

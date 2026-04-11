@@ -3,7 +3,6 @@ package me.yuugao.holymoderation.client.gui.drawable.element.impl;
 import me.yuugao.holymoderation.client.gui.drawable.element.Drawable;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -12,7 +11,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 public abstract class DrawableElement extends Drawable {
-    @Getter @Setter
+    @Getter
+    @Setter
     private boolean draggable = true;
 
     protected DrawableElement(ServiceContext serviceContext, PivotMode pivotMode) {

@@ -14,19 +14,15 @@ import lombok.Setter;
 public class Drawable implements MouseHoverable, MouseScrollable {
     protected final ServiceContext serviceContext;
     protected final AnimationService animationService;
-
+    protected final AnimationService.Value scale;
+    @Getter
+    protected final PivotMode pivotMode;
     @Getter
     @Setter
     protected float width, height;
     @Getter
     protected float screenScale;
-
-    protected final AnimationService.Value scale;
-
     protected float relX, relY;
-
-    @Getter
-    protected final PivotMode pivotMode;
 
     public Drawable(ServiceContext serviceContext, PivotMode pivotMode) {
         this.serviceContext = serviceContext;
@@ -118,5 +114,6 @@ public class Drawable implements MouseHoverable, MouseScrollable {
     }
 
     @Override
-    public void onMouseScroll(double dx, double dy, int x, int y) {}
+    public void onMouseScroll(double dx, double dy, int x, int y) {
+    }
 }

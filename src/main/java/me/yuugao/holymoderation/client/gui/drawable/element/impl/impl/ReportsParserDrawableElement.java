@@ -22,19 +22,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ReportsParserDrawableElement extends StatefulDrawableElement<ReportsParserRenderState> {
-    private final TextButtonDrawableElement startButton;
-    private final ImageButtonDrawableElement clearButton;
-    private final List<TextButtonDrawableElement> playerButtons = new ArrayList<>();
-
-    private float scrollOffset = 0f;
-    private float maxScroll = 0f;
-
     private static final float ITEM_HEIGHT = 24f;
     private static final float ITEM_SPACING = 4f;
     private static final float LIST_HEIGHT_FACTOR = 0.81f;
     private static final float EDGE_PADDING = 5f;
     private static final float BUTTON_WIDTH_FACTOR = 0.84f;
     private static final float SCROLL_SPEED = 12f;
+    private final TextButtonDrawableElement startButton;
+    private final ImageButtonDrawableElement clearButton;
+    private final List<TextButtonDrawableElement> playerButtons = new ArrayList<>();
+    private float scrollOffset = 0f;
+    private float maxScroll = 0f;
 
     public ReportsParserDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new ReportsParserRenderStateProvider(serviceContext));
