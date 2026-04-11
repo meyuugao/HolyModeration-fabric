@@ -2,8 +2,8 @@ package me.yuugao.holymoderation.client.gui.tabs.impl.main;
 
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.Tab;
-import me.yuugao.holymoderation.client.modules.drawable.element.impl.ColorPickerDrawableElement;
-import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ColorPickerDrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;

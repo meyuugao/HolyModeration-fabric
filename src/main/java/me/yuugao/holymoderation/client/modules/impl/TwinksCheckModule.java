@@ -4,11 +4,11 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,12 +41,15 @@ public class TwinksCheckModule extends Module {
 
     public TwinksCheckModule(ServiceContext serviceContext) {
         super(serviceContext);
+
+        LoggerService loggerService = serviceContext.getLoggerService();
+
         try {
             if (!Files.exists(workDir)) {
                 Files.createDirectories(workDir);
             }
         } catch (IOException e) {
-            serviceContext.getLoggerService().exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
+            loggerService.exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
         }
     }
 

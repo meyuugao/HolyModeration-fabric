@@ -1,24 +1,17 @@
 package me.yuugao.holymoderation.client.gui.screen.impl;
 
-import me.yuugao.holymoderation.client.config.GuiConfig;
+import me.yuugao.holymoderation.client.config.impl.GuiConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
-import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
-import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
-import me.yuugao.holymoderation.client.modules.drawable.element.impl.ReportsParserDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
 import java.awt.Color;
-import java.util.ArrayList;
-import java.util.Collections;
 
 import lombok.Getter;
 import obfuscator.DontObf;
@@ -55,7 +48,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         float scaleFactor = Math.min(width, height) / 100f;
         float scaledOutline = baseOutline * scaleFactor;
 
-        this.screenScale = Math.min(ctx.getScaledWindowWidth() / 960f, ctx.getScaledWindowHeight() / 540f);
+        this.screenScale = Math.min(ctx.getScaledWindowWidth() / 1280f, ctx.getScaledWindowHeight() / 720f);
 
         render2DService.setupRender();
 

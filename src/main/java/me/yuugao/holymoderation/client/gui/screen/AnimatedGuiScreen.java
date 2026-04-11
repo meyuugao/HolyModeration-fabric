@@ -1,99 +1,67 @@
 package me.yuugao.holymoderation.client.gui.screen;
 
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.SchedulerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.AnimationService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
 
+import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
-
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import lombok.Getter;
 import obfuscator.DontObf;
 import obfuscator.ObfRule;
 
 public class AnimatedGuiScreen extends GuiScreen {
-    private final float speed = 0.05f;
-
-    private float progress = 0f;
-    private boolean opening = false;
+    private final AnimationService.Value progressAnim;
 
     @Getter
     private float animValue = 0f;
 
-    private ScheduledFuture<?> task;
+    private boolean closing = false;
 
     protected AnimatedGuiScreen(Text title, ServiceContext serviceContext) {
         super(title, serviceContext);
+
+        AnimationService animationService = serviceContext.getAnimationService();
+
+        this.progressAnim = animationService.createValue(0f);
     }
 
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     protected void init() {
-        progress = 0f;
-        animValue = 0f;
-        opening = true;
-
-        startAnimation();
+        progressAnim.reset(0f);
+        progressAnim.setTarget(1f).setSpeed(5f);
+        closing = false;
     }
 
-    private void startAnimation() {
-        SchedulerService schedulerService = serviceContext.getSchedulerService();
+    @Override
+    @DontObf(ObfRule.MAP_METHOD)
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        progressAnim.update();
+        animValue = progressAnim.get();
 
-        stopAnimation();
-
-        this.task = schedulerService.getScheduler().scheduleAtFixedRate(() -> {
-            if (opening) {
-                progress += speed;
-                if (progress > 1f) progress = 1f;
-            } else {
-                progress -= speed;
-                if (progress < 0f) {
-                    progress = 0f;
-                    onFullyClosed();
-                }
-            }
-
-            float t = progress;
-            float overshoot = 1.25f;
-
-            float v;
-            if (t < 0.5f) {
-                float k = t / 0.5f;
-                v = k * overshoot;
-            } else {
-                float k = (t - 0.5f) / 0.5f;
-                v = overshoot - k * (overshoot - 1f);
-            }
-
-            animValue = v;
-        }, 0, 16, TimeUnit.MILLISECONDS);
-    }
-
-    private void stopAnimation() {
-        if (task != null && !task.isCancelled()) {
-            task.cancel(false);
+        if (closing && progressAnim.isFinished() && progressAnim.getTarget() == 0f) {
+            MinecraftService minecraftService = serviceContext.getMinecraftService();
+            minecraftService.getClient().execute(super::close);
+            return;
         }
-    }
 
-    private void onFullyClosed() {
-        MinecraftService minecraftService = serviceContext.getMinecraftService();
-
-        stopAnimation();
-        minecraftService.getClient().execute(super::close);
+        super.render(context, mouseX, mouseY, delta);
     }
 
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void close() {
-        opening = false;
+        if (!closing) {
+            closing = true;
+            progressAnim.setTarget(0f);
+        }
     }
 
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void removed() {
-        stopAnimation();
         super.removed();
     }
 }

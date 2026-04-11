@@ -4,10 +4,10 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import org.apache.commons.lang3.StringUtils;
 

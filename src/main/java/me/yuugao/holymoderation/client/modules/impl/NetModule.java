@@ -3,14 +3,14 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.ApiConfig;
+import me.yuugao.holymoderation.client.config.impl.ApiConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.connection.ServerConnectEvent;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import java.util.AbstractMap;
 import java.util.HashMap;

@@ -3,16 +3,16 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.impl.SettingsConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
-import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
-import me.yuugao.holymoderation.client.modules.drawable.element.impl.CheckoutsDrawableElement;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.modules.DrawableModule;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.CheckoutsDrawableElement;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import org.apache.commons.lang3.StringUtils;
 

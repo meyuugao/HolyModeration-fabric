@@ -2,7 +2,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator;
 
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import lombok.Getter;
 
@@ -10,6 +10,7 @@ import lombok.Getter;
 public class ServiceContext {
     private final ConfigManager configManager;
     private final EventBus eventBus;
+    private final AnimationService animationService;
     private final ChatService chatService;
     private final CheckoutsService checkoutsService;
     private final GoogleSheetsService googleSheetsService;
@@ -30,6 +31,7 @@ public class ServiceContext {
     public ServiceContext() {
         this.configManager = ServiceLocator.getConfigManager();
         this.eventBus = ServiceLocator.getEventBus();
+        this.animationService = ServiceLocator.getAnimationService();
         this.chatService = ServiceLocator.getChatService();
         this.checkoutsService = ServiceLocator.getCheckoutsService();
         this.googleSheetsService = ServiceLocator.getGoogleSheetsService();

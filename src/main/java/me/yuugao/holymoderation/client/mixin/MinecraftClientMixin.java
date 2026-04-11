@@ -1,10 +1,10 @@
 package me.yuugao.holymoderation.client.mixin;
 
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.ServerDisconnectEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.connection.ServerDisconnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.Render2DService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.LoggerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
 
 import net.minecraft.client.MinecraftClient;
 

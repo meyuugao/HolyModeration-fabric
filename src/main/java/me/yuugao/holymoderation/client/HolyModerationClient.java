@@ -1,12 +1,13 @@
 package me.yuugao.holymoderation.client;
 
+import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.modules.drawable.element.impl.*;
-import me.yuugao.holymoderation.client.modules.drawable.render.PivotMode;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.*;
+import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.modules.impl.*;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
@@ -35,7 +36,7 @@ public class HolyModerationClient implements ClientModInitializer {
         eventBus.register(new NotificationsModule(serviceContext, new NotificationsDrawableElement(serviceContext, PivotMode.RIGHT_DOWN)));
         eventBus.register(new PunishmentsModule(serviceContext));
         eventBus.register(new ReportCopyModule(serviceContext));
-        eventBus.register(new ReportsParserModule(serviceContext, new ReportsParserDrawableElement(serviceContext, PivotMode.CENTER)));
+        eventBus.register(new ReportsParserModule(serviceContext, new ReportsParserDrawableElement(serviceContext, PivotMode.CENTER))); //tip: и даже так
         eventBus.register(new SettingsModule(serviceContext));
         eventBus.register(new StateModule(serviceContext));
         eventBus.register(new SpyModule(serviceContext, new SpyDrawableElement(serviceContext, PivotMode.UP)));
@@ -46,11 +47,11 @@ public class HolyModerationClient implements ClientModInitializer {
     @Override
     @DontObf(ObfRule.MAP_METHOD)
     public void onInitializeClient() {
-        ServiceLocator.initialize(new EventBus(), new ChatService(), new CheckoutsService(), new GoogleSheetsService(),
-                new GuiManagerService(), new InputService(), new MinecraftService(), new NetService(),
-                new NotificationsService(), new PunishmentsService(), new Render2DService(), new SchedulerService(),
-                new ScreenHandlerService(), new SoundService(), new SpyService(), new StateService(),
-                (Logger) LogManager.getLogger(HolyModerationClient.class));
+        ServiceLocator.initialize(new ConfigManager(), new EventBus(), new ChatService(), new AnimationService(),
+                new CheckoutsService(), new GoogleSheetsService(), new GuiManagerService(), new InputService(),
+                new MinecraftService(), new NetService(), new NotificationsService(), new PunishmentsService(),
+                new Render2DService(), new SchedulerService(), new ScreenHandlerService(), new SoundService(),
+                new SpyService(), new StateService(), (Logger) LogManager.getLogger(HolyModerationClient.class));
         eventBusInitialize();
         commandsInitialize();
     }

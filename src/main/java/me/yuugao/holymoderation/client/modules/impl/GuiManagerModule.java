@@ -1,15 +1,16 @@
 package me.yuugao.holymoderation.client.modules.impl;
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.RenderEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.input.MouseScrollEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.render.RenderEvent;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.modules.drawable.DrawableModule;
-import me.yuugao.holymoderation.client.modules.drawable.element.DrawableElement;
-import me.yuugao.holymoderation.client.modules.drawable.render.RenderMode;
+import me.yuugao.holymoderation.client.modules.DrawableModule;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.GuiManagerService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.InputService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.GuiManagerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.InputService;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -87,6 +88,15 @@ public class GuiManagerModule extends Module {
             }
         } else {
             dragging = null;
+        }
+    }
+
+    @Subscribe
+    public void onMouseScroll(MouseScrollEvent event) {
+        GuiManagerService guiManagerService = serviceContext.getGuiManagerService();
+
+        for (DrawableModule<?> drawableModule : new ArrayList<>(guiManagerService.getDrawableModules())) {
+            drawableModule.getDrawableElement().onMouseScroll(event.getDx(), event.getDy(), event.getX(), event.getY());
         }
     }
 

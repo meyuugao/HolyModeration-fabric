@@ -1,9 +1,9 @@
 package me.yuugao.holymoderation.client.mixin;
 
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
 
 import net.minecraft.client.network.message.MessageHandler;
 import net.minecraft.text.Text;

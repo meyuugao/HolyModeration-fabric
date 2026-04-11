@@ -1,13 +1,13 @@
 package me.yuugao.holymoderation.client.modules.impl;
 
-import me.yuugao.holymoderation.client.config.SettingsConfig;
+import me.yuugao.holymoderation.client.config.impl.SettingsConfig;
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.ChatService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.StateService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.ChatService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.StateService;
 
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;

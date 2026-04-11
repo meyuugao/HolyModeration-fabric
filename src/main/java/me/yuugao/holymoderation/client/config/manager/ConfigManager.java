@@ -1,7 +1,11 @@
 package me.yuugao.holymoderation.client.config.manager;
 
 import me.yuugao.holymoderation.client.config.*;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
+import me.yuugao.holymoderation.client.config.impl.ApiConfig;
+import me.yuugao.holymoderation.client.config.impl.GuiConfig;
+import me.yuugao.holymoderation.client.config.impl.KeyBindsConfig;
+import me.yuugao.holymoderation.client.config.impl.SettingsConfig;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.LoggerService;
 
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
@@ -14,6 +18,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 import lombok.Getter;
+import lombok.Setter;
 
 public class ConfigManager {
     private static final Path configsDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Config");
@@ -73,7 +78,8 @@ public class ConfigManager {
 
     private final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
 
-    private final LoggerService loggerService;
+    @Setter
+    private LoggerService loggerService;
 
     @Getter
     private final ApiConfig apiConfig;
@@ -84,9 +90,7 @@ public class ConfigManager {
     @Getter
     private final SettingsConfig settingsConfig;
 
-    public ConfigManager(LoggerService loggerService) {
-        this.loggerService = loggerService;
-
+    public ConfigManager() {
         ensureConfigDirectory();
         apiConfig = loadOrCreate(new ApiConfig());
         guiConfig = loadOrCreate(new GuiConfig());
@@ -100,7 +104,7 @@ public class ConfigManager {
                 Files.createDirectories(configsDir);
             }
         } catch (Exception e) {
-            loggerService.exception("ConfigManager/ensureConfigDirectory: %s".formatted(e));
+            loggerService.exception("Исключение в ConfigManager/ensureConfigDirectory: %s".formatted(e));
         }
     }
 
@@ -120,7 +124,7 @@ public class ConfigManager {
                 return loaded != null ? loaded : defaultConfig;
             }
         } catch (Exception e) {
-            loggerService.exception("ConfigManager/loadOrCreate: %s".formatted(e));
+            loggerService.exception("Исключение в ConfigManager/loadOrCreate: %s".formatted(e));
             saveConfig(defaultConfig);
             return defaultConfig;
         }
@@ -134,7 +138,7 @@ public class ConfigManager {
             gson.toJson(config, writer);
             writer.write(FOOTER);
         } catch (Exception e) {
-            loggerService.exception("ConfigManager/save: %s".formatted(e));
+            loggerService.exception("Исключение в ConfigManager/saveConfig: %s".formatted(e));
         }
     }
 }

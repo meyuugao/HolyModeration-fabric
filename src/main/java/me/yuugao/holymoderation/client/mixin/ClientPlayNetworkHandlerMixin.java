@@ -2,12 +2,12 @@ package me.yuugao.holymoderation.client.mixin;
 
 
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.MessageSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.ServerConnectEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageSendEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.connection.ServerConnectEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.MinecraftService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.StateService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.StateService;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;

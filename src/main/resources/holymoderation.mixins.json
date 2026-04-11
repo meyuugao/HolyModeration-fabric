@@ -11,8 +11,8 @@
     "MessageHandlerMixin",
     "MinecraftClientMixin",
     "MouseMixin",
-    "render.GameRendererMixin",
-    "render.ScreenMixin"
+    "GameRendererMixin",
+    "ScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

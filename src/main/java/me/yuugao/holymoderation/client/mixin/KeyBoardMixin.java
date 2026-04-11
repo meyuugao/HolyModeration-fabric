@@ -1,7 +1,7 @@
 package me.yuugao.holymoderation.client.mixin;
 
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.KeyPressEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.input.KeyPressEvent;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
 
 import net.minecraft.client.Keyboard;

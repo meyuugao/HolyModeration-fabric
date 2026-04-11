@@ -2,7 +2,7 @@ package me.yuugao.holymoderation.client.eventbus;
 
 import me.yuugao.holymoderation.client.eventbus.event.Event;
 import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.LoggerService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.LoggerService;
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -10,11 +10,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import lombok.Setter;
 import obfuscator.DontObf;
 import obfuscator.ObfRule;
 
 public class EventBus {
     private final Map<Class<?>, List<Subscriber>> subscribers = new ConcurrentHashMap<>();
+    @Setter
     private LoggerService loggerService;
 
     public void register(Object object) {
@@ -78,10 +80,6 @@ public class EventBus {
                 loggerService.exception("Исключение в EventBus/executeSubscribersSync: %s".formatted(e));
             }
         }
-    }
-
-    public void setLogger(LoggerService loggerService) {
-        this.loggerService = loggerService;
     }
 
     @DontObf(ObfRule.MAP_METHOD)

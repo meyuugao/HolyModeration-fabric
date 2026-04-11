@@ -2,7 +2,7 @@ package me.yuugao.holymoderation.client.util.serviceLocator;
 
 import me.yuugao.holymoderation.client.config.manager.ConfigManager;
 import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.*;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
 
 import org.apache.logging.log4j.core.Logger;
 
@@ -13,6 +13,8 @@ public class ServiceLocator {
     private static ConfigManager configManager;
     @Getter
     private static EventBus eventBus;
+    @Getter
+    private static AnimationService animationService;
     @Getter
     private static ChatService chatService;
     @Getter
@@ -46,16 +48,18 @@ public class ServiceLocator {
     @Getter
     private static LoggerService loggerService;
 
-    public static void initialize(EventBus eventBus, ChatService chatService,
-                                  CheckoutsService checkoutsService, GoogleSheetsService googleSheetsService,
-                                  GuiManagerService guiManagerService, InputService inputService,
-                                  MinecraftService minecraftService, NetService netService,
+    public static void initialize(ConfigManager configManager, EventBus eventBus, ChatService chatService,
+                                  AnimationService animationService, CheckoutsService checkoutsService,
+                                  GoogleSheetsService googleSheetsService, GuiManagerService guiManagerService,
+                                  InputService inputService, MinecraftService minecraftService, NetService netService,
                                   NotificationsService notificationsService, PunishmentsService punishmentsService,
                                   Render2DService render2DService, SchedulerService schedulerService,
                                   ScreenHandlerService screenHandlerService, SoundService soundService,
                                   SpyService spyService, StateService stateService, Logger logger) {
+        ServiceLocator.configManager = configManager;
         ServiceLocator.eventBus = eventBus;
         ServiceLocator.chatService = chatService;
+        ServiceLocator.animationService = animationService;
         ServiceLocator.checkoutsService = checkoutsService;
         ServiceLocator.googleSheetsService = googleSheetsService;
         ServiceLocator.guiManagerService = guiManagerService;
@@ -76,8 +80,8 @@ public class ServiceLocator {
 
     private static void initializeLoggerService(Logger logger) {
         loggerService = new LoggerService(logger);
-        ServiceLocator.configManager = new ConfigManager(loggerService);
-        eventBus.setLogger(loggerService);
+        configManager.setLoggerService(loggerService);
+        eventBus.setLoggerService(loggerService);
         chatService.setLoggerService(loggerService);
         checkoutsService.setLoggerService(loggerService);
         googleSheetsService.setLoggerService(loggerService);

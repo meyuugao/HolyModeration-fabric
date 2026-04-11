@@ -5,12 +5,12 @@ import static me.yuugao.holymoderation.client.util.Colors.GREEN;
 
 
 import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.modules.Module;
 import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.ChatService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationType;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.NotificationsService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.ChatService;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.NotificationType;
+import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.NotificationsService;
 
 public class ReportCopyModule extends Module {
     private boolean messageIsReportInfo = false;
