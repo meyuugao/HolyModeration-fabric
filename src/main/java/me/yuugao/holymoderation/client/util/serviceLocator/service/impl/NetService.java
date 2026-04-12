@@ -63,10 +63,11 @@ public class NetService extends Service {
     }
 
     public void downloadSounds() {
+        SoundService soundService = ServiceLocator.getSoundService();
         NotificationsService notificationsService = ServiceLocator.getNotificationsService();
 
         try {
-            Path soundsDir = Paths.get("C:\\HolyModeration\\Sounds");
+            Path soundsDir = soundService.getSoundsDir();
 
             if (Files.exists(soundsDir)) {
                 try (var stream = Files.walk(soundsDir)) {

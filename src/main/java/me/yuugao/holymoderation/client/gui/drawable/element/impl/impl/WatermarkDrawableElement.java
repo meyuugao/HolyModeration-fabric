@@ -21,14 +21,16 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
     private static final char[][] LEET = {
             {'a', '4'}, {'e', '3'}, {'i', '1'}, {'o', '0'}, {'s', '5'}, {'l', '1'}
     };
+    private static final long TICK_MS = 300L;
 
     private final Random random = new Random();
     private final char[] baseAnimText = "made for holyworld".toCharArray();
     private final char[] animBuffer = baseAnimText.clone();
-    private int tickCounter;
+    private long lastTick;
 
     public WatermarkDrawableElement(ServiceContext serviceContext, PivotMode positionMode) {
         super(serviceContext, positionMode, new WatermarkRenderStateProvider(serviceContext));
+        this.lastTick = System.currentTimeMillis();
     }
 
     @Override
@@ -52,8 +54,11 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
         MatrixStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManager.getGuiConfig();
 
-        this.tickCounter++;
-        if (tickCounter % 18 == 0) updateAnimText();
+        long now = System.currentTimeMillis();
+        if (now - lastTick >= TICK_MS) {
+            updateAnimText();
+            lastTick = now;
+        }
 
         float animTarget = state.animTarget();
         this.scale.setTarget(animTarget);
@@ -72,15 +77,11 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
 
         render2DService.setupRender();
 
-        ms.push();
-
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(),
                 getHeight(), z, 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.2f, 3);
 
         render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),
                 (int) (getHeight() / 2f - tr.fontHeight / 2f + 0.5f), z, 0xffffffff, false, ctx);
-
-        ms.pop();
 
         render2DService.endRender();
     }

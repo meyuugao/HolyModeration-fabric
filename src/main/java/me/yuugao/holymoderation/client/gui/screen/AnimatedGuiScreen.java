@@ -31,7 +31,7 @@ public class AnimatedGuiScreen extends GuiScreen {
     @DontObf(ObfRule.MAP_METHOD)
     protected void init() {
         progressAnim.reset(0f);
-        progressAnim.setTarget(1f).setSpeed(5f);
+        progressAnim.setTarget(1f).setSpeed(1.2f);
         closing = false;
     }
 

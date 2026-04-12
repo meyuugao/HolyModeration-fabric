@@ -16,7 +16,12 @@ import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineEvent;
 
+import lombok.Getter;
+
+@Getter
 public class SoundService extends Service {
+    private final Path soundsDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Sounds");
+
     public void playSound(String soundName) {
         ConfigManager configManager = ServiceLocator.getConfigManager();
 
@@ -24,8 +29,8 @@ public class SoundService extends Service {
 
         if (settingsConfig.isSoundsEnabled()) {
             try {
-                Path soundPath = Paths.get(System.getProperty("user.home"), "HolyModeration", "Config", soundName);
-                byte[] audioData = Files.readAllBytes(soundPath);
+
+                byte[] audioData = Files.readAllBytes(soundsDir.resolve(soundName));
 
                 Clip clip = AudioSystem.getClip();
                 clip.open(AudioSystem.getAudioInputStream(new ByteArrayInputStream(audioData)));

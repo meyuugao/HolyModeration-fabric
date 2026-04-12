@@ -43,8 +43,7 @@ public class NotificationsService extends Service {
     }
 
     public void renderNotificationsLocal(DrawContext ctx, int z, float stackDirY, float hideDirX, float hideDirY,
-                                         float screenLeft, float screenRight, float screenTop, float screenBottom,
-                                         float localW) {
+                                         float screenWidth, float screenHeight) {
 
         MinecraftService minecraftService = ServiceLocator.getMinecraftService();
         Render2DService render2DService = ServiceLocator.getRender2DService();
@@ -57,7 +56,7 @@ public class NotificationsService extends Service {
 
         float margin = 8f;
         float spacing = 10f;
-        float width = localW / 6f;
+        float width = screenWidth / 6f;
         float radius = 6f;
         float blur = 6f;
         float outline = 1.5f;
@@ -86,10 +85,10 @@ public class NotificationsService extends Service {
 
         notificationPool.removeIf(n -> {
             if (n.state != State.HIDING) return false;
-            if (hideDirX > 0) return n.x > screenRight + n.width;
-            if (hideDirX < 0) return n.x + n.width < screenLeft;
-            if (hideDirY < 0) return n.y + n.height < screenTop;
-            if (hideDirY > 0) return n.y > screenBottom;
+            if (hideDirX > 0) return n.x > screenWidth + n.width;
+            if (hideDirX < 0) return n.x + n.width < 0;
+            if (hideDirY < 0) return n.y + n.height < 0;
+            if (hideDirY > 0) return n.y > screenHeight;
             return false;
         });
 
@@ -99,36 +98,36 @@ public class NotificationsService extends Service {
 
             if (n.state != State.HIDING) {
                 if (hideDirX > 0) {
-                    n.targetX = screenRight - margin - n.width;
+                    n.targetX = screenWidth - margin - n.width;
                 } else if (hideDirX < 0) {
-                    n.targetX = screenLeft + margin;
+                    n.targetX = margin;
                 } else {
-                    n.targetX = (screenLeft + screenRight - n.width) / 2;
+                    n.targetX = (screenWidth - n.width) / 2;
                 }
 
                 if (stackDirY < 0) {
-                    n.targetY = screenBottom - cursor - n.height;
+                    n.targetY = screenHeight - cursor - n.height;
                 } else if (stackDirY > 0) {
-                    n.targetY = screenTop + cursor;
+                    n.targetY = cursor;
                 } else {
-                    n.targetY = (screenTop + screenBottom - n.height) / 2;
+                    n.targetY = (screenHeight - n.height) / 2;
                 }
                 cursor += n.height + spacing;
             }
 
             if (n.state == State.HIDING) {
-                if (hideDirX > 0) n.targetX = screenRight + n.width + margin;
-                else if (hideDirX < 0) n.targetX = screenLeft - n.width - margin;
-                if (hideDirY < 0) n.targetY = screenTop - n.height - margin;
-                else if (hideDirY > 0) n.targetY = screenBottom + n.height + margin;
+                if (hideDirX > 0) n.targetX = screenWidth + n.width + margin;
+                else if (hideDirX < 0) n.targetX = -n.width - margin;
+                if (hideDirY < 0) n.targetY = -n.height - margin;
+                else if (hideDirY > 0) n.targetY = screenHeight + n.height + margin;
             }
         }
 
         for (Notification n : notificationPool) {
             if (n.state == State.SPAWNING && !n.initialized) {
                 n.x = n.targetX;
-                if (stackDirY < 0) n.y = screenBottom + n.height;
-                else if (stackDirY > 0) n.y = screenTop - n.height;
+                if (stackDirY < 0) n.y = screenHeight + n.height;
+                else if (stackDirY > 0) n.y = -n.height;
                 else n.y = n.targetY;
                 n.initialized = true;
             }
@@ -142,7 +141,7 @@ public class NotificationsService extends Service {
         }
 
         for (Notification n : notificationPool) {
-            if (n.y + n.height < screenTop || n.y > screenBottom) continue;
+            if (n.y + n.height < 0 || n.y > screenHeight) continue;
 
             MatrixStack ms = ctx.getMatrices();
             Color bg = n.type.getBg();

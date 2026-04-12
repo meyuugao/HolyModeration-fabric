@@ -28,11 +28,7 @@ public class ColorPickerDrawableElement extends DrawableElement {
 
         render2DService.setupRender();
 
-        ms.push();
-
         render2DService.renderRGBPalette(ms, 0f, 0f, z, radius, outlineColor, outlineWidth);
-
-        ms.pop();
 
         render2DService.endRender();
     }

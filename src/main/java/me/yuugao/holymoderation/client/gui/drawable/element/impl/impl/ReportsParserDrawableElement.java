@@ -103,8 +103,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
         render2DService.setupRender();
 
-        ms.push();
-
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
                 getHeight() / 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
 
@@ -130,8 +128,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         renderVisibleButtons(ctx, z, guiConfig, listHeight, buttonWidth, itemTotal);
 
         ctx.disableScissor();
-
-        ms.pop();
 
         render2DService.endRender();
     }

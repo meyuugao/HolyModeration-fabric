@@ -90,8 +90,6 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
 
         render2DService.setupRender();
 
-        ms.push();
-
         render2DService.renderSoftRoundedRectOutline(
                 ms, 0f, 0f, getWidth(), getHeight(), z,
                 10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
@@ -106,8 +104,6 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
                 false,
                 ctx
         );
-
-        ms.pop();
 
         render2DService.endRender();
     }

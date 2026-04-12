@@ -75,8 +75,6 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
 
         render2DService.setupRender();
 
-        ms.push();
-
         float baseY = (getHeight() - textBlockHeight) / 2f + 0.5f;
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
                 10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
@@ -87,8 +85,6 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
             render2DService.renderText(tr, display1, (int) (getWidth() / 2f - tr.getWidth(display1) / 2f),
                     (int) (baseY + tr.fontHeight + 4), z, 0xffffffff, false, ctx);
         }
-
-        ms.pop();
 
         render2DService.endRender();
     }
