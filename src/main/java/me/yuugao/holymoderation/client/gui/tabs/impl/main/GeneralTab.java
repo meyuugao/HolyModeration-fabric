@@ -30,10 +30,5 @@ public class GeneralTab extends Tab<MainGuiScreen> {
         colorPicker.updateRenderForParent(ctx, 0.5f, 0.5f, pW, pH,
                 parent.getRenderPriority(), Math.min(pW, pH) * animatedRelRadius,
                 new Color(0x000000), 2f);
-
-        Color color = colorPicker.getColorFromMouse(pW, pH, relMouseX, relMouseY);
-
-        serviceContext.getRender2DService().renderRect(ctx.getMatrices(), 0, 0, 100, 100,
-                parent.getRenderPriority(), color == null ? Color.WHITE : color);
     }
 }
