@@ -1,20 +1,20 @@
 package me.yuugao.holymoderation.client.modules.impl;
 
-import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.impl.input.KeyPressEvent;
-import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.InputService;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.util.service.InputService;
+import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.KeyPressEvent;
 
-public class KeyBindingModule extends Module {
-    public KeyBindingModule(ServiceContext serviceContext) {
-        super(serviceContext);
-    }
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+@Singleton
+public class KeyBindingModule {
+    private final InputService inputService;
 
     @Subscribe
     public void onKeyPress(KeyPressEvent event) {
-        InputService inputService = serviceContext.getInputService();
-
         inputService.updatePressedKeys(event.getKey(), event.getAction());
     }
 }

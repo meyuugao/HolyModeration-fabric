@@ -1,11 +1,16 @@
 package me.yuugao.holymoderation.client.gui.screen.impl;
 
-import me.yuugao.holymoderation.client.config.impl.GuiConfig;
-import me.yuugao.holymoderation.client.config.manager.ConfigManager;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
+import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
+import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -14,17 +19,24 @@ import net.minecraft.text.Text;
 import java.awt.Color;
 
 import lombok.Getter;
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
 
+@Singleton
 public class MainGuiScreen extends AnimatedGuiScreen {
     @Getter
     private final int renderPriority = 2000;
     private final Color outlineColor = Color.WHITE;
 
-    public MainGuiScreen(ServiceContext serviceContext) {
-        super(Text.of("HolyModeration Main Gui Screen"), serviceContext);
-        this.tabs.put("General", new GeneralTab(this, serviceContext));
+    private final Render2DService render2DService;
+    private final ConfigManagerService configManagerService;
+
+    @Inject
+    public MainGuiScreen(AnimationService animationService, Render2DService render2DService,
+                         ConfigManagerService configManagerService, DrawableElementFactory drawableElementFactory) {
+        super(Text.of("HolyModeration Main Gui Screen"), animationService);
+        this.tabs.put("General", new GeneralTab(this, drawableElementFactory));
+
+        this.render2DService = render2DService;
+        this.configManagerService = configManagerService;
     }
 
     @Override
@@ -32,11 +44,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
         super.render(ctx, mouseX, mouseY, tickDelta);
 
-        Render2DService render2DService = serviceContext.getRender2DService();
-        ConfigManager configManager = serviceContext.getConfigManager();
-
         MatrixStack ms = ctx.getMatrices();
-        GuiConfig guiConfig = configManager.getGuiConfig();
+        GuiConfig guiConfig = configManagerService.getGuiConfig();
 
         float targetWidth = 435f;
         float targetHeight = 300f;

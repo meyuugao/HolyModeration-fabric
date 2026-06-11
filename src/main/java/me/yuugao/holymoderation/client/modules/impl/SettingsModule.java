@@ -3,55 +3,50 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.impl.SettingsConfig;
-import me.yuugao.holymoderation.client.config.manager.ConfigManager;
-import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
-import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.ChatService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.NotificationType;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.NotificationsService;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.util.service.ChatService;
+import me.yuugao.holymoderation.client.util.service.NotificationType;
+import me.yuugao.holymoderation.client.util.service.NotificationsService;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
+import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
+import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
+import lombok.RequiredArgsConstructor;
 
 @DontObf(ObfRule.OBF_STRING)
-public class SettingsModule extends Module {
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+@Singleton
+public class SettingsModule {
     private final String[] settingsCommands = {
             "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
             "copy", "setcopy", "setmarker", "setspydelay", "setsoundsvolume", "sounds", "textadd", "textedit",
             "textremove", "textsclear", "textslist"
     };
-
     private final String[] settingsWithoutArguments = {
             "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish", //tip: autotp --> autocheckouttp & autospytp
             "copy", "sounds", "textsclear", "textslist"
     };
-
     private final String[] settingsWithOneArgument = {
             "setcopy", "setmarker", "setspydelay", "setsoundsvolume", "textadd", "textremove"
     };
-
     private final String[] settingsWithTwoArguments = {
             "textedit"
     };
-
-    public SettingsModule(ServiceContext serviceContext) {
-        super(serviceContext);
-    }
+    private final ChatService chatService;
+    private final ConfigManagerService configManagerService;
+    private final NotificationsService notificationsService;
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
-        ChatService chatService = serviceContext.getChatService();
-        ConfigManager configManager = serviceContext.getConfigManager();
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-
-        SettingsConfig settingsConfig = configManager.getSettingsConfig();
+        SettingsConfig settingsConfig = configManagerService.getSettingsConfig();
 
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
@@ -272,14 +267,11 @@ public class SettingsModule extends Module {
                             "Вы изменили текст номер %s.".formatted((index + 1)), 5f);
                 }
             }
-            configManager.saveConfig(settingsConfig);
+            configManagerService.saveConfig(settingsConfig);
         }
     }
 
     private String validateArguments(String[] commandSplit) {
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-        ChatService chatService = serviceContext.getChatService();
-
         if (commandSplit.length == 2) {
             notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                     "Вы не указали число.", 5f);

@@ -1,9 +1,9 @@
 package me.yuugao.holymoderation;
 
-import net.fabricmc.api.ModInitializer;
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
 
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
+import net.fabricmc.api.ModInitializer;
 
 public class HolyModeration implements ModInitializer {
     @Override

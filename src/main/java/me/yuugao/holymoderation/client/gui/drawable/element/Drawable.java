@@ -3,8 +3,7 @@ package me.yuugao.holymoderation.client.gui.drawable.element;
 import me.yuugao.holymoderation.client.gui.drawable.MouseHoverable;
 import me.yuugao.holymoderation.client.gui.drawable.MouseScrollable;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.AnimationService;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
 
 import net.minecraft.client.gui.DrawContext;
 
@@ -12,7 +11,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 public class Drawable implements MouseHoverable, MouseScrollable {
-    protected final ServiceContext serviceContext;
     protected final AnimationService animationService;
     protected final AnimationService.Value scale;
     @Getter
@@ -24,11 +22,10 @@ public class Drawable implements MouseHoverable, MouseScrollable {
     protected float screenScale;
     protected float relX, relY;
 
-    public Drawable(ServiceContext serviceContext, PivotMode pivotMode) {
-        this.serviceContext = serviceContext;
+    public Drawable(AnimationService animationService, PivotMode pivotMode) {
         this.pivotMode = pivotMode;
-        this.animationService = serviceContext.getAnimationService();
-        this.scale = serviceContext.getAnimationService().createValue(1f);
+        this.animationService = animationService;
+        this.scale = animationService.createValue(1f);
     }
 
     public float getScale() {

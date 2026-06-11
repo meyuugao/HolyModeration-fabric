@@ -3,46 +3,66 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.config.impl.SettingsConfig;
-import me.yuugao.holymoderation.client.config.manager.ConfigManager;
-import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
-import me.yuugao.holymoderation.client.eventbus.event.impl.connection.ServerConnectEvent;
-import me.yuugao.holymoderation.client.eventbus.event.impl.connection.ServerDisconnectEvent;
-import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SpyDrawableElement;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.singleton.SpyDrawableElement;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
+import me.yuugao.holymoderation.client.util.service.*;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
+import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
+import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.connection.ServerConnectEvent;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.connection.ServerDisconnectEvent;
+import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
+import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public class SpyModule extends DrawableModule<SpyDrawableElement> {
+    private final PlayerStateService playerStateService;
+    private final UserStateService userStateService;
+    private final SpyService spyService;
+    private final NotificationsService notificationsService;
+    private final CheckoutsService checkoutsService;
+    private final ConfigManagerService configManagerService;
+    private final SchedulerService schedulerService;
+    private final ChatService chatService;
+
     private boolean processingPlaytimeInfo = false;
     private boolean shouldUpdate = false;
     private boolean instantUpdate = false;
     private String lastKnownLocation = StringUtils.EMPTY;
 
-    public SpyModule(ServiceContext serviceContext, SpyDrawableElement spyDrawableElement) {
-        super(serviceContext, spyDrawableElement);
+    @Inject
+    public SpyModule(SpyDrawableElement spyDrawableElement, PlayerStateService playerStateService,
+                     UserStateService userStateService, SpyService spyService,
+                     NotificationsService notificationsService, CheckoutsService checkoutsService,
+                     ConfigManagerService configManagerService, SchedulerService schedulerService, ChatService chatService) {
+        super(spyDrawableElement);
+        this.playerStateService = playerStateService;
+        this.userStateService = userStateService;
+        this.spyService = spyService;
+        this.notificationsService = notificationsService;
+        this.checkoutsService = checkoutsService;
+        this.configManagerService = configManagerService;
+        this.schedulerService = schedulerService;
+        this.chatService = chatService;
     }
 
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
-        StateService stateService = serviceContext.getStateService();
-        SpyService spyService = serviceContext.getSpyService();
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-        CheckoutsService checkoutsService = serviceContext.getCheckoutsService();
-
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ", 3);
         if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
 
         if (commandSplit[1].equals("spy")) {
             if (commandSplit.length == 2) {
-                if (!stateService.getSpyPlayer().isEmpty()) {
+                if (!playerStateService.getSpyPlayer().isEmpty()) {
                     spyService.endSpy();
                 } else {
                     notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
@@ -51,19 +71,19 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
                 return;
             }
 
-            if (stateService.isInHub()) {
+            if (userStateService.isInHub()) {
                 notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                         "В хабе этого делать нельзя.", 5f);
                 return;
             }
 
-            if (!stateService.getCheckoutPlayer().isEmpty() && stateService.getCheckoutPlayer().equals(commandSplit[2])) {
+            if (!playerStateService.getCheckoutPlayer().isEmpty() && playerStateService.getCheckoutPlayer().equals(commandSplit[2])) {
                 notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                         "Вы не можете начать следить за игроком на вашей проверке.", 5f);
                 return;
             }
 
-            if (!stateService.getSpyPlayer().isEmpty()) {
+            if (!playerStateService.getSpyPlayer().isEmpty()) {
                 notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                         "Вы уже следите за кем-то --> %s%s/hm spy%s%s%s.".formatted(GOLD, BOLD, WHITE, RED, BOLD), 5f);
                 return;
@@ -71,19 +91,19 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
 
             spyService.startSpy(commandSplit[2]);
         } else if (commandSplit[1].equals("spyfrz")) {
-            if (stateService.isInHub()) {
+            if (userStateService.isInHub()) {
                 notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                         "В хабе этого делать нельзя.", 5f);
                 return;
             }
 
-            if (stateService.getSpyPlayer().isEmpty()) {
+            if (playerStateService.getSpyPlayer().isEmpty()) {
                 notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                         "Вы ни за кем не следите.", 5f);
                 return;
             }
 
-            if (checkoutsService.startCheckOut(stateService.getSpyPlayer())) {
+            if (checkoutsService.startCheckOut(playerStateService.getSpyPlayer())) {
                 spyService.endSpy();
             }
         }
@@ -91,13 +111,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
 
     @Subscribe(priority = 98)
     public void onMessageReceive(MessageReceiveEvent event) {
-        ChatService chatService = serviceContext.getChatService();
-        StateService stateService = serviceContext.getStateService();
-        SchedulerService schedulerService = serviceContext.getSchedulerService();
-        SpyService spyService = serviceContext.getSpyService();
-        ConfigManager configManager = serviceContext.getConfigManager();
-
-        SettingsConfig settingsConfig = configManager.getSettingsConfig();
+        SettingsConfig settingsConfig = configManagerService.getSettingsConfig();
 
         String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
@@ -115,7 +129,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
                 }
             }
 
-            if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок %s".formatted(stateService.getUserNickname()))) {
+            if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок %s".formatted(userStateService.getUserNickname()))) {
                 event.setCancelled(true);
                 String status;
                 if (receivedText.equals("Игрок оффлайн")) {
@@ -139,14 +153,14 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
                 } else {
                     if (lastKnownLocation.isEmpty()) lastKnownLocation = loc;
                     else if (!loc.equals(lastKnownLocation)) {
-                        stateService.setSpyPlayerStatus(StringUtils.EMPTY);
+                        playerStateService.setSpyPlayerStatus(StringUtils.EMPTY);
                         lastKnownLocation = loc;
                     }
                 }
             }
 
-            if (receivedText.startsWith("Последняя") && !stateService.getSpyPlayerStatus().isEmpty()) {
-                stateService.setSpyPlayerActivity(receivedText.split(": ")[1]);
+            if (receivedText.startsWith("Последняя") && !playerStateService.getSpyPlayerStatus().isEmpty()) {
+                playerStateService.setSpyPlayerActivity(receivedText.split(": ")[1]);
             }
 
             if (receivedText.startsWith("Активность") || receivedText.startsWith("Общее время") ||
@@ -157,15 +171,15 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
             }
 
             if (shouldUpdate) {
-                if (stateService.getUserLocation().equals(stateService.getSpyPlayerStatus())
-                        && stateService.getSpyPlayerActivity().isEmpty()) {
+                if (userStateService.getUserLocation().equals(playerStateService.getSpyPlayerStatus())
+                        && playerStateService.getSpyPlayerActivity().isEmpty()) {
                     instantUpdate = true;
                     if (settingsConfig.isAutoSpyTpEnabled()) {
-                        chatService.chatMessage("/tpo " + stateService.getSpyPlayer());
+                        chatService.chatMessage("/tpo " + playerStateService.getSpyPlayer());
                     }
                 }
 
-                schedulerService.getScheduler().schedule(spyService::update,
+                schedulerService.schedule("SpyModule/onMessageReceive", spyService::update,
                         instantUpdate ? 500 : settingsConfig.getSpyDelay(),
                         instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
@@ -180,28 +194,22 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
 
     @Subscribe
     public void onServerDisconnect(ServerDisconnectEvent event) {
-        SpyService spyService = serviceContext.getSpyService();
         if (spyService.isEnabled()) {
             spyService.endSpy();
         }
     }
 
     private void tryInit() {
-        SchedulerService schedulerService = serviceContext.getSchedulerService();
-        StateService stateService = serviceContext.getStateService();
-        SpyService spyService = serviceContext.getSpyService();
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-
-        schedulerService.getScheduler().schedule(() -> {
-            if (stateService.isGameInitCompleted()) {
+        schedulerService.schedule("SpyModule/tryInit", () -> {
+            if (userStateService.isGameInitCompleted()) {
                 if (spyService.isEnabled()) {
-                    if (stateService.isInHub()) {
+                    if (userStateService.isInHub()) {
                         lastKnownLocation = StringUtils.EMPTY;
                         spyService.onPause();
                         notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех"
                                 .formatted(GREEN, BOLD), "Слежка приостановлена.", 5f);
                     } else {
-                        if (!stateService.getUserLocation().isEmpty()) {
+                        if (!userStateService.getUserLocation().isEmpty()) {
                             spyService.update();
                             notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех"
                                     .formatted(GREEN, BOLD), "Слежка возобновлена.", 5f);

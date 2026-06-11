@@ -3,61 +3,60 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
-import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.util.service.*;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
+import me.yuugao.holymoderation.client.util.service.config.impl.ApiConfig;
+import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
 
 import org.apache.commons.lang3.StringUtils;
 
-public class PunishmentsModule extends Module {
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+@Singleton
+public class PunishmentsModule {
     private final String[] PunishmentsCommands = {
             "/mute", "/muteip", "/tempmute", "/tempmuteip", "/ban", "/banip", "/tempban", "/warn"
     };
-
     private final String[] TempPunishments = {
             "/tempmute", "/tempmuteip", "/tempban"
     };
-
     private final String[] InfinityPunishments = {
             "/mute", "/muteip", "/ban", "/banip"
     };
-
     private final String[] BanCommands = {
             "/ban", "/banip", "/tempban"
     };
-
     private final String[] MuteCommands = {
             "/mute", "/muteip", "/tempmute", "/tempmuteip"
     };
-
     private final String[] VkCommands = {
             "/mute", "/muteip", "/ban", "/banip", "/tempban"
     };
-
+    private final ChatService chatService;
+    private final NotificationsService notificationsService;
+    private final PlayerStateService playerStateService;
+    private final PunishmentsService punishmentsService;
+    private final CheckoutsService checkoutsService;
+    private final ConfigManagerService configManagerService;
     private boolean nicknameHasChar = false;
     private boolean StrangePunishmentConfirm = false;
     private boolean StrangeFrzPunishmentConfirm = false;
     private String StrangeMessage = StringUtils.EMPTY;
     private String StrangeFrzMessage = StringUtils.EMPTY;
 
-    public PunishmentsModule(ServiceContext serviceContext) {
-        super(serviceContext);
-    }
-
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
-        ChatService chatService = serviceContext.getChatService();
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-        StateService stateService = serviceContext.getStateService();
-        PunishmentsService punishmentsService = serviceContext.getPunishmentsService();
-        CheckoutsService checkoutsService = serviceContext.getCheckoutsService();
+        ApiConfig apiConfig = configManagerService.getApiConfig();
 
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ", 3);
 
-        String command = "/%s".formatted(commandSplit[0]);
+        String command = commandSplit[0].equals("hm") ? commandSplit[1] : "/%s".formatted(commandSplit[0]);
 
         if (!eventCommand.equals(StrangeMessage)) {
             StrangePunishmentConfirm = false;
@@ -76,6 +75,8 @@ public class PunishmentsModule extends Module {
                     if (nickname.contains(String.valueOf(ch))) {
                         nicknameHasChar = true;
                         break;
+                    } else {
+                        nicknameHasChar = false;
                     }
                 }
                 if (nicknameHasChar) {
@@ -96,7 +97,7 @@ public class PunishmentsModule extends Module {
                         StrangeMessage = StringUtils.EMPTY;
                     }
                 }
-                if (nickname.equals(stateService.getCheckoutPlayer())) {
+                if (nickname.equals(playerStateService.getCheckoutPlayer())) {
                     if (!StrangeFrzPunishmentConfirm) {
                         StrangeFrzMessage = eventCommand;
                         StrangeFrzPunishmentConfirm = true;
@@ -139,7 +140,7 @@ public class PunishmentsModule extends Module {
                     }
                 }
                 if (chatService.isArrayContains(BanCommands, command)) {
-                    if (!punishmentsService.punish(command, nick, time, reason, true)) {
+                    if (!punishmentsService.punish(command, nick, time, reason, reason.toLowerCase().contains("вопросы?"))) {
                         return;
                     }
                 }
@@ -160,7 +161,12 @@ public class PunishmentsModule extends Module {
                 }
                 String nick = commandSplit[1];
                 String reason = commandSplit[2];
-                punishmentsService.punish(command, nick, reason, chatService.isArrayContains(VkCommands, command));
+
+                boolean addVk = chatService.isArrayContains(VkCommands, command)
+                        && !((command.equals("/mute") || command.equals("/muteip")) && punishmentsService.isTimeCorrect(reason.split(" ")[0]))
+                        && reason.toLowerCase().contains("вопросы?");
+
+                punishmentsService.punish(command, nick, reason, addVk);
             }
 
             if (chatService.isArrayContains(BanCommands, command) || command.equals("/warn")) {
@@ -175,6 +181,32 @@ public class PunishmentsModule extends Module {
                     StrangeFrzPunishmentConfirm = false;
                 }
             }
+        } else if (command.equals("setvk")) {
+            commandSplit = eventCommand.split(" ", 3);
+            if (commandSplit.length == 2) {
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "Вы не указали ссылку на вк.", 5f);
+                return;
+            }
+            if (!commandSplit[2].matches("^(https://)?vk\\.(com|ru)/id\\d+$")) {
+                notificationsService.addNotification(
+                        NotificationType.ERROR,
+                        "%s%sОшибка".formatted(RED, BOLD),
+                        "Некорректная ссылка на VK. Используйте формат: vk.com/id123, vk.ru/id123, https://vk.com/id123 или https://vk.ru/id123",
+                        5f
+                );
+                return;
+            }
+
+            apiConfig.setVk(commandSplit[2]);
+            configManagerService.saveConfig(apiConfig);
+
+            notificationsService.addNotification(
+                    NotificationType.SUCCESS,
+                    "%s%sУспех".formatted(GREEN, BOLD),
+                    "Вы успешно установили новую ссылку на вк: %s".formatted(commandSplit[2]),
+                    5f
+            );
         }
     }
 }

@@ -1,20 +1,19 @@
 package me.yuugao.holymoderation.client.gui.tabs.impl.main;
 
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ColorPickerDrawableElement;
-import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.Tab;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 
 import net.minecraft.client.gui.DrawContext;
 
 import java.awt.Color;
 
 public class GeneralTab extends Tab<MainGuiScreen> {
-    public GeneralTab(MainGuiScreen parent, ServiceContext serviceContext) {
-        super(parent, serviceContext);
+    public GeneralTab(MainGuiScreen parent, DrawableElementFactory drawableElementFactory) {
+        super(parent);
 
-        drawableElements.put("ColorPicker", new ColorPickerDrawableElement(serviceContext, PivotMode.CENTER));
+        drawableElements.put("ColorPicker", drawableElementFactory.createColorPicker());
     }
 
     @Override

@@ -4,7 +4,7 @@ import me.yuugao.holymoderation.client.gui.drawable.element.state.RenderState;
 import me.yuugao.holymoderation.client.gui.drawable.element.state.provider.RenderStateProvider;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
 
 import net.minecraft.client.gui.DrawContext;
 
@@ -14,8 +14,9 @@ public abstract class StatefulDrawableElement<T extends RenderState> extends Dra
 
     private T activeState;
 
-    protected StatefulDrawableElement(ServiceContext serviceContext, PivotMode positionMode, RenderStateProvider<T> stateProvider) {
-        super(serviceContext, positionMode);
+    protected StatefulDrawableElement(AnimationService animationService, PivotMode pivotMode, RenderStateProvider<T> stateProvider) {
+        super(animationService, pivotMode);
+
         this.stateProvider = stateProvider;
     }
 

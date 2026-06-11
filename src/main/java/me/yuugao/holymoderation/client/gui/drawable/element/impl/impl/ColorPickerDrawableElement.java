@@ -2,8 +2,8 @@ package me.yuugao.holymoderation.client.gui.drawable.element.impl.impl;
 
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.Render2DService;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -13,17 +13,21 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.Color;
 
 public class ColorPickerDrawableElement extends DrawableElement {
-    private float radius;
-    private float outlineWidth;
+    private final Render2DService render2DService;
+
     private Color outlineColor;
 
-    public ColorPickerDrawableElement(ServiceContext serviceContext, PivotMode pivotMode) {
-        super(serviceContext, pivotMode);
+    private float radius;
+    private float outlineWidth;
+
+    public ColorPickerDrawableElement(AnimationService animationService, Render2DService render2DService) {
+        super(animationService, PivotMode.CENTER);
+
+        this.render2DService = render2DService;
     }
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        Render2DService render2DService = serviceContext.getRender2DService();
         MatrixStack ms = ctx.getMatrices();
 
         render2DService.setupRender();

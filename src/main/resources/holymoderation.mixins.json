@@ -12,6 +12,7 @@
     "MessageHandlerMixin",
     "MinecraftClientMixin",
     "MouseMixin",
+    "ScreenEventsMixin",
     "ScreenMixin"
   ],
   "injectors": {

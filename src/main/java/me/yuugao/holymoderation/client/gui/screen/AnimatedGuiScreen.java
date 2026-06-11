@@ -1,28 +1,24 @@
 package me.yuugao.holymoderation.client.gui.screen;
 
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.AnimationService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
 
+import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
 import lombok.Getter;
-import obfuscator.DontObf;
-import obfuscator.ObfRule;
 
 public class AnimatedGuiScreen extends GuiScreen {
     private final AnimationService.Value progressAnim;
-
     @Getter
     private float animValue = 0f;
 
     private boolean closing = false;
 
-    protected AnimatedGuiScreen(Text title, ServiceContext serviceContext) {
-        super(title, serviceContext);
-
-        AnimationService animationService = serviceContext.getAnimationService();
+    protected AnimatedGuiScreen(Text title, AnimationService animationService) {
+        super(title);
 
         this.progressAnim = animationService.createValue(0f);
     }
@@ -42,8 +38,9 @@ public class AnimatedGuiScreen extends GuiScreen {
         animValue = progressAnim.get();
 
         if (closing && progressAnim.isFinished() && progressAnim.getTarget() == 0f) {
-            MinecraftService minecraftService = serviceContext.getMinecraftService();
-            minecraftService.getClient().execute(super::close);
+            closing = false;
+            ScreenEvents.remove(this);
+            super.close();
             return;
         }
 

@@ -1,8 +1,11 @@
 package me.yuugao.holymoderation.client.mixin;
 
-import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.impl.render.RenderEvent;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
+import me.yuugao.holymoderation.client.di.DIAccessor;
+import me.yuugao.holymoderation.client.util.service.eventbus.EventBus;
+import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.render.RenderEvent;
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -20,10 +23,10 @@ import com.llamalad7.mixinextras.sugar.Local;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
+    @DontObf(ObfRule.MAP_FIELD)
     @Shadow
     @Final
     MinecraftClient client;
-
     @Unique
     boolean isScreenRendering = false;
 
@@ -37,7 +40,7 @@ public class GameRendererMixin {
     )
     private void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
         if (tick && client.world != null && !isScreenRendering) {
-            EventBus eventBus = ServiceLocator.getEventBus();
+            EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
             eventBus.invokeEvent(new RenderEvent(drawContext, 0, 0, tickDelta));
         }

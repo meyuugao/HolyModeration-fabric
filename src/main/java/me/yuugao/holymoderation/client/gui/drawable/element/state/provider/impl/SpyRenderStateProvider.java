@@ -1,20 +1,23 @@
 package me.yuugao.holymoderation.client.gui.drawable.element.state.provider.impl;
 
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.drawable.element.state.impl.SpyRenderState;
 import me.yuugao.holymoderation.client.gui.drawable.element.state.provider.RenderStateProvider;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.StateService;
+import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+@Singleton
 public class SpyRenderStateProvider extends RenderStateProvider<SpyRenderState> {
-    public SpyRenderStateProvider(ServiceContext serviceContext) {
-        super(serviceContext);
-    }
+    private final PlayerStateService playerStateService;
 
     @Override
     public SpyRenderState getState(RenderMode mode) {
@@ -27,13 +30,11 @@ public class SpyRenderStateProvider extends RenderStateProvider<SpyRenderState> 
     }
 
     private String @NotNull [] getStringsToRender() {
-        StateService stateService = serviceContext.getStateService();
-
-        String spyPlayer = stateService.getSpyPlayer();
+        String spyPlayer = playerStateService.getSpyPlayer();
         if (spyPlayer.isEmpty()) return new String[]{StringUtils.EMPTY, StringUtils.EMPTY};
 
-        String spyPlayerStatus = stateService.getSpyPlayerStatus();
-        String spyPlayerActivity = stateService.getSpyPlayerActivity();
+        String spyPlayerStatus = playerStateService.getSpyPlayerStatus();
+        String spyPlayerActivity = playerStateService.getSpyPlayerActivity();
 
         if (spyPlayerStatus.isEmpty())
             return new String[]{spyPlayer, StringUtils.EMPTY};

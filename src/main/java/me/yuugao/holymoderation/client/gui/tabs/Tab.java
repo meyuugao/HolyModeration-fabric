@@ -2,21 +2,17 @@ package me.yuugao.holymoderation.client.gui.tabs;
 
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement;
 import me.yuugao.holymoderation.client.gui.screen.GuiScreen;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import net.minecraft.client.gui.DrawContext;
 
 import java.util.HashMap;
 
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 public abstract class Tab<T extends GuiScreen> {
     protected final T parent;
-    protected final ServiceContext serviceContext;
     protected final HashMap<String, DrawableElement> drawableElements = new HashMap<>();
-
-    public Tab(T parent, ServiceContext serviceContext) {
-        this.parent = parent;
-        this.serviceContext = serviceContext;
-    }
 
     public abstract void onRender(DrawContext ctx, int mouseX, int mouseY, float tickDelta);
 }

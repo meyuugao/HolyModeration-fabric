@@ -3,9 +3,9 @@ package me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.im
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.ButtonAction;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.ButtonDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.Render2DService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -14,24 +14,27 @@ import net.minecraft.text.Text;
 
 import java.awt.Color;
 
-import lombok.Getter;
-import lombok.Setter;
-
 public class TextButtonDrawableElement extends ButtonDrawableElement {
-    private final float verticalPadding = 6f;
-    private TextRenderer tr;
-    @Getter
-    @Setter
-    private Text text;
+    private final Render2DService render2DService;
+    private final MinecraftService minecraftService;
+    private final Text text;
 
-    public TextButtonDrawableElement(ServiceContext serviceContext, PivotMode pivotMode, ButtonAction action, boolean enabled, Text text) {
-        super(serviceContext, pivotMode, action, enabled);
+    private final float verticalPadding = 6f;
+
+    private TextRenderer tr;
+
+    public TextButtonDrawableElement(AnimationService animationService, Render2DService render2DService,
+                                     MinecraftService minecraftService, PivotMode pivotMode,
+                                     ButtonAction action, boolean enabled, Text text) {
+        super(animationService, pivotMode, action, enabled);
+
         this.text = text;
+        this.render2DService = render2DService;
+        this.minecraftService = minecraftService;
     }
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        Render2DService render2DService = serviceContext.getRender2DService();
         MatrixStack ms = ctx.getMatrices();
 
         int textWidth = tr.getWidth(text);
@@ -50,6 +53,8 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
         float offsetX = (getWidth() - scaledWidth) / 2f;
         float offsetY = (getHeight() - scaledHeight) / 2f;
 
+        render2DService.setupRender();
+
         ms.push();
 
         ms.translate(offsetX, offsetY, 0);
@@ -63,13 +68,13 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
         render2DService.renderText(tr, text.asOrderedText(), (int) textX, (int) textY, z, 0xffffffff, false, ctx);
 
         ms.pop();
+
+        render2DService.endRender();
     }
 
     public void updateRenderForParent(DrawContext ctx, float relX, float relY, float width,
                                       float parW, float parH, int z, float radius,
                                       Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
-        MinecraftService minecraftService = serviceContext.getMinecraftService();
-
         this.tr = minecraftService.getClient().textRenderer;
         setRelativePos(relX, relY);
 

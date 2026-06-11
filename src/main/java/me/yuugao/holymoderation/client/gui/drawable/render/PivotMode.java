@@ -1,7 +1,11 @@
 package me.yuugao.holymoderation.client.gui.drawable.render;
 
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
+
 import lombok.Getter;
 
+@DontObf({ObfRule.MAP_CLASS, ObfRule.MAP_METHOD, ObfRule.MAP_FIELD, ObfRule.MAP_LOCALVARS})
 @Getter
 public enum PivotMode {
     LEFT_UP(0f, 0f),

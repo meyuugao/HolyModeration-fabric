@@ -2,7 +2,7 @@ package me.yuugao.holymoderation.client.gui.drawable.element.impl;
 
 import me.yuugao.holymoderation.client.gui.drawable.element.Drawable;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
+import me.yuugao.holymoderation.client.util.service.AnimationService;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -15,8 +15,8 @@ public abstract class DrawableElement extends Drawable {
     @Setter
     private boolean draggable = true;
 
-    protected DrawableElement(ServiceContext serviceContext, PivotMode pivotMode) {
-        super(serviceContext, pivotMode);
+    protected DrawableElement(AnimationService animationService, PivotMode pivotMode) {
+        super(animationService, pivotMode);
     }
 
     protected abstract void render(DrawContext ctx, int z);

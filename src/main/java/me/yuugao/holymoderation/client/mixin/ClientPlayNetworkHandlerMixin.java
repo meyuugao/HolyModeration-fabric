@@ -1,13 +1,13 @@
 package me.yuugao.holymoderation.client.mixin;
 
-
-import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.impl.connection.ServerConnectEvent;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.StateService;
+import me.yuugao.holymoderation.client.di.DIAccessor;
+import me.yuugao.holymoderation.client.util.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.eventbus.EventBus;
+import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageSendEvent;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.connection.ServerConnectEvent;
+import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -22,23 +22,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ClientPlayNetworkHandlerMixin {
     @Inject(method = "onGameJoin", at = @At("TAIL"))
     public void onGameJoin(CallbackInfo ci) {
-        MinecraftService minecraftService = ServiceLocator.getMinecraftService();
-        EventBus eventBus = ServiceLocator.getEventBus();
-        StateService stateService = ServiceLocator.getStateService();
-
-        ClientPlayerEntity player = minecraftService.getPlayer();
+        ClientPlayerEntity player = DIAccessor.getDI().get(MinecraftService.class).getPlayer();
 
         if (player != null) {
             ServerInfo serverInfo = player.networkHandler.getServerInfo();
             if (serverInfo != null) {
-                eventBus.invokeEvent(new ServerConnectEvent(serverInfo, stateService.isConnected()));
+                DIAccessor.getDI().get(EventBusService.class).getEventBus().invokeEvent(new ServerConnectEvent(
+                        serverInfo, DIAccessor.getDI().get(UserStateService.class).isConnected()));
             }
         }
     }
 
     @Inject(method = "sendChatMessage", at = @At("HEAD"), cancellable = true)
     public void sendChatMessage(String content, CallbackInfo ci) {
-        EventBus eventBus = ServiceLocator.getEventBus();
+        EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
         MessageSendEvent event = new MessageSendEvent(content);
 
@@ -51,7 +48,7 @@ public class ClientPlayNetworkHandlerMixin {
 
     @Inject(method = "sendChatCommand", at = @At("HEAD"), cancellable = true)
     public void sendCommand(String command, CallbackInfo ci) {
-        EventBus eventBus = ServiceLocator.getEventBus();
+        EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
         CommandSendEvent event = new CommandSendEvent(command);
 

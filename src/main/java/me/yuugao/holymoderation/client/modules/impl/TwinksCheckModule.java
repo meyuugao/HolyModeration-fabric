@@ -3,12 +3,14 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.CommandSendEvent;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
-import me.yuugao.holymoderation.client.modules.Module;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.*;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.PostConstruct;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.util.service.*;
+import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
+import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,33 +28,27 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.common.hash.Hashing;
+import lombok.RequiredArgsConstructor;
 
-public class TwinksCheckModule extends Module {
+@RequiredArgsConstructor(onConstructor_ = @Inject)
+@Singleton
+public class TwinksCheckModule {
     private final Pattern STATUS_PATTERN = Pattern.compile("\\[(Активный|Истёкший)]");
-
     private final Path workDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Twinks");
     private final File checkFile = workDir.resolve("checktwinks.txt").toFile();
     private final File tempFile = workDir.resolve("temp.txt").toFile();
+    private final UserStateService userStateService;
+    private final NotificationsService notificationsService;
+    private final ChatService chatService;
+    private final SchedulerService schedulerService;
+    private final GoogleSheetsService googleSheetsService;
 
-    public TwinksCheckModule(ServiceContext serviceContext) {
-        super(serviceContext);
-
-        LoggerService loggerService = serviceContext.getLoggerService();
-
-        try {
-            if (!Files.exists(workDir)) {
-                Files.createDirectories(workDir);
-            }
-        } catch (IOException e) {
-            loggerService.exception("Исключение в TwinksCheckModule/init: %s".formatted(e));
-        }
-    }
+    private boolean checkingTwinks = false;
 
     private static String extractTimeAgo(String headerLine) {
         int start = headerLine.indexOf('[');
@@ -105,20 +102,31 @@ public class TwinksCheckModule extends Module {
         return s.replace("\\|", "|");
     }
 
-    @Subscribe
-    public void onCommandSend(CommandSendEvent event) {
-        StateService stateService = serviceContext.getStateService();
-        NotificationsService notificationsService = serviceContext.getNotificationsService();
-        ChatService chatService = serviceContext.getChatService();
-        SchedulerService schedulerService = serviceContext.getSchedulerService();
-        GoogleSheetsService googleSheetsService = serviceContext.getGoogleSheetsService();
+    @PostConstruct
+    private void init() {
+        try {
+            if (!Files.exists(workDir)) {
+                Files.createDirectories(workDir);
+            }
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/init: %s%s".formatted(DARK_RED, e), 5f);
+        }
+    }
 
-        ScheduledExecutorService scheduler = schedulerService.getScheduler();
+    @Subscribe(priority = 101)
+    public void onCommandSend(CommandSendEvent event) {
+        if (checkingTwinks) {
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Дождитесь окончания проверки твинков.", 5f);
+            event.setCancelled(true);
+            return;
+        }
 
         String[] parts = event.getCommand().split(" ");
         if (parts.length < 2 || !parts[0].equals("hm") || !parts[1].equals("twinks")) return;
 
-        if (stateService.isInHub()) {
+        if (userStateService.isInHub()) {
             notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                     "В хабе этого делать нельзя.", 5f);
             return;
@@ -133,40 +141,39 @@ public class TwinksCheckModule extends Module {
         notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                 "Проверка твинков началась.", 5f);
 
-        try {
-            Files.deleteIfExists(tempFile.toPath());
-            Files.createFile(tempFile.toPath());
-        } catch (Exception e) {
-            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в TwinksCheckModule/onCommandSend: %s%s".formatted(DARK_RED, e), 5f);
-            return;
-        }
-
-        List<String> nicknames = readNicknamesFromFile(notificationsService);
+        List<String> nicknames = readNicknamesFromFile();
         if (nicknames.isEmpty()) {
             notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                     "Файл checktwinks.txt пустой.", 5f);
             return;
         }
 
-        stateService.setCheckingTwinks(true);
+        try {
+            Files.deleteIfExists(tempFile.toPath());
+            Files.createFile(tempFile.toPath());
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в TwinksCheckModule/onCommandSend: %s%s".formatted(DARK_RED, e), 5f);
+        }
+
+        checkingTwinks = true;
         int lastIndex = nicknames.size() - 1;
 
-        scheduler.submit(() -> {
-            Set<String> blopNicknames = loadBlopNicknames(googleSheetsService, notificationsService);
+        schedulerService.submit("TwinksCheckModule/onCommandSend", () -> {
+            Set<String> blopNicknames = loadBlopNicknames();
 
             for (int i = 0; i <= lastIndex; i++) {
                 String nickname = nicknames.get(i);
                 boolean isInBLOP = checkIsInBLOP(nickname, blopNicknames);
 
-                scheduler.schedule(() -> {
+                schedulerService.schedule("TwinksCheckModule/onCommandSend", () -> {
                     writeTempPlayer(nickname, isInBLOP);
                     chatService.chatMessage("/history %s 100".formatted(nickname));
                 }, i, TimeUnit.SECONDS);
 
                 if (i == lastIndex) {
-                    scheduler.schedule(() -> {
-                        stateService.setCheckingTwinks(false);
+                    schedulerService.schedule("TwinksCheckModule/onCommandSend", () -> {
+                        checkingTwinks = false;
                         List<PlayerEntry> results = parseHistory();
                         saveResults(results);
                     }, i + 1, TimeUnit.SECONDS);
@@ -175,7 +182,7 @@ public class TwinksCheckModule extends Module {
         });
     }
 
-    private Set<String> loadBlopNicknames(GoogleSheetsService googleSheetsService, NotificationsService notificationsService) {
+    private Set<String> loadBlopNicknames() {
         Set<String> nicknames = new HashSet<>();
 
         GoogleSheetsService.Spreadsheet spreadsheet = googleSheetsService.getPublicSpreadsheet(
@@ -209,10 +216,8 @@ public class TwinksCheckModule extends Module {
 
     @Subscribe(priority = 97)
     public void onMessageReceive(MessageReceiveEvent event) {
-        StateService stateService = serviceContext.getStateService();
-        if (!stateService.isCheckingTwinks()) return;
+        if (!checkingTwinks) return;
 
-        ChatService chatService = serviceContext.getChatService();
         String message = chatService.formatReceivedText(event.getMessage().getString());
         if (message == null) return;
 
@@ -228,26 +233,38 @@ public class TwinksCheckModule extends Module {
                 || message.startsWith("Разбанен:") || message.startsWith("Размьючен:") || message.trim().isEmpty();
     }
 
-    private List<String> readNicknamesFromFile(NotificationsService notificationsService) {
+    private List<String> readNicknamesFromFile() {
         List<String> nicknames = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(Files.newInputStream(checkFile.toPath()), StandardCharsets.UTF_16LE))) {
-            br.mark(1);
-            if (br.read() != 0xFEFF) br.reset();
 
-            String line = br.readLine();
-            if (line != null) {
-                for (String nick : line.split(" ")) {
-                    String sanitized = sanitizeNickname(nick);
-                    if (!sanitized.isEmpty()) {
-                        nicknames.add(sanitized);
+        for (Charset charset : List.of(StandardCharsets.UTF_8, StandardCharsets.UTF_16LE)) {
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(Files.newInputStream(checkFile.toPath()), charset))) {
+
+                br.mark(1);
+                if (br.read() != 0xFEFF) br.reset();
+
+                String line = br.readLine();
+                if (line != null) {
+                    for (String nick : line.split(" ")) {
+                        String sanitized = sanitizeNickname(nick);
+                        if (!sanitized.isEmpty()) {
+                            nicknames.add(sanitized);
+                        }
                     }
                 }
+
+                return nicknames;
+            } catch (IOException ignored) {
             }
-        } catch (Exception e) {
-            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в TwinksCheckModule/readNicknamesFromFile: %s%s".formatted(DARK_RED, e), 5f);
         }
+
+        notificationsService.addNotification(
+                NotificationType.EXCEPTION,
+                "%s%sИсключение".formatted(DARK_RED, BOLD),
+                "Не удалось прочитать файл ни как UTF-8, ни как UTF-16LE",
+                5f
+        );
+
         return nicknames;
     }
 
@@ -258,8 +275,8 @@ public class TwinksCheckModule extends Module {
                     ? "PLAYER: " + nickname + " | BLOP: " + isInBLOP
                     : System.lineSeparator() + "PLAYER: " + nickname + " | BLOP: " + isInBLOP;
             Files.writeString(tempFile.toPath(), header, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (Exception e) {
-            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/writeTempPlayer: %s%s".formatted(DARK_RED, e), 5f);
         }
@@ -269,8 +286,8 @@ public class TwinksCheckModule extends Module {
         try {
             Files.writeString(tempFile.toPath(), System.lineSeparator() + "DATA: " + message,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (Exception e) {
-            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/writeTempData: %s%s".formatted(DARK_RED, e), 5f);
         }
@@ -305,8 +322,8 @@ public class TwinksCheckModule extends Module {
             if (currentNickname != null && !currentBlock.isEmpty()) {
                 results.add(buildPlayerEntry(currentNickname, currentIsInBLOP, currentBlock));
             }
-        } catch (Exception e) {
-            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/parseHistory: %s%s".formatted(DARK_RED, e), 5f);
         }
@@ -444,11 +461,11 @@ public class TwinksCheckModule extends Module {
             File resultFile = workDir.resolve(hash + ".txt").toFile();
             Files.writeString(resultFile.toPath(), content);
 
-            serviceContext.getNotificationsService().addNotification(NotificationType.SUCCESS,
+            notificationsService.addNotification(NotificationType.SUCCESS,
                     "%s%sУспех".formatted(GREEN, BOLD),
                     "Результат проверки твинков сохранены: %s".formatted(resultFile.getName()), 5f);
-        } catch (Exception e) {
-            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/saveResults: %s%s".formatted(DARK_RED, e), 5f);
         }
@@ -495,8 +512,8 @@ public class TwinksCheckModule extends Module {
             if (last != null) {
                 results.add(last);
             }
-        } catch (Exception e) {
-            serviceContext.getNotificationsService().addNotification(NotificationType.EXCEPTION,
+        } catch (IOException e) {
+            notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/loadResults: %s%s".formatted(DARK_RED, e), 5f);
         }

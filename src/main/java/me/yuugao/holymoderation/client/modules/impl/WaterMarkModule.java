@@ -1,15 +1,18 @@
 package me.yuugao.holymoderation.client.modules.impl;
 
-import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.WatermarkDrawableElement;
+import me.yuugao.holymoderation.client.di.annotations.Inject;
+import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.singleton.WatermarkDrawableElement;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
 
 import lombok.Getter;
 
 @Getter
+@Singleton
 public class WaterMarkModule extends DrawableModule<WatermarkDrawableElement> {
-    public WaterMarkModule(ServiceContext serviceContext, WatermarkDrawableElement watermarkDrawableElement) {
-        super(serviceContext, watermarkDrawableElement);
+    @Inject
+    public WaterMarkModule(WatermarkDrawableElement watermarkDrawableElement) {
+        super(watermarkDrawableElement);
     }
 
     @Override

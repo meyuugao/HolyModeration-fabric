@@ -1,9 +1,10 @@
 package me.yuugao.holymoderation.client.mixin;
 
-import me.yuugao.holymoderation.client.eventbus.EventBus;
-import me.yuugao.holymoderation.client.eventbus.event.impl.chat.MessageReceiveEvent;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceLocator;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
+import me.yuugao.holymoderation.client.di.DIAccessor;
+import me.yuugao.holymoderation.client.util.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.eventbus.EventBus;
+import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
 
 import net.minecraft.client.network.message.MessageHandler;
 import net.minecraft.text.Text;
@@ -14,11 +15,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MessageHandler.class)
-public abstract class MessageHandlerMixin {
+public class MessageHandlerMixin {
     @Inject(method = "onGameMessage", at = @At("HEAD"), cancellable = true)
     public void onGameMessage(Text message, boolean overlay, CallbackInfo ci) {
-        EventBus eventBus = ServiceLocator.getEventBus();
-        MinecraftService minecraftService = ServiceLocator.getMinecraftService();
+        EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
+        MinecraftService minecraftService = DIAccessor.getDI().get(MinecraftService.class);
 
         MessageReceiveEvent event = new MessageReceiveEvent(message);
 

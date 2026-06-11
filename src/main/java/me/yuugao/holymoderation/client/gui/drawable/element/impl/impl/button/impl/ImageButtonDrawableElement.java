@@ -1,12 +1,13 @@
 package me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.impl;
 
+import static me.yuugao.holymoderation.client.util.Colors.BOLD;
+import static me.yuugao.holymoderation.client.util.Colors.DARK_RED;
+
+
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.ButtonAction;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.ButtonDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
-import me.yuugao.holymoderation.client.util.serviceLocator.ServiceContext;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.LoggerService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.MinecraftService;
-import me.yuugao.holymoderation.client.util.serviceLocator.service.impl.Render2DService;
+import me.yuugao.holymoderation.client.util.service.*;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.texture.NativeImage;
@@ -19,19 +20,29 @@ import java.io.IOException;
 import java.util.Optional;
 
 public class ImageButtonDrawableElement extends ButtonDrawableElement {
+    private final Render2DService render2DService;
+    private final MinecraftService minecraftService;
+    private final NotificationsService notificationsService;
+
     private Identifier image;
-    private float imageWidth;
+
     private float imageHeight;
     private float padding;
     private float scale;
+    private float imageWidth;
 
-    public ImageButtonDrawableElement(ServiceContext serviceContext, PivotMode pivotMode, ButtonAction action, boolean enabled) {
-        super(serviceContext, pivotMode, action, enabled);
+    public ImageButtonDrawableElement(AnimationService animationService, Render2DService render2DService,
+                                      MinecraftService minecraftService, NotificationsService notificationsService,
+                                      PivotMode pivotMode, ButtonAction action, boolean enabled) {
+        super(animationService, pivotMode, action, enabled);
+
+        this.render2DService = render2DService;
+        this.minecraftService = minecraftService;
+        this.notificationsService = notificationsService;
     }
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        Render2DService render2DService = serviceContext.getRender2DService();
         MatrixStack ms = ctx.getMatrices();
 
         float scaledImgW = imageWidth * scale;
@@ -43,33 +54,32 @@ public class ImageButtonDrawableElement extends ButtonDrawableElement {
         float imgX = (buttonW - scaledImgW) / 2f;
         float imgY = (buttonH - scaledImgH) / 2f;
 
+        render2DService.setupRender();
+
         ms.push();
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, buttonW, buttonH, z,
-                radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, buttonW, buttonH, z, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
 
         ms.translate(imgX, imgY, 0);
         render2DService.renderImage(ctx, image, 0f, 0f, scaledImgW, scaledImgH, z);
 
         ms.pop();
+
+        render2DService.endRender();
     }
 
-    public void updateRenderForScreen(DrawContext ctx, Identifier image, float relX, float relY, float padding, float scale,
-                                      int z, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
+    public void updateRenderForScreen(DrawContext ctx, Identifier image, float relX, float relY, float padding, float scale, int z, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
         updateRender(image, relX, relY, padding, scale, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
         float screenScale = Math.min(ctx.getScaledWindowWidth() / 1280f, ctx.getScaledWindowHeight() / 720f);
         super.updateRenderForScreen(ctx, z, screenScale);
     }
 
-    public void updateRenderForParent(DrawContext ctx, Identifier image, float relX, float relY, float padding, float scale,
-                                      float parW, float parH, int z, float radius,
-                                      Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
+    public void updateRenderForParent(DrawContext ctx, Identifier image, float relX, float relY, float padding, float scale, float parW, float parH, int z, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
         updateRender(image, relX, relY, padding, scale, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
         super.updateRenderForParent(ctx, parW, parH, z);
     }
 
-    private void updateRender(Identifier image, float relX, float relY, float padding, float scale, float radius,
-                              Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
+    private void updateRender(Identifier image, float relX, float relY, float padding, float scale, float radius, Color buttonColor, Color outlineColor, float outlineWidth, float blurWidth) {
         this.image = image;
         setRelativePos(relX, relY);
         this.padding = padding;
@@ -90,9 +100,6 @@ public class ImageButtonDrawableElement extends ButtonDrawableElement {
     }
 
     private int[] getImageSizes(Identifier texture) {
-        MinecraftService minecraftService = serviceContext.getMinecraftService();
-        LoggerService loggerService = serviceContext.getLoggerService();
-
         try {
             Optional<Resource> optional = minecraftService.getClient().getResourceManager().getResource(texture);
             if (optional.isPresent()) {
@@ -105,7 +112,8 @@ public class ImageButtonDrawableElement extends ButtonDrawableElement {
             }
             return new int[]{0, 0};
         } catch (IOException e) {
-            loggerService.exception("Исключение в ImageButtonDrawableElement/getImageSizes: %s".formatted(e));
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "Исключение в ImageButtonDrawableElement/getImageSizes: %s%s".formatted(DARK_RED, e), 5f);
             return new int[]{0, 0};
         }
     }
