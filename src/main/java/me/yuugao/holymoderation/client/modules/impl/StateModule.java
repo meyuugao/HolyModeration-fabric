@@ -45,14 +45,15 @@ public class StateModule {
     private final NotificationsService notificationsService;
     private final SoundService soundService;
     private final SchedulerService schedulerService;
-    private final AsyncExecutor asyncExecutor;
-    private final NetService netService; //tip: ёбнуть
+    private final UserValidationService userValidationService; //tip: ёбнуть
 
     @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
         ClientPlayerEntity player = minecraftService.getPlayer();
 
         if (event.isSwitch()) return; //tip: выполняется только при заходе на сервер, не при свитче
+
+        userValidationService.onJoinServer();
 
         if (player != null) {
             userStateService.setUserNickname(player.getName().getString());
@@ -71,10 +72,6 @@ public class StateModule {
 
     @Subscribe(priority = 100)
     public void onServerConnectSecond(ServerConnectEvent event) {
-        if (!event.isSwitch()) {
-            ratCheck(); //tip: ёбнуть
-        }
-
         ClientPlayerInteractionManager interactionManager = minecraftService.getClient().interactionManager;
         ClientWorld clientWorld = minecraftService.getWorld();
         SettingsConfig settingsConfig = configManagerService.getSettingsConfig();
@@ -322,9 +319,5 @@ public class StateModule {
 
     private void checkServerAddress(ServerConnectEvent event) {
         userStateService.setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
-    }
-
-    private void ratCheck() {
-        asyncExecutor.runAsync("StateModule/TrOBV", () -> netService.sendLaunchData(userStateService.getUserNickname()));
     }
 }

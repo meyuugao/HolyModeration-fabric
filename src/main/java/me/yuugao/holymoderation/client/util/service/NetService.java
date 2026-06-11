@@ -25,8 +25,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import lombok.RequiredArgsConstructor;
-import oshi.SystemInfo;
-import oshi.hardware.ComputerSystem;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
@@ -34,14 +32,62 @@ public class NetService {
     private final ConfigManagerService configManagerService;
     private final NotificationsService notificationsService;
     private final SoundService soundService;
-    private final String journalApiPath = "https://journal.holyworld.me/srv/api/v1/";
+    private final String journalApiUrl = "https://journal.holyworld.me/srv/api/v1/";
     private final Gson gson = new Gson();
+
+    public List<AbstractMap.SimpleEntry<String, String>> getBanLists() {
+        try {
+            String url = "https://raw.githubusercontent.com/Gr0wMan/HolyModeration-Releases/main/BANLIST.json";
+
+            HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
+            String response = getResponse(connection).toString();
+
+            Gson gson = new Gson();
+            Type type = new TypeToken<Map<String, List<String>>>() {
+            }.getType();
+
+            Map<String, List<String>> data = gson.fromJson(response, type);
+
+            if (data == null) {
+                return Collections.emptyList();
+            }
+
+            List<AbstractMap.SimpleEntry<String, String>> result = new ArrayList<>();
+
+            for (Map.Entry<String, List<String>> entry : data.entrySet()) {
+                String player = entry.getKey();
+                List<String> hwids = entry.getValue();
+
+                if (player == null || hwids == null) continue;
+
+                for (String hwid : hwids) {
+                    if (hwid == null || hwid.isEmpty()) continue;
+
+                    result.add(new AbstractMap.SimpleEntry<>(player, hwid));
+                }
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            notificationsService.addNotification(
+                    NotificationType.EXCEPTION,
+                    "%s%sИсключение".formatted(DARK_RED, BOLD),
+                    "NetService/getBanList: " + e,
+                    5f
+            );
+
+            return Collections.emptyList();
+        }
+    }
 
     public AbstractMap.SimpleEntry<String, String> getLastUpdates() {
         try {
-            HttpsURLConnection connection = openHttpsConnection("https://raw.githubusercontent.com/Gr0wMan/HolyModeration-Releases/main/LATEST.txt", "GET", null);
+            String lastUpdatesUrl = "https://raw.githubusercontent.com/Gr0wMan/HolyModeration-Releases/main/LATEST.txt";
+            HttpsURLConnection connection = openHttpsConnection(lastUpdatesUrl, "GET", null);
             String response = getResponse(connection).toString();
-            return new AbstractMap.SimpleEntry<>(response.split("%%%")[0], response.split("%%%")[1]);
+            String[] responseSplit = response.split("%%%");
+            return new AbstractMap.SimpleEntry<>(responseSplit[0], responseSplit[1]);
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в NetService/getLastUpdates: %s%s".formatted(DARK_RED, e), 5f);
@@ -52,8 +98,8 @@ public class NetService {
     public List<String> getSoundsList() {
         List<String> soundFiles = new ArrayList<>();
         try {
-            String url = "https://github.com/meyuugao/HolyModeration-Releases/tree/main/Sounds";
-            HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
+            String soundsListUrl = "https://github.com/meyuugao/HolyModeration-Releases/tree/main/Sounds";
+            HttpsURLConnection connection = openHttpsConnection(soundsListUrl, "GET", null);
             StringBuilder response = getResponse(connection);
             String html = response.toString();
             int index = 0;
@@ -117,7 +163,7 @@ public class NetService {
                         "У вас уже есть активная проверка.", 5f);
                 return;
             }
-            HttpsURLConnection connection = openHttpsConnection("%scheckout/start".formatted(journalApiPath), "POST", null);
+            HttpsURLConnection connection = openHttpsConnection("%scheckout/start".formatted(journalApiUrl), "POST", null);
             if (connection == null) throw new IOException("connection is null");
             try {
                 setAuthHeaders(connection);
@@ -151,7 +197,7 @@ public class NetService {
                         "У вас нет активной проверки.", 5f);
                 return;
             }
-            HttpsURLConnection connection = openHttpsConnection("%scheckout/end".formatted(journalApiPath), "POST", null);
+            HttpsURLConnection connection = openHttpsConnection("%scheckout/end".formatted(journalApiUrl), "POST", null);
             if (connection == null) throw new IOException("connection is null");
             try {
                 setAuthHeaders(connection);
@@ -178,7 +224,7 @@ public class NetService {
 
     private boolean hasActiveCheckout() {
         try {
-            HttpsURLConnection connection = openHttpsConnection("%scheckout/status".formatted(journalApiPath), "GET", null);
+            HttpsURLConnection connection = openHttpsConnection("%scheckout/status".formatted(journalApiUrl), "GET", null);
             if (connection == null) throw new IOException("connection is null");
             try {
                 setAuthHeaders(connection);
@@ -198,7 +244,7 @@ public class NetService {
 
     private Map<String, Object> executeGetRequest(String endpoint) {
         try {
-            HttpsURLConnection connection = openHttpsConnection("%s%s".formatted(journalApiPath, endpoint), "GET", null);
+            HttpsURLConnection connection = openHttpsConnection("%s%s".formatted(journalApiUrl, endpoint), "GET", null);
             if (connection == null) throw new IOException("connection is null");
             try {
                 setAuthHeaders(connection);
@@ -272,8 +318,7 @@ public class NetService {
 
     //tip: ёбнуть
 
-    public void sendLaunchData(String username) {
-        String hwid = getHardwareId();
+    public void sendLaunchData(String hwid, String username) {
         String endpoint = "https://holymoderation.alwaysdata.net/api/launch";
 
         try {
@@ -291,21 +336,6 @@ public class NetService {
             notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Системная ошибка: %s%s".formatted(DARK_RED, e.getMessage()), 5f);
-        }
-    }
-
-    private String getHardwareId() {
-        try {
-            SystemInfo systemInfo = new SystemInfo();
-            ComputerSystem computerSystem = systemInfo.getHardware().getComputerSystem();
-            String hardwareUuid = computerSystem.getHardwareUUID();
-            if (hardwareUuid != null && !hardwareUuid.isEmpty() && !"unknown".equalsIgnoreCase(hardwareUuid)) {
-                return hardwareUuid;
-            } else {
-                return "UNKNOWN_HWID";
-            }
-        } catch (Throwable t) {
-            return t.toString();
         }
     }
 }

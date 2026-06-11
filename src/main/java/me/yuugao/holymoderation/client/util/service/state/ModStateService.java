@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.util.service.state;
 
-import me.yuugao.holymoderation.client.di.DIContainer;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.modules.impl.GuiManagerModule;
@@ -23,9 +22,10 @@ import lombok.Setter;
 @Setter
 @Singleton
 public class ModStateService {
+    @Getter(AccessLevel.NONE)
     private final LoggerService loggerService;
     @Getter(AccessLevel.NONE)
-    private final DIContainer di;
+    private final ModuleManagerService moduleManagerService;
 
     private boolean debugEnabled = false;
     private boolean enabled = true;
@@ -76,14 +76,10 @@ public class ModStateService {
     }
 
     public void registerEventListeners() {
-        ModuleManagerService moduleManagerService = di.get(ModuleManagerService.class);
-
         moduleManagerService.registerAll();
     }
 
     public void unregisterEventListeners() {
-        ModuleManagerService moduleManagerService = di.get(ModuleManagerService.class);
-
         moduleManagerService.unregisterAll();
         moduleManagerService.register(StateModule.class);
         moduleManagerService.register(GuiManagerModule.class);

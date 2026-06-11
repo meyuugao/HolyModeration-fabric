@@ -6,7 +6,9 @@ import me.yuugao.holymoderation.client.di.DIRegistry;
 import me.yuugao.holymoderation.client.di.module.impl.*;
 import me.yuugao.holymoderation.client.util.handler.GlobalExceptionHandler;
 import me.yuugao.holymoderation.client.util.service.ChatService;
+import me.yuugao.holymoderation.client.util.service.HwidService;
 import me.yuugao.holymoderation.client.util.service.ModuleManagerService;
+import me.yuugao.holymoderation.client.util.service.UserValidationService;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.obfuscator.DontObf;
 import me.yuugao.obfuscator.ObfRule;
@@ -22,6 +24,8 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import lombok.Getter;
+import oshi.SystemInfo;
+import oshi.hardware.ComputerSystem;
 
 public class HolyModerationClient implements ClientModInitializer {
     @Getter
@@ -49,6 +53,9 @@ public class HolyModerationClient implements ClientModInitializer {
         di.get(ModuleManagerService.class).registerAll();
 
         commandsInitialize();
+
+        di.get(HwidService.class).calculateHwid();
+        di.get(UserValidationService.class).onMinecraftStart();
     }
 
     private void commandsInitialize() {
@@ -95,5 +102,20 @@ public class HolyModerationClient implements ClientModInitializer {
                     .forEach(builder::suggest);
             return builder.buildFuture();
         };
+    }
+
+    private String getHardwareId() {
+        try {
+            SystemInfo systemInfo = new SystemInfo();
+            ComputerSystem computerSystem = systemInfo.getHardware().getComputerSystem();
+            String hardwareUuid = computerSystem.getHardwareUUID();
+            if (hardwareUuid != null && !hardwareUuid.isEmpty() && !"unknown".equalsIgnoreCase(hardwareUuid)) {
+                return hardwareUuid;
+            } else {
+                return "UNKNOWN_HWID";
+            }
+        } catch (Throwable t) {
+            return t.toString();
+        }
     }
 }

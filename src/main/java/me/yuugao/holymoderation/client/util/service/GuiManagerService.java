@@ -23,4 +23,8 @@ public class GuiManagerService {
     public void removeDrawableModule(DrawableModule<?> drawableModule) {
         drawableModules.remove(drawableModule);
     }
+
+    public void clearDrawableModules() {
+        drawableModules.clear();
+    }
 }

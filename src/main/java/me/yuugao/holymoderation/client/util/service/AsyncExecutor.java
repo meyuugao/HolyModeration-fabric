@@ -13,12 +13,16 @@ import lombok.RequiredArgsConstructor;
 public class AsyncExecutor {
     private final LoggerService loggerService;
 
-    public void runAsync(String context, Runnable action) {
-        CompletableFuture.runAsync(() -> {
+    public CompletableFuture<Void> runAsync(String context, Runnable action) {
+        return CompletableFuture.runAsync(() -> {
             try {
                 action.run();
             } catch (Exception e) {
-                loggerService.exception("Исключение в AsyncExecutor/runAsync (" + context + "): %s".formatted(e));
+                loggerService.exception(
+                        "Исключение в AsyncExecutor/runAsync (%s): %s"
+                                .formatted(context, e)
+                );
+                throw new RuntimeException(e);
             }
         });
     }
