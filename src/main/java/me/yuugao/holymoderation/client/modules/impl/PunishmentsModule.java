@@ -164,7 +164,7 @@ public class PunishmentsModule {
 
                 boolean addVk = chatService.isArrayContains(VkCommands, command)
                         && !((command.equals("/mute") || command.equals("/muteip")) && punishmentsService.isTimeCorrect(reason.split(" ")[0]))
-                        && reason.toLowerCase().contains("вопросы?");
+                        && !reason.toLowerCase().contains("вопросы?");
 
                 punishmentsService.punish(command, nick, reason, addVk);
             }

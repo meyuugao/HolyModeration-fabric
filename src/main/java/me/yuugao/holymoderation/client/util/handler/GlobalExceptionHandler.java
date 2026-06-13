@@ -15,7 +15,6 @@ public class GlobalExceptionHandler {
 
     public void register() {
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) ->
-                logger.exception("Uncaught exception in thread " + thread.getName() + ": " + throwable)
-        );
+                logger.exception("Uncaught exception in thread %s: %s".formatted(thread.getName(), throwable)));
     }
 }

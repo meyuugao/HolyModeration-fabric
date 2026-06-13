@@ -30,7 +30,7 @@ public class UserValidationService {
     private void validateHwid() {
         String hwid = hwidService.getHwid();
         if (modBlackListService.isBannedByHwid(hwid)) {
-            stop();
+            //tip: stop();
         }
     }
 
@@ -42,7 +42,7 @@ public class UserValidationService {
     private void validateNickname() {
         String nickname = userStateService.getUserNickname();
         if (modBlackListService.isBannedByNickname(nickname)) {
-            stop();
+            //tip: stop();
         }
     }
 

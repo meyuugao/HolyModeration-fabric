@@ -32,7 +32,7 @@ public class AsyncExecutor {
             try {
                 return action.get();
             } catch (Exception e) {
-                loggerService.exception("Исключение в AsyncExecutor/supplyAsync (" + context + "): %s".formatted(e));
+                loggerService.exception("Исключение в AsyncExecutor/supplyAsync (%s): %s".formatted(context, e));
                 throw new RuntimeException(e);
             }
         });

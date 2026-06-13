@@ -55,7 +55,7 @@ public class ModuleManagerService {
             guiManagerService.addDrawableModule(drawable);
         }
 
-        loggerService.debug("Module registered: " + moduleClass.getSimpleName());
+        loggerService.debug("Module registered: %s".formatted(moduleClass.getSimpleName()));
     }
 
     public void unregister(Class<?> moduleClass) {
@@ -65,7 +65,7 @@ public class ModuleManagerService {
             if (module instanceof DrawableModule<?> drawable) {
                 guiManagerService.removeDrawableModule(drawable);
             }
-            loggerService.debug("Module unregistered: " + moduleClass.getSimpleName());
+            loggerService.debug("Module unregistered: %s".formatted(moduleClass.getSimpleName()));
         }
     }
 

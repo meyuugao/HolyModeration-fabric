@@ -79,10 +79,10 @@ public class StateModule {
         if (modStateService.isBlocked()) return;
 
         userStateService.setGameInitCompleted(false);
+        userStateService.setUserLocation(StringUtils.EMPTY);
 
         if (interactionManager != null && interactionManager.getCurrentGameMode().equals(GameMode.ADVENTURE)) {
             userStateService.setInHub(true);
-            userStateService.setUserLocation(StringUtils.EMPTY);
         } else {
             userStateService.setInHub(false);
             tryFindUser();

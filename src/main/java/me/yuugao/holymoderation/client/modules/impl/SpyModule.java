@@ -175,7 +175,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> {
                         && playerStateService.getSpyPlayerActivity().isEmpty()) {
                     instantUpdate = true;
                     if (settingsConfig.isAutoSpyTpEnabled()) {
-                        chatService.chatMessage("/tpo " + playerStateService.getSpyPlayer());
+                        chatService.chatMessage("/tpo %s".formatted(playerStateService.getSpyPlayer()));
                     }
                 }
 

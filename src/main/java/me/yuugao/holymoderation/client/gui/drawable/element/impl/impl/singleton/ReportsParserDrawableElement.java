@@ -69,7 +69,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
     public void addButton(String text) {
         playerButtons.add(drawableElementFactory.createTextButton(PivotMode.CENTER,
-                () -> System.out.println("Clicked " + text), true, Text.literal(text)));
+                () -> System.out.printf("Clicked %s%n", text), true, Text.literal(text)));
     }
 
     public void clearPlayers() {

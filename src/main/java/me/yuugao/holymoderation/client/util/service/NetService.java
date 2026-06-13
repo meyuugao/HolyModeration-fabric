@@ -73,7 +73,7 @@ public class NetService {
             notificationsService.addNotification(
                     NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "NetService/getBanList: " + e,
+                    "NetService/getBanList: %s".formatted(e),
                     5f
             );
 

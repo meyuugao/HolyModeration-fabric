@@ -18,7 +18,7 @@ public class SchedulerService {
             try {
                 task.run();
             } catch (Exception e) {
-                loggerService.exception("Исключение в SchedulerService/schedule (" + context + "): %s".formatted(e));
+                loggerService.exception("Исключение в SchedulerService/schedule (%s): %s".formatted(context, e));
             }
         }, delay, unit);
     }
@@ -28,17 +28,17 @@ public class SchedulerService {
             try {
                 task.run();
             } catch (Exception e) {
-                loggerService.exception("Исключение в SchedulerService/scheduleAtFixedRate (" + context + "): %s".formatted(e));
+                loggerService.exception("Исключение в SchedulerService/scheduleAtFixedRate (%s): %s".formatted(context, e));
             }
         }, initialDelay, period, unit);
     }
 
-    public Future<?> submit(String context, Runnable task) {
-        return scheduler.submit(() -> {
+    public void submit(String context, Runnable task) {
+        scheduler.submit(() -> {
             try {
                 task.run();
             } catch (Exception e) {
-                loggerService.exception("Исключение в SchedulerService/submit (" + context + "): %s".formatted(e));
+                loggerService.exception("Исключение в SchedulerService/submit (%s): %s".formatted(context, e));
             }
         });
     }

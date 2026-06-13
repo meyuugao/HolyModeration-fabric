@@ -97,9 +97,9 @@ public class EventBus {
             try {
                 method.invoke(target, event);
             } catch (InvocationTargetException e) {
-                loggerService.exception("Исключение в Subscriber/invoke: " + method.getName() + " в классе " + method.getDeclaringClass() + ": " + e.getCause());
+                loggerService.exception("Исключение в Subscriber/invoke: %s в классе %s: %s".formatted(method.getName(), method.getDeclaringClass(), e.getCause()));
             } catch (ReflectiveOperationException e) {
-                loggerService.exception("Исключение в Subscriber/invoke: " + method.getName() + " в классе " + method.getDeclaringClass() + ": " + e);
+                loggerService.exception("Исключение в Subscriber/invoke: %s в классе %s: %s".formatted(method.getName(), method.getDeclaringClass(), e));
             }
         }
 

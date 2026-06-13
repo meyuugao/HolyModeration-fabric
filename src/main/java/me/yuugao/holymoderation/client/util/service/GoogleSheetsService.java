@@ -96,7 +96,7 @@ public class GoogleSheetsService {
     }
 
     private String buildCsvUrl(String spreadsheetId, String gid) {
-        return "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/export?format=csv&gid=" + gid;
+        return "https://docs.google.com/spreadsheets/d/%s/export?format=csv&gid=%s".formatted(spreadsheetId, gid);
     }
 
     private List<List<CellData>> parseCsv(String csv) {

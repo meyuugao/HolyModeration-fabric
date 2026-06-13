@@ -40,7 +40,7 @@ public class DIContainer {
         }
 
         if (selected == null) {
-            throw new RuntimeException("Исключение в DIContainer/getConstructor: Не найден конструктор для " + clazz.getName());
+            throw new RuntimeException("Исключение в DIContainer/getConstructor: Не найден конструктор для %s".formatted(clazz.getName()));
         }
         return selected;
     }
@@ -60,15 +60,12 @@ public class DIContainer {
     @SuppressWarnings("unchecked")
     public <T> T get(Class<T> type) {
         List<String> stack = resolutionStack.get();
-        stack.add("get(" + type.getSimpleName() + ")");
+        stack.add("get(%s)".formatted(type.getSimpleName()));
 
         if (stack.size() > MAX_DEPTH) {
             String chain = String.join(" -> ", stack);
             resolutionStack.remove();
-            throw new RuntimeException(
-                    "Превышена глубина разрешения DI! Возможна циклическая зависимость.\n" +
-                            "Цепочка: " + chain
-            );
+            throw new RuntimeException("Превышена глубина разрешения DI! Возможна циклическая зависимость.\nЦепочка: %s".formatted(chain));
         }
 
         try {
@@ -111,15 +108,12 @@ public class DIContainer {
     @SuppressWarnings("unchecked")
     private <T> T createInstance(Class<?> clazz) {
         List<String> stack = resolutionStack.get();
-        stack.add("create(" + clazz.getSimpleName() + ")");
+        stack.add("create(%s)".formatted(clazz.getSimpleName()));
 
         if (stack.size() > MAX_DEPTH) {
             String chain = String.join(" -> ", stack);
             resolutionStack.remove();
-            throw new RuntimeException(
-                    "Превышена глубина разрешения DI! Возможна циклическая зависимость.\n" +
-                            "Цепочка: " + chain
-            );
+            throw new RuntimeException("Превышена глубина разрешения DI! Возможна циклическая зависимость.\nЦепочка: %s".formatted(chain));
         }
 
         try {
@@ -141,7 +135,7 @@ public class DIContainer {
             return instance;
 
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Исключение в DIContainer/createInstance: " + clazz.getName(), e);
+            throw new RuntimeException("Исключение в DIContainer/createInstance: %s".formatted(clazz.getName()), e);
         } finally {
             if (!stack.isEmpty()) {
                 stack.remove(stack.size() - 1);
@@ -161,7 +155,7 @@ public class DIContainer {
                 try {
                     field.set(target, get(field.getType()));
                 } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException("Исключение в DIContainer/injectFields:" + field.getName(), e);
+                    throw new RuntimeException("Исключение в DIContainer/injectFields: %s".formatted(field.getName()), e);
                 }
             }
         }
@@ -171,13 +165,13 @@ public class DIContainer {
         for (java.lang.reflect.Method method : instance.getClass().getDeclaredMethods()) {
             if (method.isAnnotationPresent(PostConstruct.class)) {
                 if (method.getParameterCount() != 0) {
-                    throw new RuntimeException("Исключение в DIContainer/invokePostConstruct: @PostConstruct метод не должен иметь параметров: " + method);
+                    throw new RuntimeException("Исключение в DIContainer/invokePostConstruct: @PostConstruct метод не должен иметь параметров: %s".formatted(method));
                 }
                 method.setAccessible(true);
                 try {
                     method.invoke(instance);
                 } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException("Исключение в DIContainer/invokePostConstruct: " + method, e);
+                    throw new RuntimeException("Исключение в DIContainer/invokePostConstruct: %s".formatted(method), e);
                 }
             }
         }
