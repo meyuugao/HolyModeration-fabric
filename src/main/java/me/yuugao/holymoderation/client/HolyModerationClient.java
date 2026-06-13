@@ -24,8 +24,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import lombok.Getter;
-import oshi.SystemInfo;
-import oshi.hardware.ComputerSystem;
 
 public class HolyModerationClient implements ClientModInitializer {
     @Getter
@@ -102,20 +100,5 @@ public class HolyModerationClient implements ClientModInitializer {
                     .forEach(builder::suggest);
             return builder.buildFuture();
         };
-    }
-
-    private String getHardwareId() {
-        try {
-            SystemInfo systemInfo = new SystemInfo();
-            ComputerSystem computerSystem = systemInfo.getHardware().getComputerSystem();
-            String hardwareUuid = computerSystem.getHardwareUUID();
-            if (hardwareUuid != null && !hardwareUuid.isEmpty() && !"unknown".equalsIgnoreCase(hardwareUuid)) {
-                return hardwareUuid;
-            } else {
-                return "UNKNOWN_HWID";
-            }
-        } catch (Throwable t) {
-            return t.toString();
-        }
     }
 }
