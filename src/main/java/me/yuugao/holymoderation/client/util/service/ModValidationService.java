@@ -5,7 +5,6 @@ import me.yuugao.holymoderation.client.di.annotations.Singleton;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import lombok.RequiredArgsConstructor;

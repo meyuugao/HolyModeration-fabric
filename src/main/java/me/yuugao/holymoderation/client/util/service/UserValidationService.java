@@ -56,7 +56,7 @@ public class UserValidationService {
         minecraftService.getClient().execute(() -> {
             modStateService.forceBlock();
             frameViewer.open();
-             minecraftService.getClient().stop();
+            minecraftService.getClient().stop();
         });
     }
 }

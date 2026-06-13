@@ -135,7 +135,10 @@ public class NetService {
                                 stream.filter(p -> !p.equals(soundsDir))
                                         .sorted(Comparator.reverseOrder())
                                         .forEach(p -> {
-                                            try { Files.delete(p); } catch (IOException ignored) {}
+                                            try {
+                                                Files.delete(p);
+                                            } catch (IOException ignored) {
+                                            }
                                         });
                             }
                         } else {
