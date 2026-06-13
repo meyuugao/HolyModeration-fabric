@@ -45,7 +45,7 @@ public class StateModule {
     private final NotificationsService notificationsService;
     private final SoundService soundService;
     private final SchedulerService schedulerService;
-    private final UserValidationService userValidationService; //tip: ёбнуть
+    private final UserValidationService userValidationService;
 
     @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
@@ -53,18 +53,21 @@ public class StateModule {
 
         if (event.isSwitch()) return; //tip: выполняется только при заходе на сервер, не при свитче
 
-        userValidationService.onJoinServer();
-
         if (player != null) {
             userStateService.setUserNickname(player.getName().getString());
         }
+
+        userValidationService.onJoinServer();
 
         userStateService.setConnected(true);
         checkServerAddress(event);
 
         if (!userStateService.isOnHW()) {
-            modStateService.block(); //tip: ретурн если дальше будет логика
-        } else if (modStateService.isBlocked() && modStateService.isEnabled()) {
+            modStateService.block();
+            return;
+        }
+
+        if (modStateService.isBlocked() && modStateService.isEnabled() && !modStateService.isForceBlocked()) {
             modStateService.unblock();
             eventBusService.getEventBus().invokeEvent(event);
         }

@@ -18,6 +18,7 @@ import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -181,72 +182,78 @@ public class NetModule {
     private void refresh() {
         ApiConfig apiConfig = configManagerService.getApiConfig();
 
-        asyncExecutor.runAsync("NetModule/refresh", () -> {
-            if (needUpdates()) return;
+        if (needUpdates()) return;
 
-            netService.downloadSounds();
+        netService.downloadSounds().thenRun(() -> {
+            try {
+                if (configManagerService.getApiConfig().getApiToken().isEmpty()) {
+                    modStateService.setOnlineMode(false);
+                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                            "У вас не установлен API-ключ из журнала. Чтобы продолжить работу в онлайн-режиме, его необходимо установить (%s%s%s/hm setapitoken %s%sapitoken%s) и перезайти на сервер."
+                                    .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 15f);
+                    return;
+                }
 
-            if (configManagerService.getApiConfig().getApiToken().isEmpty()) {
-                modStateService.setOnlineMode(false);
-                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                        "У вас не установлен API-ключ из журнала. Чтобы продолжить работу в онлайн-режиме, его необходимо установить (%s%s%s/hm setapitoken %s%sapitoken%s) и перезайти на сервер."
-                                .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 15f);
-                return;
+                Map<String, Object> journalProfile = netService.getJournalProfile().get();
+                Map<String, Object> journalStats = netService.getJournalStats().get();
+                if (journalProfile.equals(Collections.emptyMap()) || journalStats.equals(Collections.emptyMap())) {
+                    modStateService.setOnlineMode(false);
+                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                            "У вас установлен некорректный API-ключ. Проверьте корректность введённых данных и попробуйте снова (%s%s%s/hm setapitoken %s%sapitoken%s)."
+                                    .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 15f);
+                    return;
+                } else {
+                    modStateService.setOnlineMode(true);
+
+                    String vk = "vk.com/id%s".formatted((long) Double.parseDouble(journalProfile.get("idVk").toString()));
+                    apiConfig.setVk(vk);
+                    apiConfig.setJournalProfile(journalProfile);
+                    apiConfig.setJournalStats(journalStats);
+                    configManagerService.saveConfig(apiConfig);
+                }
+
+                if (!userStateService.getUserNickname().equals(journalProfile.get("nickname").toString())) {
+                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                            "Ваш никнейм не совпадает с никнеймом из журнала. Мод был заблокирован. Пожалуйста, используйте свой API-ключ.", 3600f);
+                    modStateService.block();
+                    return;
+                }
+
+                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD), "Синхронизация завершена!", 5f);
+            } catch (ExecutionException | InterruptedException e) {
+                throw new RuntimeException(e);
             }
-
-            Map<String, Object> journalProfile = netService.getJournalProfile();
-            Map<String, Object> journalStats = netService.getJournalStats();
-            if (journalProfile.equals(Collections.emptyMap()) || journalStats.equals(Collections.emptyMap())) {
-                modStateService.setOnlineMode(false);
-                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                        "У вас установлен некорректный API-ключ. Проверьте корректность введённых данных и попробуйте снова (%s%s%s/hm setapitoken %s%sapitoken%s)."
-                                .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 15f);
-                return;
-            } else {
-                modStateService.setOnlineMode(true);
-
-                String vk = "vk.com/id%s".formatted((long) Double.parseDouble(journalProfile.get("idVk").toString()));
-                apiConfig.setVk(vk);
-                apiConfig.setJournalProfile(journalProfile);
-                apiConfig.setJournalStats(journalStats);
-                configManagerService.saveConfig(apiConfig);
-            }
-
-            if (!userStateService.getUserNickname().equals(journalProfile.get("nickname").toString())) {
-                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                        "Ваш никнейм не совпадает с никнеймом из журнала. Мод был заблокирован. Пожалуйста, используйте свой API-ключ.", 3600f);
-                modStateService.block();
-                return;
-            }
-
-            notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD), "Синхронизация завершена!", 5f);
         });
     }
 
     private boolean needUpdates() {
-        ApiConfig apiConfig = configManagerService.getApiConfig();
-        AbstractMap.SimpleEntry<String, String> lastUpdates = netService.getLastUpdates();
-        String lastVersion = lastUpdates.getKey();
-        String description = lastUpdates.getValue();
+        try {
+            ApiConfig apiConfig = configManagerService.getApiConfig();
+            AbstractMap.SimpleEntry<String, String> lastUpdates = netService.getLastUpdates().get();
+            String lastVersion = lastUpdates.getKey();
+            String description = lastUpdates.getValue();
 
-        if (!apiConfig.getCurrentVersion().equals(lastVersion)) {
-            notificationsService.addNotification(NotificationType.WARNING,
-                    "%s%sВаша версия HolyModeration устарела. Новейшая версия: %s%s%s%s%s, ваша: %s%s%s".formatted(
-                            GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, apiConfig.getCurrentVersion()
-                    ),
-                    "%s%sОписание обновления: %s%s%s".formatted(AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n")),
-                    3600f, "update.wav");
+            if (!apiConfig.getCurrentVersion().equals(lastVersion)) {
+                notificationsService.addNotification(NotificationType.WARNING,
+                        "%s%sВаша версия HolyModeration устарела. Новейшая версия: %s%s%s%s%s, ваша: %s%s%s".formatted(
+                                GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, apiConfig.getCurrentVersion()
+                        ),
+                        "%s%sОписание обновления: %s%s%s".formatted(AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n")),
+                        3600f, "update.wav");
 
-            chatService.clientMessage(chatService.openURLTextComponent(
-                    "%s%sНовая версия!".formatted(GREEN, BOLD),
-                    "Нажмите, чтобы перейти на страницу с новой версией мода.",
-                    "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/%s".formatted(lastVersion)
-            ));
+                chatService.clientMessage(chatService.openURLTextComponent(
+                        "%s%sНовая версия!".formatted(GREEN, BOLD),
+                        "Нажмите, чтобы перейти на страницу с новой версией мода.",
+                        "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/%s".formatted(lastVersion)
+                ));
 
-            modStateService.block();
-            return true;
+                modStateService.block();
+                return true;
+            }
+
+            return false;
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
         }
-
-        return false;
     }
 }

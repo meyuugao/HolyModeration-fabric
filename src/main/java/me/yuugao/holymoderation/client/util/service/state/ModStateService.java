@@ -30,6 +30,7 @@ public class ModStateService {
     private boolean debugEnabled = false;
     private boolean enabled = true;
     private boolean blocked = false;
+    private boolean forceBlocked = false;
     private boolean onlineMode = false;
 
     public void enableDebug() {
@@ -63,6 +64,11 @@ public class ModStateService {
         } else {
             return false;
         }
+    }
+
+    public void forceBlock() {
+        forceBlocked = blocked = true;
+        moduleManagerService.unregisterAll();
     }
 
     public void block() {

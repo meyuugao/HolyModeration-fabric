@@ -9,6 +9,7 @@ import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.state.ModStateService;
 import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
+import me.yuugao.holymoderation.client.util.viewer.FrameViewer;
 
 @Singleton
 public class ServicesModule implements DIModule {
@@ -37,7 +38,8 @@ public class ServicesModule implements DIModule {
         container.register(ScreenHandlerService.class, ScreenHandlerService.class);
         container.register(ModuleManagerService.class, ModuleManagerService.class);
         container.register(AsyncExecutor.class, AsyncExecutor.class);
-        container.register(ModBlackListService.class, ModBlackListService.class);
+        container.register(ModValidationService.class, ModValidationService.class);
         container.register(UserValidationService.class, UserValidationService.class);
+        container.register(FrameViewer.class, FrameViewer.class);
     }
 }

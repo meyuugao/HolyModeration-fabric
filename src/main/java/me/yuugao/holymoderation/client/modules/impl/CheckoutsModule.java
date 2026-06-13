@@ -155,11 +155,11 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                     }
                     String loc = userStateService.getUserLocation();
                     String mode = loc.startsWith("lite120") ? "lite120" : loc.startsWith("lite") ? "lite" : loc.startsWith("classic") ? "classic" : "lpvp";
-                    asyncExecutor.runAsync("CheckoutsModule/onCommandSend", () -> {
-                        if (mode.equals("lpvp")) netService.startCheckout(player, reason, "lite", 1, true);
-                        else
-                            netService.startCheckout(player, reason, mode, Integer.parseInt(loc.split("%s-".formatted(mode))[1]), false);
-                    });
+                    if (mode.equals("lpvp")) {
+                        netService.startCheckout(player, reason, "lite", 1, true);
+                    } else {
+                        netService.startCheckout(player, reason, mode, Integer.parseInt(loc.split("%s-".formatted(mode))[1]), false);
+                    }
                 }
                 case "endcheckout" -> {
                     messageSplit = eventCommand.split(" ", 6);
@@ -172,46 +172,44 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
                         notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный результат проверки.", 5f);
                         return;
                     }
-                    asyncExecutor.runAsync("CheckoutsModule/onCommandSend", () -> {
-                        switch (result) {
-                            case "clean" -> netService.endCheckout(result, result, false);
-                            case "ban" -> {
-                                if (messageSplit.length == 3) {
-                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали ник игрока и необходимость снести стеш.", 5f);
-                                } else if (messageSplit.length == 4) {
-                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали необходимость снести стеш.", 5f);
+                    switch (result) {
+                        case "clean" -> netService.endCheckout(result, result, false);
+                        case "ban" -> {
+                            if (messageSplit.length == 3) {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали ник игрока и необходимость снести стеш.", 5f);
+                            } else if (messageSplit.length == 4) {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали необходимость снести стеш.", 5f);
+                            } else {
+                                if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[4])) {
+                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная необходимость снести стеш.", 5f);
                                 } else {
-                                    if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[4])) {
-                                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная необходимость снести стеш.", 5f);
+                                    destroyStash = messageSplit[4].equals("true");
+                                    if (messageSplit.length == 5) {
+                                        banChecking = true;
+                                        chatService.chatMessage("/checkban %s".formatted(messageSplit[3]));
+                                    } else if (messageSplit.length == 6) {
+                                        netService.endCheckout(result, messageSplit[5], destroyStash);
                                     } else {
-                                        destroyStash = messageSplit[4].equals("true");
-                                        if (messageSplit.length == 5) {
-                                            banChecking = true;
-                                            chatService.chatMessage("/checkban %s".formatted(messageSplit[3]));
-                                        } else if (messageSplit.length == 6) {
-                                            netService.endCheckout(result, messageSplit[5], destroyStash);
-                                        } else {
-                                            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный формат команды.", 5f);
-                                        }
+                                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный формат команды.", 5f);
                                     }
-                                }
-                            }
-                            case "autobuy", "autosell" -> {
-                                if (messageSplit.length == 3) {
-                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали необходимость снести стеш.", 5f);
-                                } else if (messageSplit.length == 4) {
-                                    if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[3])) {
-                                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная необходимость снести стеш.", 5f);
-                                    } else {
-                                        destroyStash = messageSplit[3].equals("true");
-                                        netService.endCheckout(result, result, destroyStash);
-                                    }
-                                } else {
-                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный формат команды.", 5f);
                                 }
                             }
                         }
-                    });
+                        case "autobuy", "autosell" -> {
+                            if (messageSplit.length == 3) {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали необходимость снести стеш.", 5f);
+                            } else if (messageSplit.length == 4) {
+                                if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[3])) {
+                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная необходимость снести стеш.", 5f);
+                                } else {
+                                    destroyStash = messageSplit[3].equals("true");
+                                    netService.endCheckout(result, result, destroyStash);
+                                }
+                            } else {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный формат команды.", 5f);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -261,7 +259,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
             if (receivedText.startsWith("IP бан:")) {
                 messageIsCheckbanInfo = false;
                 banChecking = false;
-                asyncExecutor.runAsync("CheckoutsModule/onMessageReceive", () -> netService.endCheckout("ban", banReason, destroyStash));
+                netService.endCheckout("ban", banReason, destroyStash);
             }
         }
     }
