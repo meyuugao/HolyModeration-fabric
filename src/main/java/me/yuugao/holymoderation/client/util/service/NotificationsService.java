@@ -2,6 +2,7 @@ package me.yuugao.holymoderation.client.util.service;
 
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.util.Colors;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -43,6 +44,31 @@ public class NotificationsService {
 
     public void clearNotifications() {
         notificationPool.clear();
+    }
+
+    // ===== Convenience helpers (canonical titles used across all modules) =====
+    public void error(String text) {
+        addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(Colors.RED, Colors.BOLD), text, 5f);
+    }
+
+    public void success(String text) {
+        addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(Colors.GREEN, Colors.BOLD), text, 5f);
+    }
+
+    public void warning(String text) {
+        addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(Colors.GOLD, Colors.BOLD), text, 5f);
+    }
+
+    public void error(String text, float liveTime) {
+        addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(Colors.RED, Colors.BOLD), text, liveTime);
+    }
+
+    public void success(String text, float liveTime) {
+        addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(Colors.GREEN, Colors.BOLD), text, liveTime);
+    }
+
+    public void warning(String text, float liveTime) {
+        addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(Colors.GOLD, Colors.BOLD), text, liveTime);
     }
 
     public void renderNotificationsLocal(DrawContext ctx, int z, float stackDirY, float hideDirX, float hideDirY,

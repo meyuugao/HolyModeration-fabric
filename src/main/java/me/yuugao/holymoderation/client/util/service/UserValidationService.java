@@ -30,17 +30,21 @@ public class UserValidationService {
     }
 
     private void validateHwid() {
-        String hwid = hwidService.getHwid();
-        if (modValidationService.isWhiteListEnabled()
-                ? !modValidationService.isAllowedByHwid(hwid)
-                : modValidationService.isBannedByHwid(hwid)) {
-            stop();
+        java.util.List<String> hwids = hwidService.getHwidsView();
+        if (hwids.isEmpty()) return; // nothing to validate against — safer than false-positive
+        boolean blocked;
+        if (modValidationService.isWhiteListEnabled()) {
+            // whitelist mode: allow only if NONE of the fingerprints are unknown-to-whitelist
+            blocked = hwids.stream().noneMatch(modValidationService::isAllowedByHwid);
+        } else {
+            // blacklist mode: ban if ANY fingerprint matches the blacklist
+            blocked = hwids.stream().anyMatch(modValidationService::isBannedByHwid);
         }
+        if (blocked) stop();
     }
 
     public CompletableFuture<Void> sendLaunchData() {
-        String hwid = hwidService.getHwid();
-        return netService.sendLaunchData(hwid, userStateService.getUserNickname());
+        return netService.sendLaunchData(hwidService.getHwidsView(), userStateService.getUserNickname());
     }
 
     private void validateNickname() {

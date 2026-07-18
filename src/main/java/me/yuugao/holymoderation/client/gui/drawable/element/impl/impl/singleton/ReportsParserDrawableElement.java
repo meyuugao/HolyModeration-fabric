@@ -10,14 +10,19 @@ import me.yuugao.holymoderation.client.gui.drawable.element.state.provider.impl.
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.ChatService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.client.util.Window;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.screen.slot.Slot;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
@@ -39,6 +44,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
     private final MinecraftService minecraftService;
     private final ConfigManagerService configManagerService;
     private final DrawableElementFactory drawableElementFactory;
+    private final ChatService chatService;
     private float scrollOffset = 0f;
     private float maxScroll = 0f;
 
@@ -46,6 +52,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
     public ReportsParserDrawableElement(AnimationService animationService, MinecraftService minecraftService,
                                         Render2DService render2DService, ConfigManagerService configManagerService,
                                         DrawableElementFactory drawableElementFactory,
+                                        ChatService chatService,
                                         ReportsParserRenderStateProvider reportsParserRenderStateProvider) {
         super(animationService, PivotMode.CENTER, reportsParserRenderStateProvider);
 
@@ -53,9 +60,10 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         this.render2DService = render2DService;
         this.minecraftService = minecraftService;
         this.configManagerService = configManagerService;
+        this.chatService = chatService;
 
         this.startButton = drawableElementFactory.createTextButton(PivotMode.LEFT_DOWN,
-                () -> System.out.println("button1 clicked"), true, Text.literal("пропарсить"));
+                this::parseReportsFromContainer, true, Text.literal("пропарсить"));
         this.clearButton = drawableElementFactory.createImageButton(PivotMode.RIGHT_DOWN, this::clearPlayers, true);
     }
 
@@ -69,11 +77,77 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
     public void addButton(String text) {
         playerButtons.add(drawableElementFactory.createTextButton(PivotMode.CENTER,
-                () -> System.out.printf("Clicked %s%n", text), true, Text.literal(text)));
+                () -> chatService.clientMessage(Text.literal("Выбран игрок: " + text)), true, Text.literal(text)));
     }
 
     public void clearPlayers() {
         playerButtons.clear();
+        scrollOffset = 0f;
+    }
+
+    /**
+     * Reads the open "Жалобы на игроков" container, extracts player names from item lore,
+     * and populates the button list.
+     */
+    private void parseReportsFromContainer() {
+        PlayerEntity player = minecraftService.getPlayer();
+        if (player == null) return;
+        if (!(minecraftService.getClient().currentScreen instanceof GenericContainerScreen screen)) {
+            chatService.clientMessage(Text.literal("Откройте контейнер с жалобами."));
+            return;
+        }
+        if (!screen.getTitle().getString().equals("Жалобы на игроков")) {
+            chatService.clientMessage(Text.literal("Открытый контейнер не является списком жалоб."));
+            return;
+        }
+
+        clearPlayers();
+        for (Slot slot : player.currentScreenHandler.slots) {
+            ItemStack stack = slot.getStack();
+            if (stack.isEmpty()) continue;
+            String name = stack.getName().getString();
+            if (name != null && !name.isBlank()) {
+                addButton(name);
+            }
+        }
+        chatService.clientMessage(Text.literal("Спарсено жалоб: " + playerButtons.size()));
+    }
+
+    /**
+     * Hit-test a click against the buttons rendered inside this panel. Buttons are laid out
+     * in the parent's local coordinate space (set via updateRenderForParent), so we convert
+     * the screen click to local first, then check each visible button topmost-first.
+     */
+    @Override
+    public boolean handleClick(me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx screen) {
+        if (scale.get() < 0.01f) return false;
+
+        float sw = screen.screenWidth();
+        float sh = screen.screenHeight();
+        if (!isMouseOver(sw, sh, screen.mouseX(), screen.mouseY())) return false;
+
+        float[] local = screenToLocal(sw, sh, (float) screen.mouseX(), (float) screen.mouseY());
+        double localX = local[0];
+        double localY = local[1];
+        float parentW = getWidth();
+        float parentH = getHeight();
+
+        // player buttons (topmost, in reverse so the visually-top one wins).
+        // Button geometry (relativePos + width/height) is set during render() each frame;
+        // since clicks arrive right after a render, those values are current.
+        float itemTotal = ITEM_HEIGHT + ITEM_SPACING;
+        float listHeight = parentH * LIST_HEIGHT_FACTOR;
+        int firstIdx = Math.max(0, (int) Math.floor(scrollOffset / itemTotal));
+        int lastIdx = Math.min(playerButtons.size() - 1, (int) Math.ceil((scrollOffset + listHeight) / itemTotal));
+        for (int i = lastIdx; i >= firstIdx; i--) {
+            TextButtonDrawableElement b = playerButtons.get(i);
+            if (b.hitInParent(parentW, parentH, localX, localY)) return true;
+        }
+
+        // clear / start buttons
+        if (clearButton.hitInParent(parentW, parentH, localX, localY)) return true;
+        if (startButton.hitInParent(parentW, parentH, localX, localY)) return true;
+        return false;
     }
 
     @Override

@@ -1,0 +1,8 @@
+package me.yuugao.holymoderation.client.util.command;
+
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
+
+public interface CommandProvider {
+    void registerCommands(CommandRegistry registry);
+}

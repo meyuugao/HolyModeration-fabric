@@ -10,8 +10,11 @@ import me.yuugao.holymoderation.client.util.service.GuiManagerService;
 import me.yuugao.holymoderation.client.util.service.InputService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.MouseClickEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.MouseScrollEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.render.RenderEvent;
+
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -87,6 +90,27 @@ public class GuiManagerModule {
     public void onMouseScroll(MouseScrollEvent event) {
         for (DrawableModule<?> drawableModule : new ArrayList<>(guiManagerService.getDrawableModules())) {
             drawableModule.getDrawableElement().onMouseScroll(event.getDx(), event.getDy(), event.getX(), event.getY());
+        }
+    }
+
+    @Subscribe
+    public void onMouseClick(MouseClickEvent event) {
+        // Clicks only drive buttons while the config GUI is open; in LIVE mode clicks go to the game.
+        MinecraftClient mc = minecraftService.getClient();
+        if (!(mc.currentScreen instanceof MainGuiScreen)) return;
+        if (dragging != null) return; // an in-progress drag has priority
+
+        ScreenCtx screen = new ScreenCtx(
+                mc.getWindow().getScaledWidth(),
+                mc.getWindow().getScaledHeight(),
+                event.getX(),
+                event.getY()
+        );
+        // Topmost (highest render priority) first.
+        ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
+        Collections.reverse(list);
+        for (DrawableModule<?> d : list) {
+            if (d.getDrawableElement().handleClick(screen)) return;
         }
     }
 

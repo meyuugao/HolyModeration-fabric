@@ -51,24 +51,24 @@ public class NetService {
                 HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
                 String response = getResponse(connection).toString();
 
+                // Backend format: { "hwid": "nickname", ... } (key = fingerprint, value = owner).
                 Gson gson = new Gson();
-                Type type = new TypeToken<Map<String, List<String>>>() {
+                Type type = new TypeToken<Map<String, String>>() {
                 }.getType();
-                Map<String, List<String>> data = gson.fromJson(response, type);
+                Map<String, String> data = gson.fromJson(response, type);
 
                 if (data == null) {
                     return Collections.emptyList();
                 }
 
+                // Flatten into the internal contract: SimpleEntry(nickname, hwid).
+                // Note the key/value swap relative to the wire format.
                 List<AbstractMap.SimpleEntry<String, String>> result = new ArrayList<>();
-                for (Map.Entry<String, List<String>> entry : data.entrySet()) {
-                    String player = entry.getKey();
-                    List<String> hwids = entry.getValue();
-                    if (player == null || hwids == null) continue;
-                    for (String hwid : hwids) {
-                        if (hwid == null || hwid.isEmpty()) continue;
-                        result.add(new AbstractMap.SimpleEntry<>(player, hwid));
-                    }
+                for (Map.Entry<String, String> entry : data.entrySet()) {
+                    String hwid = entry.getKey();
+                    String player = entry.getValue();
+                    if (hwid == null || hwid.isEmpty() || player == null) continue;
+                    result.add(new AbstractMap.SimpleEntry<>(player, hwid));
                 }
                 return result;
             } catch (Exception e) {
@@ -334,7 +334,7 @@ public class NetService {
         });
     }
 
-    public CompletableFuture<Void> sendLaunchData(String hwid, String username) {
+    public CompletableFuture<Void> sendLaunchData(java.util.List<String> hwids, String username) {
         return asyncExecutor.runAsync("NetService/sendLaunchData", () -> {
             String endpoint = "https://holymoderation.alwaysdata.net/api/launch";
 
@@ -343,11 +343,19 @@ public class NetService {
                 if (connection == null) throw new IOException("Connection is null");
                 try {
                     connection.setRequestMethod("POST");
-                    connection.setRequestProperty("hwid", hwid);
-                    connection.setRequestProperty("username", username);
-                    connection.setDoOutput(false);
+                    connection.setRequestProperty("Content-Type", "application/json");
 
-                    connection.getResponseCode();
+                    JsonObject body = new JsonObject();
+                    body.addProperty("username", username);
+                    com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+                    for (String h : hwids) {
+                        arr.add(h);
+                    }
+                    body.add("hwids", arr);
+
+                    if (writeJson(connection, body)) {
+                        connection.getResponseCode();
+                    }
                 } finally {
                     connection.disconnect();
                 }

@@ -5,9 +5,16 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.util.command.Argument;
+import me.yuugao.holymoderation.client.util.command.CommandContext;
+import me.yuugao.holymoderation.client.util.command.CommandProvider;
+import me.yuugao.holymoderation.client.util.command.CommandRegistry;
+import me.yuugao.holymoderation.client.util.command.CommandSpec;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.ApiConfig;
+import me.yuugao.obfuscator.DontObf;
+import me.yuugao.obfuscator.ObfRule;
 import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
@@ -34,7 +41,8 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
-public class StateModule {
+
+public class StateModule implements CommandProvider {
     private final MinecraftService minecraftService;
     private final ModStateService modStateService;
     private final PlayerStateService playerStateService;
@@ -143,23 +151,102 @@ public class StateModule {
         }
     }
 
-    @Subscribe(priority = 100)
+    @Override
+    public void registerCommands(CommandRegistry registry) {
+        registry.register(CommandSpec.of("enableDebug").group("Система").description("включить отладочный лог (осторожно!)").handler(this::cmdEnableDebug));
+        registry.register(CommandSpec.of("disableDebug").group("Система").description("выключить отладочный лог").handler(this::cmdDisableDebug));
+        registry.register(CommandSpec.of("enable").group("Система").description("включить мод").handler(this::cmdEnable));
+        registry.register(CommandSpec.of("disable").group("Система").description("выключить мод").handler(this::cmdDisable));
+        registry.register(CommandSpec.of("setapitoken", Argument.text("токен")).group("Система").description("установить API-ключ журнала").handler(this::cmdSetApiToken));
+    }
+
+    /** Common gate: returns true (and notifies) when the command must be ignored. */
+    private boolean blocked() {
+        if (!userStateService.isOnHW()) return true;
+        if (!userStateService.isGameInitCompleted()) {
+            notificationsService.error("Не спеши, инициализация игры ещё не завершилась!");
+            return true;
+        }
+        return false;
+    }
+
+    private void cmdEnableDebug(CommandContext ctx) {
+        if (blocked()) return;
+        modStateService.enableDebug();
+        notificationsService.addNotification(NotificationType.WARNING,
+                "%s%sПОЖАЛУЙСТА, ОБРАТИТЕ ВНИМАНИЕ!".formatted(RED, BOLD),
+                """
+                        %sБыл включен %sдебаг.%s Это означает, что в логах может появиться важная информация, и в том числе:
+                        %sИнформация о вашей системе.
+                        %sИнформация о ваших действиях в текущей сессии.
+                        %sВаш конфиг, в том числе API-ключ.
+                        %sЕсли кто-то сказал вам включить этот режим, будьте осторожны и %sНИ В КОЕМ СЛУЧАЕ НЕ ДАВАЙТЕ ДОСТУП К СВОЕМУ ПК ИЛИ ЛОГАМ ТЕКУЩЕЙ СЕССИИ!"""
+                        .formatted(GOLD, RED, GOLD, RED, RED, RED, GOLD, RED), 30f);
+    }
+
+    private void cmdDisableDebug(CommandContext ctx) {
+        if (blocked()) return;
+        modStateService.disableDebug();
+        notificationsService.success("Дебаг выключен!");
+    }
+
+    private void cmdEnable(CommandContext ctx) {
+        if (blocked()) return;
+        if (modStateService.enable()) {
+            notificationsService.success("Мод включен!");
+        } else {
+            notificationsService.error("Мод уже включён!");
+        }
+    }
+
+    private void cmdDisable(CommandContext ctx) {
+        if (blocked()) return;
+        if (modStateService.disable()) {
+            notificationsService.success("Мод выключен!");
+        } else {
+            notificationsService.error("Мод уже выключен!");
+        }
+    }
+
+    private void cmdSetApiToken(CommandContext ctx) {
+        if (blocked()) return;
+        ApiConfig apiConfig = configManagerService.getApiConfig();
+        ClientPlayNetworkHandler clientPlayNetworkHandler = minecraftService.getClient().getNetworkHandler();
+        if (!ctx.hasArg(0)) {
+            notificationsService.error("Вы не ввели токен.");
+            return;
+        }
+        String apiToken = ctx.arg(0);
+        if (apiToken.contains(" ")) {
+            notificationsService.error("В API-ключе обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
+            return;
+        }
+        apiConfig.setApiToken(apiToken);
+        configManagerService.saveConfig(apiConfig);
+        soundService.playSound("success.wav");
+
+        if (clientPlayNetworkHandler != null) {
+            clientPlayNetworkHandler.getConnection().disconnect(Text.of(
+                    "%s%sВы успешно установили API-ключ. Пожалуйста, перезайдите на сервер.".formatted(AQUA, BOLD)));
+        }
+    }
+
+    // ===== Server-namespace pass-through: /v, /gamemode, /gm, /fly, /god, /hac (state sync only, no cancel) =====
+    @Subscribe(priority = 99)
     public void onCommandSend(CommandSendEvent event) {
         ClientWorld clientWorld = minecraftService.getWorld();
-        ClientPlayNetworkHandler clientPlayNetworkHandler = minecraftService.getClient().getNetworkHandler();
-        ApiConfig apiConfig = configManagerService.getApiConfig();
 
         if (!userStateService.isOnHW()) return;
+        if (event.getCommand().startsWith("hm")) return; // hm-subcommands handled by CommandRegistry
 
         if (!userStateService.isGameInitCompleted()) {
-            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                    "Не спеши, инициализация игры ещё не завершилась!", 5f);
+            notificationsService.error("Не спеши, инициализация игры ещё не завершилась!");
             return;
         }
 
         String eventCommand = event.getCommand();
         String[] messageSplit = eventCommand.split(" ");
-        String command = eventCommand.startsWith("hm") ? messageSplit[1] : messageSplit[0];
+        String command = messageSplit[0];
 
         switch (command) {
             case ("v") -> {
@@ -221,74 +308,7 @@ public class StateModule {
                     userStateService.setHacAlertsEnabled(!userStateService.isHacAlertsEnabled());
                 }
             }
-
-            case "enableDebug" -> {
-                modStateService.enableDebug();
-                notificationsService.addNotification(NotificationType.WARNING,
-                        "%s%sПОЖАЛУЙСТА, ОБРАТИТЕ ВНИМАНИЕ!".formatted(RED, BOLD),
-                        """
-                                %sБыл включен %sдебаг.%s Это означает, что в логах может появиться важная информация, и в том числе:
-                                %sИнформация о вашей системе.
-                                %sИнформация о ваших действиях в текущей сессии.
-                                %sВаш конфиг, в том числе API-ключ.
-                                %sЕсли кто-то сказал вам включить этот режим, будьте осторожны и %sНИ В КОЕМ СЛУЧАЕ НЕ ДАВАЙТЕ ДОСТУП К СВОЕМУ ПК ИЛИ ЛОГАМ ТЕКУЩЕЙ СЕССИИ!"""
-                                .formatted(GOLD, RED, GOLD, RED, RED, RED, GOLD, RED), 30f);
-            }
-
-            case "disableDebug" -> {
-                modStateService.disableDebug();
-                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                        "Дебаг выключен!", 5f);
-            }
-
-            case "enable" -> {
-                if (modStateService.enable()) {
-                    notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                            "Мод включен!", 5f);
-                } else {
-                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                            "Мод уже включён!", 5f);
-                }
-            }
-
-            case "disable" -> {
-                event.setCancelled(true);
-                if (modStateService.disable()) {
-                    notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD),
-                            "Мод выключен!", 5f);
-                } else {
-                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                            "Мод уже выключен!", 5f);
-                }
-            }
-
-            case "setapitoken" -> {
-                if (messageSplit.length == 2) {
-                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                            "Вы не ввели токен.", 5f);
-                    return;
-                }
-                String apiToken = messageSplit[2];
-                if (apiToken.contains(" ")) {
-                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
-                            "В API-ключе обнаружены пробелы, пожалуйста, указывайте его без пробелов.", 5f);
-                    return;
-                }
-                apiConfig.setApiToken(apiToken);
-                configManagerService.saveConfig(apiConfig);
-                soundService.playSound("success.wav");
-
-                if (clientPlayNetworkHandler != null) {
-                    clientPlayNetworkHandler.getConnection().disconnect(Text.of(
-                            "%s%sВы успешно установили API-ключ. Пожалуйста, перезайдите на сервер.".formatted(AQUA, BOLD)));
-                }
-            }
         }
-    }
-
-    @Subscribe(priority = -100)
-    public void onCommandSendSecond(CommandSendEvent event) {
-        if (event.getCommand().startsWith("hm")) event.setCancelled(true);
     }
 
     @Subscribe(priority = 100)
@@ -296,17 +316,16 @@ public class StateModule {
         String receivedText = chatService.formatReceivedText(event.getMessage().getString());
         if (receivedText == null) return;
 
-        if (receivedText.equals("▶ Ожидайте завершения проверки... Пожалуйста, не двигайтесь.")
-                || receivedText.equals("▶ Введите цифры с картинки в чат! Для открытия чата, нажмите <T>")) {
+        if (HolyWorldPatterns.isHubGate(receivedText)) {
             userStateService.setInHub(true);
             userStateService.setGameInitCompleted(true);
             userStateService.setUserLocation(StringUtils.EMPTY);
         }
 
         if (userStateService.getUserLocation().isEmpty()) {
-            if (receivedText.startsWith("Игрок %s".formatted(userStateService.getUserNickname()))) {
+            if (HolyWorldPatterns.isFindResponseAboutSelf(receivedText, userStateService.getUserNickname())) {
                 event.setCancelled(true);
-                userStateService.setUserLocation(chatService.formatLocation(receivedText.split("сервере ")[1]));
+                userStateService.setUserLocation(HolyWorldPatterns.formatLocation(receivedText.split(HolyWorldPatterns.FIND_ON_SERVER_SUFFIX)[1]));
             }
         }
     }

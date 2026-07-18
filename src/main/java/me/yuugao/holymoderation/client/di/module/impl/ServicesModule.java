@@ -3,6 +3,7 @@ package me.yuugao.holymoderation.client.di.module.impl;
 import me.yuugao.holymoderation.client.di.DIContainer;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.di.module.DIModule;
+import me.yuugao.holymoderation.client.util.command.CommandRegistry;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
@@ -37,6 +38,7 @@ public class ServicesModule implements DIModule {
         container.register(PunishmentsService.class, PunishmentsService.class);
         container.register(ScreenHandlerService.class, ScreenHandlerService.class);
         container.register(ModuleManagerService.class, ModuleManagerService.class);
+        container.register(CommandRegistry.class, CommandRegistry.class);
         container.register(AsyncExecutor.class, AsyncExecutor.class);
         container.register(ModValidationService.class, ModValidationService.class);
         container.register(UserValidationService.class, UserValidationService.class);

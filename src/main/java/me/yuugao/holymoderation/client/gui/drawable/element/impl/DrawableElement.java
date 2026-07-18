@@ -48,4 +48,13 @@ public abstract class DrawableElement extends Drawable {
     public void updateRenderForParent(DrawContext ctx, float parW, float parH, int z) {
         updateRender(ctx, parW, parH, z, 1f);
     }
+
+    /**
+     * Hit-test a click in screen space and handle it if this element (or a child) is under the cursor.
+     * Returns true if the click was consumed (a button fired), false to let the caller try others.
+     * Base implementation is a no-op; interactive elements override this.
+     */
+    public boolean handleClick(ScreenCtx screen) {
+        return false;
+    }
 }

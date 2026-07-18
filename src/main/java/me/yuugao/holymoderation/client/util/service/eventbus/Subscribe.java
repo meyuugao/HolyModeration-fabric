@@ -10,7 +10,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@DontObf({ObfRule.GARBAGE_INJECT, ObfRule.MAP_METHOD})
 public @interface Subscribe {
     int priority() default 0;
 }
