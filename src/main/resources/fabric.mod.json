@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "holymoderation",
+  "version": "3.0-alpha.5",
+  "name": "HolyModeration",
+  "description": "An auxiliary mod for moderation on HolyWorld | Bugs? @meyuugao",
+  "authors": [
+    "MeYuugao\\n\\nПомощник:\\n SomeOneDay"
+  ],
+  "contact": {
+    "tg": "t.me/meyuugao",
+    "vk": "vk.com/meyuugao"
+  },
+  "icon": "assets/minecraft/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "me.yuugao.holymoderation.client.HolyModerationClient"
+    ],
+    "main": [
+      "me.yuugao.holymoderation.HolyModeration"
+    ]
+  },
+  "mixins": [
+    "holymoderation.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "developers": [
+        "MeYuugao"
+      ],
+      "contributors": [
+        "SomeOneDay"
+      ]
+    }
+  }
+}

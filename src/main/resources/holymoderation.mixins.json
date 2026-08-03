@@ -1,0 +1,24 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "me.yuugao.holymoderation.client.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+  ],
+  "client": [
+    "ClientPlayNetworkHandlerMixin",
+    "GameRendererMixin",
+    "KeyBoardMixin",
+    "MessageHandlerMixin",
+    "MinecraftClientMixin",
+    "MouseMixin",
+    "ScreenEventsMixin",
+    "ScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}
