@@ -7,11 +7,6 @@ import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.singleton.CheckoutsDrawableElement;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
-import me.yuugao.holymoderation.client.util.command.Argument;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
@@ -20,18 +15,15 @@ import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.Com
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Singleton
-
-public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> implements CommandProvider {
-    private final String[] ServerFreezeCommands = {"/freezing", "/frz"};
+public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> {
+    private final String[] FreezerCommands = {"/freezing", "/frz", "freezing", "frz", "unfreezing", "unfrz", "sban", "sendtexts"};
+    private final String[] ApiCommands = {"endcheckout", "startcheckout"};
     private final ConfigManagerService configManagerService;
     private final PlayerStateService playerStateService;
     private final UserStateService userStateService;
@@ -70,145 +62,154 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         this.asyncExecutor = asyncExecutor;
     }
 
-    @Override
-    public void registerCommands(CommandRegistry registry) {
-        registry.register(CommandSpec.of("freezing", Argument.player("игрок")).group("Проверки").description("заморозить игрока и начать проверку").handler(this::cmdFreezing));
-        registry.register(CommandSpec.of("frz", Argument.player("игрок")).group("Проверки").description("алиас freezing").handler(this::cmdFreezing));
-        registry.register(CommandSpec.of("unfreezing").group("Проверки").description("разморозить игрока и завершить проверку").handler(this::cmdUnfreezing));
-        registry.register(CommandSpec.of("unfrz").group("Проверки").description("алиас unfreezing").handler(this::cmdUnfreezing));
-        registry.register(CommandSpec.of("sban", Argument.text("время"), Argument.text("причина")).group("Проверки").description("забанить проверяемого и завершить проверку").handler(this::cmdSban));
-        registry.register(CommandSpec.of("sendtexts", Argument.player("игрок")).group("Проверки").description("отправить игроку заготовленные тексты").handler(this::cmdSendTexts));
-        registry.register(CommandSpec.of("startcheckout", Argument.player("игрок"), Argument.choice("причина", List.of("report", "checkout", "autobuy", "autosell", "customka", "personal", "toManyChecks", "candidate"))).group("Проверки").description("внести проверку в журнал").handler(this::cmdStartCheckout));
-        registry.register(CommandSpec.of("endcheckout", Argument.choice("результат", List.of("clean", "ban", "autobuy", "autosell")), Argument.player("игрок"), Argument.choice("снести_стеш", List.of("true", "false")), Argument.text("причина_бана")).group("Проверки").description("завершить проверку в журнале").handler(this::cmdEndCheckout));
-    }
-
-    // ===== Server-namespace intercept: /freezing, /frz (cancel + replace) =====
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
         String checkoutPlayer = playerStateService.getCheckoutPlayer();
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
-        if (eventCommand.startsWith("hm")) return; // hm-subcommands handled by CommandRegistry
-        String command = "/%s".formatted(commandSplit[0]);
+        if (eventCommand.startsWith("hm") && commandSplit.length < 2) return;
+        String command = eventCommand.startsWith("hm") ? commandSplit[1] : "/%s".formatted(commandSplit[0]);
 
-        if (chatService.isArrayContains(ServerFreezeCommands, command)) {
-            event.setCancelled(true);
-            if (commandSplit.length == 1) {
-                notificationsService.error("Вы не указали ник игрока.");
+        if (chatService.isArrayContains(FreezerCommands, command) || chatService.isArrayContains(ApiCommands, command)) {
+            if (userStateService.isInHub()) {
+                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD), "В хабе этого делать нельзя.", 5f);
                 return;
             }
-            String player = commandSplit[1];
-            if (player.equals(checkoutPlayer)) {
-                notificationsService.warning("Этот игрок находиться у вас на проверке. Для его разморозки используйте %s%s%s/unfreezing%s или %s%s%s/unfrz%s".formatted(GOLD, GOLD, BOLD, WHITE, GOLD, GOLD, BOLD, WHITE));
-                return;
-            }
-            chatService.chatMessage("/freezing %s".formatted(player));
         }
-    }
 
-    private void cmdFreezing(CommandContext ctx) {
-        String checkoutPlayer = playerStateService.getCheckoutPlayer();
-        if (userStateService.isInHub()) {
-            notificationsService.warning("В хабе этого делать нельзя.");
-            return;
-        }
-        if (!ctx.hasArg(0)) {
-            notificationsService.error("Вы не указали ник игрока.");
-            return;
-        }
-        String nickname = ctx.arg(0);
-        startingCheckout = true;
-        if (checkoutsService.startCheckOut(nickname)) {
-            this.drawableElement.coStartForLocal(nickname);
-        }
-    }
+        if (chatService.isArrayContains(FreezerCommands, command)) {
+            switch (command) {
+                case "/freezing", "/frz" -> {
+                    event.setCancelled(true);
+                    commandSplit = eventCommand.split(" ", 2);
+                    if (commandSplit.length == 1) {
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали ник игрока.", 5f);
+                        return;
+                    }
+                    String player = commandSplit[1];
+                    if (player.equals(checkoutPlayer)) {
+                        notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD), "Этот игрок находиться у вас на проверке. Для его разморозки используйте %s%s%s/hm unfreezing%s или %s%s%s/hm unfrz%s".formatted(GOLD, GOLD, BOLD, WHITE, GOLD, GOLD, BOLD, WHITE), 5f);
+                        return;
+                    }
+                    chatService.chatMessage("/freezing %s".formatted(player));
+                }
+                case "freezing", "frz" -> {
+                    String nickname = eventCommand.split(command + " ")[1];
+                    if (commandSplit.length < 3) {
+                        notificationsService.addNotification(NotificationType.ERROR,
+                                "%s%sОшибка".formatted(RED, BOLD),
+                                "Вы не указали ник игрока.", 5f);
+                        return;
+                    }
 
-    private void cmdUnfreezing(CommandContext ctx) {
-        String checkoutPlayer = playerStateService.getCheckoutPlayer();
-        if (checkoutPlayer.isEmpty()) {
-            notificationsService.warning("Вы никого не проверяете.");
-            return;
-        }
-        checkoutsService.endCheckOut(false);
-    }
-
-    private void cmdSban(CommandContext ctx) {
-        String checkoutPlayer = playerStateService.getCheckoutPlayer();
-        if (checkoutPlayer.isEmpty()) {
-            notificationsService.warning("Вы никого не проверяете.");
-            return;
-        }
-        if (!ctx.hasArg(0)) {
-            notificationsService.error("Вы не указали время и причину бана.");
-            return;
-        }
-        String time = ctx.arg(0);
-        String reason = ctx.hasArg(1) ? "2.4 (%s)".formatted(ctx.arg(1)) : "2.4";
-        if (!punishmentsService.punish("/banip", checkoutPlayer, time, reason, true)) return;
-        checkoutsService.endCheckOut(false);
-    }
-
-    private void cmdSendTexts(CommandContext ctx) {
-        if (userStateService.isInHub()) {
-            notificationsService.warning("В хабе этого делать нельзя.");
-            return;
-        }
-        if (!ctx.hasArg(0)) {
-            notificationsService.error("Вы не указали ник игрока.");
-            return;
-        }
-        checkoutsService.sendTexts(ctx.arg(0));
-    }
-
-    private void cmdStartCheckout(CommandContext ctx) {
-        if (!ctx.hasArg(0)) {
-            notificationsService.error("Вы не указали ник игрока и причину проверки.");
-            return;
-        }
-        if (!ctx.hasArg(1)) {
-            notificationsService.error("Вы не указали причину проверки.");
-            return;
-        }
-        String player = ctx.arg(0);
-        String reason = ctx.arg(1);
-        String loc = userStateService.getUserLocation();
-        String mode = loc.startsWith("lite120") ? "lite120" : loc.startsWith("lite") ? "lite" : loc.startsWith("classic") ? "classic" : "lpvp";
-        if (mode.equals("lpvp")) {
-            netService.startCheckout(player, reason, "lite", 1, true);
-        } else {
-            netService.startCheckout(player, reason, mode, Integer.parseInt(loc.split("%s-".formatted(mode))[1]), false);
-        }
-    }
-
-    private void cmdEndCheckout(CommandContext ctx) {
-        if (!ctx.hasArg(0)) {
-            notificationsService.error("Вы не указали результат проверки.");
-            return;
-        }
-        String result = ctx.arg(0);
-        switch (result) {
-            case "clean" -> netService.endCheckout(result, result, false);
-            case "ban" -> {
-                if (!ctx.hasArg(1)) {
-                    notificationsService.error("Вы не указали ник игрока и необходимость снести стеш.");
-                } else if (!ctx.hasArg(2)) {
-                    notificationsService.error("Вы не указали необходимость снести стеш.");
-                } else {
-                    destroyStash = ctx.arg(2).equals("true");
-                    if (!ctx.hasArg(3)) {
-                        banChecking = true;
-                        chatService.chatMessage("/checkban %s".formatted(ctx.arg(1)));
-                    } else {
-                        netService.endCheckout(result, ctx.arg(3), destroyStash);
+                    startingCheckout = true;
+                    if (checkoutsService.startCheckOut(nickname)) {
+                        this.drawableElement.coStartForLocal(nickname);
                     }
                 }
+                case "unfreezing", "unfrz" -> {
+                    if (checkoutPlayer.isEmpty()) {
+                        notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD), "Вы никого не проверяете.", 5f);
+                        return;
+                    }
+                    checkoutsService.endCheckOut(false);
+                }
+                case "sban" -> {
+                    commandSplit = eventCommand.split(" ", 4);
+                    if (checkoutPlayer.isEmpty()) {
+                        notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD), "Вы никого не проверяете.", 5f);
+                        return;
+                    }
+                    if (commandSplit.length == 2) {
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали время и причину бана.", 5f);
+                        return;
+                    }
+                    String time = commandSplit[2];
+                    String reason = commandSplit.length == 3 ? "2.4" : "2.4 (%s)".formatted(commandSplit[3]);
+                    if (!punishmentsService.punish("/banip", checkoutPlayer, time, reason, true)) return;
+                    checkoutsService.endCheckOut(false);
+                }
+                case "sendtexts" -> {
+                    commandSplit = eventCommand.split(" ", 3);
+                    if (commandSplit.length == 2) {
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали ник игрока.", 5f);
+                        return;
+                    }
+                    checkoutsService.sendTexts(commandSplit[2]);
+                }
             }
-            case "autobuy", "autosell" -> {
-                if (!ctx.hasArg(2)) {
-                    notificationsService.error("Вы не указали необходимость снести стеш.");
-                } else {
-                    destroyStash = ctx.arg(2).equals("true");
-                    netService.endCheckout(result, result, destroyStash);
+        } else if (chatService.isArrayContains(ApiCommands, command)) {
+            String[] messageSplit;
+            switch (command) {
+                case "startcheckout" -> {
+                    messageSplit = eventCommand.split(" ", 4);
+                    if (messageSplit.length == 2)
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали ник игрока и причину проверки.", 5f);
+                    else if (messageSplit.length == 3)
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали причину проверки.", 5f);
+                    String player = messageSplit[2];
+                    String reason = messageSplit[3];
+                    if (!Arrays.stream(new String[]{"report", "checkout", "autobuy", "autosell", "customka", "personal", "toManyChecks", "candidate"}).toList().contains(reason)) {
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная причина проверки.", 5f);
+                        return;
+                    }
+                    String loc = userStateService.getUserLocation();
+                    String mode = loc.startsWith("lite120") ? "lite120" : loc.startsWith("lite") ? "lite" : loc.startsWith("classic") ? "classic" : "lpvp";
+                    if (mode.equals("lpvp")) {
+                        netService.startCheckout(player, reason, "lite", 1, true);
+                    } else {
+                        netService.startCheckout(player, reason, mode, Integer.parseInt(loc.split("%s-".formatted(mode))[1]), false);
+                    }
+                }
+                case "endcheckout" -> {
+                    messageSplit = eventCommand.split(" ", 6);
+                    if (messageSplit.length == 2) {
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали результат проверки.", 5f);
+                        return;
+                    }
+                    String result = messageSplit[2];
+                    if (!Arrays.stream(new String[]{"clean", "ban", "autobuy", "autosell"}).toList().contains(result)) {
+                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный результат проверки.", 5f);
+                        return;
+                    }
+                    switch (result) {
+                        case "clean" -> netService.endCheckout(result, result, false);
+                        case "ban" -> {
+                            if (messageSplit.length == 3) {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали ник игрока и необходимость снести стеш.", 5f);
+                            } else if (messageSplit.length == 4) {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали необходимость снести стеш.", 5f);
+                            } else {
+                                if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[4])) {
+                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная необходимость снести стеш.", 5f);
+                                } else {
+                                    destroyStash = messageSplit[4].equals("true");
+                                    if (messageSplit.length == 5) {
+                                        banChecking = true;
+                                        chatService.chatMessage("/checkban %s".formatted(messageSplit[3]));
+                                    } else if (messageSplit.length == 6) {
+                                        netService.endCheckout(result, messageSplit[5], destroyStash);
+                                    } else {
+                                        notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный формат команды.", 5f);
+                                    }
+                                }
+                            }
+                        }
+                        case "autobuy", "autosell" -> {
+                            if (messageSplit.length == 3) {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Вы не указали необходимость снести стеш.", 5f);
+                            } else if (messageSplit.length == 4) {
+                                if (!Arrays.stream(new String[]{"true", "false"}).toList().contains(messageSplit[3])) {
+                                    notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректная необходимость снести стеш.", 5f);
+                                } else {
+                                    destroyStash = messageSplit[3].equals("true");
+                                    netService.endCheckout(result, result, destroyStash);
+                                }
+                            } else {
+                                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Некорректный формат команды.", 5f);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -222,14 +223,14 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         if (receivedText == null) return;
 
         if (startingCheckout) {
-            if (receivedText.equals(HolyWorldPatterns.FREEZE_OK)) startingCheckout = false;
-            else if (receivedText.equals(HolyWorldPatterns.FREEZE_NOT_FOUND)) {
+            if (receivedText.equals("Игрок заморожен!")) startingCheckout = false;
+            else if (receivedText.equals("Игрок не найден!")) {
                 startingCheckout = false;
                 checkoutsService.endCheckOut(true);
             }
         }
 
-        if (!checkoutPlayer.isEmpty() && settingsConfig.isAutoBanEnabled() && HolyWorldPatterns.isFreezeLeave(receivedText, checkoutPlayer)) {
+        if (!checkoutPlayer.isEmpty() && settingsConfig.isAutoBanEnabled() && receivedText.startsWith("▶ Замороженный игрок %s".formatted(checkoutPlayer))) {
             punishmentsService.punish("/banip", checkoutPlayer, "30d", "2.4 (Лив с проверки)", true);
             checkoutsService.endCheckOut(false);
         }
@@ -239,24 +240,23 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
             String msgText;
             if (receivedText.startsWith("[%s ->".formatted(checkoutPlayer)) && chatService.checkCorrectLong(msgText = receivedText.split("я]", 0)[1].replace(" ", StringUtils.EMPTY)) && msgText.length() >= 9 && msgText.length() <= 11) {
                 chatService.copyToClipboard(msgText);
-                notificationsService.success("Скопирован анидеск из лс: %s".formatted(msgText));
+                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD), "Скопирован анидеск из лс: %s".formatted(msgText), 5f);
             } else if (chatService.checkCorrectLong(chatText = receivedText.split(":")[1].replace(" ", StringUtils.EMPTY)) && chatText.length() >= 9 && chatText.length() <= 11) {
                 chatService.copyToClipboard(chatText);
-                notificationsService.success("Скопирован анидеск из чата: %s".formatted(chatText));
+                notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(GREEN, BOLD), "Скопирован анидеск из чата: %s".formatted(chatText), 5f);
             }
         }
 
         if (banChecking) {
-            if (HolyWorldPatterns.isCheckbanAbort(receivedText)) {
+            if (receivedText.equals("Цель не забанена!") || receivedText.equals("История не найдена.")) {
                 event.setCancelled(true);
-                notificationsService.error("Проверка не была закончена, т.к. не удалось определить причину бана игрока. Пожалуйста, допишите причину вручную.");
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD), "Проверка не была закончена, т.к. не удалось определить причину бана игрока. Пожалуйста, допишите причину вручную.", 5f);
                 banChecking = false;
             }
-            if (receivedText.startsWith(HolyWorldPatterns.CHECKBAN_INFO_PREFIX)) messageIsCheckbanInfo = true;
-            String parsedReason = HolyWorldPatterns.extractBanReason(receivedText);
-            if (parsedReason != null) banReason = parsedReason;
+            if (receivedText.startsWith("Игрок [")) messageIsCheckbanInfo = true;
+            if (receivedText.startsWith("Причина:")) banReason = receivedText.split("Причина: ")[1].split(" \\| ")[0];
             if (messageIsCheckbanInfo) event.setCancelled(true);
-            if (receivedText.startsWith(HolyWorldPatterns.CHECKBAN_IPBAN_PREFIX)) {
+            if (receivedText.startsWith("IP бан:")) {
                 messageIsCheckbanInfo = false;
                 banChecking = false;
                 netService.endCheckout("ban", banReason, destroyStash);

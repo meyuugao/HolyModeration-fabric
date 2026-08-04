@@ -24,23 +24,4 @@ public abstract class ButtonDrawableElement extends DrawableElement {
         this.action = action;
         this.enabled = enabled;
     }
-
-    /**
-     * Hit-test in the parent's local coordinate space and fire the action if hit.
-     * The parent must translate screen coordinates to local before calling this.
-     *
-     * @param parentW parent width (local space)
-     * @param parentH parent height (local space)
-     * @param localX  cursor X in parent's local space
-     * @param localY  cursor Y in parent's local space
-     * @return true if the click was consumed (action fired)
-     */
-    public boolean hitInParent(float parentW, float parentH, double localX, double localY) {
-        if (!enabled || action == null) return false;
-        if (isMouseOver(parentW, parentH, localX, localY)) {
-            action.execute();
-            return true;
-        }
-        return false;
-    }
 }

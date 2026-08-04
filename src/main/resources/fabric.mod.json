@@ -5,7 +5,7 @@
   "name": "HolyModeration",
   "description": "An auxiliary mod for moderation on HolyWorld | Bugs? @meyuugao",
   "authors": [
-    "MeYuugao"
+    "MeYuugao\\n\\nПомощник:\\n SomeOneDay"
   ],
   "contact": {
     "tg": "t.me/meyuugao",
@@ -28,5 +28,15 @@
     "fabricloader": ">=${loader_version}",
     "fabric": "*",
     "minecraft": "${minecraft_version}"
+  },
+  "custom": {
+    "modmenu": {
+      "developers": [
+        "MeYuugao"
+      ],
+      "contributors": [
+        "SomeOneDay"
+      ]
+    }
   }
 }

@@ -6,11 +6,10 @@ import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -28,19 +27,33 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
     private final Render2DService render2DService;
     private final ConfigManagerService configManagerService;
+    private final NotificationsService notificationsService;
 
     @Inject
     public MainGuiScreen(AnimationService animationService, Render2DService render2DService,
-                         ConfigManagerService configManagerService, DrawableElementFactory drawableElementFactory) {
+                         ConfigManagerService configManagerService, DrawableElementFactory drawableElementFactory,
+                         NotificationsService notificationsService) {
         super(Text.of("HolyModeration Main Gui Screen"), animationService);
         this.tabs.put("General", new GeneralTab(this, drawableElementFactory));
 
         this.render2DService = render2DService;
         this.configManagerService = configManagerService;
+        this.notificationsService = notificationsService;
     }
 
     @Override
-    @DontObf(ObfRule.MAP_METHOD)
+    protected void init() {
+        super.init();
+        notificationsService.showPreview();
+    }
+
+    @Override
+    public void removed() {
+        super.removed();
+        notificationsService.hidePreview();
+    }
+
+    @Override
     public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
         super.render(ctx, mouseX, mouseY, tickDelta);
 

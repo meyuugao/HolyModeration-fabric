@@ -9,4 +9,3 @@ pluginManagement {
 }
 
 rootProject.name = "HolyModeration-fabric"
-includeBuild("D:/GitProjects/IntelliJ_IDEA_WorkSpace/HolyObfuscator")

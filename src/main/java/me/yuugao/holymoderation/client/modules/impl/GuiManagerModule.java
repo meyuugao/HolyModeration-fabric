@@ -9,12 +9,10 @@ import me.yuugao.holymoderation.client.modules.DrawableModule;
 import me.yuugao.holymoderation.client.util.service.GuiManagerService;
 import me.yuugao.holymoderation.client.util.service.InputService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
-import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.MouseClickEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.MouseScrollEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.render.RenderEvent;
-
-import me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -38,9 +36,14 @@ public class GuiManagerModule {
     private final MinecraftService minecraftService;
     private final InputService inputService;
     private final GuiManagerService guiManagerService;
+    private final NotificationsService notificationsService;
     private DrawableModule<?> dragging;
     private float dragOffsetX;
     private float dragOffsetY;
+
+    private static final float SCALE_STEP = 0.1f;
+    private static final float MIN_SCALE = 0.3f;
+    private static final float MAX_SCALE = 3.0f;
 
     @Subscribe
     public void onRender(RenderEvent event) {
@@ -77,6 +80,12 @@ public class GuiManagerModule {
                 float sh = ctx.getScaledWindowHeight();
                 float targetAnchorX = event.getMouseX() - dragOffsetX;
                 float targetAnchorY = event.getMouseY() - dragOffsetY;
+
+                targetAnchorX = clampAnchor(targetAnchorX, sw,
+                        elem.getScaledWidth(), elem.getPivotMode().getXFactor());
+                targetAnchorY = clampAnchor(targetAnchorY, sh,
+                        elem.getScaledHeight(), elem.getPivotMode().getYFactor());
+
                 float newRelX = targetAnchorX / sw;
                 float newRelY = targetAnchorY / sh;
                 elem.setRelativePos(newRelX, newRelY);
@@ -88,29 +97,20 @@ public class GuiManagerModule {
 
     @Subscribe
     public void onMouseScroll(MouseScrollEvent event) {
+        if (dragging != null) {
+            DrawableElement elem = dragging.getDrawableElement();
+            float delta = (float) event.getDy() * SCALE_STEP;
+            float newScale = elem.getUserScale() + delta;
+            newScale = Math.max(MIN_SCALE, Math.min(newScale, MAX_SCALE));
+            elem.setUserScale(newScale);
+            return;
+        }
+        if (notificationsService.isMouseOver(event.getX(), event.getY())) {
+            notificationsService.adjustNotifScale((float) event.getDy() * SCALE_STEP);
+            return;
+        }
         for (DrawableModule<?> drawableModule : new ArrayList<>(guiManagerService.getDrawableModules())) {
             drawableModule.getDrawableElement().onMouseScroll(event.getDx(), event.getDy(), event.getX(), event.getY());
-        }
-    }
-
-    @Subscribe
-    public void onMouseClick(MouseClickEvent event) {
-        // Clicks only drive buttons while the config GUI is open; in LIVE mode clicks go to the game.
-        MinecraftClient mc = minecraftService.getClient();
-        if (!(mc.currentScreen instanceof MainGuiScreen)) return;
-        if (dragging != null) return; // an in-progress drag has priority
-
-        ScreenCtx screen = new ScreenCtx(
-                mc.getWindow().getScaledWidth(),
-                mc.getWindow().getScaledHeight(),
-                event.getX(),
-                event.getY()
-        );
-        // Topmost (highest render priority) first.
-        ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
-        Collections.reverse(list);
-        for (DrawableModule<?> d : list) {
-            if (d.getDrawableElement().handleClick(screen)) return;
         }
     }
 
@@ -119,5 +119,15 @@ public class GuiManagerModule {
             if (clazz.isAssignableFrom(screen.getClass())) return true;
         }
         return false;
+    }
+
+    private static float clampAnchor(float anchor, float screenSize, float elemSize, float pivotFactor) {
+        float minAnchor = pivotFactor * elemSize;
+        float maxAnchor = screenSize - (1f - pivotFactor) * elemSize;
+        if (maxAnchor < minAnchor) {
+            // Элемент больше экрана — центрируем по доступной оси
+            return screenSize * 0.5f;
+        }
+        return Math.max(minAnchor, Math.min(anchor, maxAnchor));
     }
 }

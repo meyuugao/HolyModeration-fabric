@@ -7,15 +7,11 @@ import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.singleton.SpyDrawableElement;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
-import me.yuugao.holymoderation.client.util.command.Argument;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.connection.ServerConnectEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.connection.ServerDisconnectEvent;
@@ -27,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.concurrent.TimeUnit;
 
 @Singleton
-public class SpyModule extends DrawableModule<SpyDrawableElement> implements CommandProvider {
+public class SpyModule extends DrawableModule<SpyDrawableElement> {
     private final PlayerStateService playerStateService;
     private final UserStateService userStateService;
     private final SpyService spyService;
@@ -58,55 +54,58 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> implements Com
         this.chatService = chatService;
     }
 
-    @Override
-    public void registerCommands(CommandRegistry registry) {
-        registry.register(CommandSpec.of("spy", Argument.player("игрок")).group("Слежка").description("следить за игроком (без аргумента — остановить)").handler(this::cmdSpy));
-        registry.register(CommandSpec.of("spyfrz").group("Слежка").description("заморозить игрока со слежки").handler(this::cmdSpyfrz));
-    }
+    @Subscribe
+    public void onCommandSend(CommandSendEvent event) {
+        String eventCommand = event.getCommand();
+        String[] commandSplit = eventCommand.split(" ", 3);
+        if (!eventCommand.startsWith("hm") || commandSplit.length < 2) return;
 
-    private void cmdSpy(CommandContext ctx) {
-        if (!ctx.hasArg(0)) {
-            if (!playerStateService.getSpyPlayer().isEmpty()) {
-                spyService.endSpy();
-            } else {
-                notificationsService.warning("Вы никого не отслеживаете.");
+        if (commandSplit[1].equals("spy")) {
+            if (commandSplit.length == 2) {
+                if (!playerStateService.getSpyPlayer().isEmpty()) {
+                    spyService.endSpy();
+                } else {
+                    notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                            "Вы никого не отслеживаете.", 5f);
+                }
+                return;
             }
-            return;
-        }
 
-        String target = ctx.arg(0);
+            if (userStateService.isInHub()) {
+                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                        "В хабе этого делать нельзя.", 5f);
+                return;
+            }
 
-        if (userStateService.isInHub()) {
-            notificationsService.warning("В хабе этого делать нельзя.");
-            return;
-        }
+            if (!playerStateService.getCheckoutPlayer().isEmpty() && playerStateService.getCheckoutPlayer().equals(commandSplit[2])) {
+                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                        "Вы не можете начать следить за игроком на вашей проверке.", 5f);
+                return;
+            }
 
-        if (!playerStateService.getCheckoutPlayer().isEmpty() && playerStateService.getCheckoutPlayer().equals(target)) {
-            notificationsService.warning("Вы не можете начать следить за игроком на вашей проверке.");
-            return;
-        }
+            if (!playerStateService.getSpyPlayer().isEmpty()) {
+                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                        "Вы уже следите за кем-то --> %s%s/hm spy%s%s%s.".formatted(GOLD, BOLD, WHITE, RED, BOLD), 5f);
+                return;
+            }
 
-        if (!playerStateService.getSpyPlayer().isEmpty()) {
-            notificationsService.warning("Вы уже следите за кем-то --> %s%s/hm spy%s%s%s.".formatted(GOLD, BOLD, WHITE, RED, BOLD));
-            return;
-        }
+            spyService.startSpy(commandSplit[2]);
+        } else if (commandSplit[1].equals("spyfrz")) {
+            if (userStateService.isInHub()) {
+                notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                        "В хабе этого делать нельзя.", 5f);
+                return;
+            }
 
-        spyService.startSpy(target);
-    }
+            if (playerStateService.getSpyPlayer().isEmpty()) {
+                notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                        "Вы ни за кем не следите.", 5f);
+                return;
+            }
 
-    private void cmdSpyfrz(CommandContext ctx) {
-        if (userStateService.isInHub()) {
-            notificationsService.warning("В хабе этого делать нельзя.");
-            return;
-        }
-
-        if (playerStateService.getSpyPlayer().isEmpty()) {
-            notificationsService.error("Вы ни за кем не следите.");
-            return;
-        }
-
-        if (checkoutsService.startCheckOut(playerStateService.getSpyPlayer())) {
-            spyService.endSpy();
+            if (checkoutsService.startCheckOut(playerStateService.getSpyPlayer())) {
+                spyService.endSpy();
+            }
         }
     }
 
@@ -120,7 +119,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> implements Com
         boolean isChecking = spyService.isCheckingSpy();
 
         if (isChecking) {
-            if (receivedText.startsWith(HolyWorldPatterns.PLAYTIME_SEPARATOR)) {
+            if (receivedText.startsWith("----------")) {
                 if (processingPlaytimeInfo) {
                     spyService.onPlaytimeComplete();
                     shouldUpdate = true;
@@ -130,33 +129,44 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> implements Com
                 }
             }
 
-            if (HolyWorldPatterns.isFindResponseAboutOther(receivedText, userStateService.getUserNickname())) {
+            if (receivedText.startsWith("Игрок") && !receivedText.startsWith("Игрок %s".formatted(userStateService.getUserNickname()))) {
                 event.setCancelled(true);
-                String status = HolyWorldPatterns.parseFindStatus(receivedText);
+                String status;
+                if (receivedText.equals("Игрок оффлайн")) {
+                    status = "offline";
+                } else if (receivedText.split("сервере ")[1].startsWith("lobby")) {
+                    status = "lobby";
+                } else {
+                    status = chatService.formatLocation(receivedText.split("сервере ")[1]);
+                }
                 spyService.onFindResponse(status);
                 shouldUpdate = true;
             }
 
-            String playtimeLoc = HolyWorldPatterns.extractPlaytimeLocation(receivedText);
-            if (playtimeLoc != null) {
-                if (playtimeLoc.equals(HolyWorldPatterns.OFFLINE_LITERAL)) {
+            if (receivedText.startsWith("Текущая")) {
+                String loc = receivedText.split(": ")[1];
+                loc = loc.substring(1, loc.length() - 1);
+                if (loc.equals("Оффлайн")) {
                     processingPlaytimeInfo = true;
                     spyService.onFindResponse("offline");
                     instantUpdate = true;
                 } else {
-                    if (lastKnownLocation.isEmpty()) lastKnownLocation = playtimeLoc;
-                    else if (!playtimeLoc.equals(lastKnownLocation)) {
+                    if (lastKnownLocation.isEmpty()) lastKnownLocation = loc;
+                    else if (!loc.equals(lastKnownLocation)) {
                         playerStateService.setSpyPlayerStatus(StringUtils.EMPTY);
-                        lastKnownLocation = playtimeLoc;
+                        lastKnownLocation = loc;
                     }
                 }
             }
 
-            if (receivedText.startsWith(HolyWorldPatterns.PLAYTIME_LAST_PREFIX) && !playerStateService.getSpyPlayerStatus().isEmpty()) {
-                playerStateService.setSpyPlayerActivity(HolyWorldPatterns.extractPlaytimeActivity(receivedText));
+            if (receivedText.startsWith("Последняя") && !playerStateService.getSpyPlayerStatus().isEmpty()) {
+                playerStateService.setSpyPlayerActivity(receivedText.split(": ")[1]);
             }
 
-            if (HolyWorldPatterns.isPlaytimeNoise(receivedText)) {
+            if (receivedText.startsWith("Активность") || receivedText.startsWith("Общее время") ||
+                    receivedText.startsWith("Текущая") || receivedText.startsWith("Время") ||
+                    receivedText.startsWith("Последняя") || receivedText.startsWith("Последний") ||
+                    receivedText.startsWith("----------") || receivedText.isEmpty()) {
                 event.setCancelled(true);
             }
 
@@ -196,11 +206,13 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> implements Com
                     if (userStateService.isInHub()) {
                         lastKnownLocation = StringUtils.EMPTY;
                         spyService.onPause();
-                        notificationsService.success("Слежка приостановлена.");
+                        notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех"
+                                .formatted(GREEN, BOLD), "Слежка приостановлена.", 5f);
                     } else {
                         if (!userStateService.getUserLocation().isEmpty()) {
                             spyService.update();
-                            notificationsService.success("Слежка возобновлена.");
+                            notificationsService.addNotification(NotificationType.SUCCESS, "%s%sУспех"
+                                    .formatted(GREEN, BOLD), "Слежка возобновлена.", 5f);
                         } else {
                             tryInit();
                         }

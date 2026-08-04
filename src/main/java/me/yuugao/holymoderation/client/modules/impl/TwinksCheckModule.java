@@ -6,12 +6,9 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.PostConstruct;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
+import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
@@ -40,7 +37,8 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
-public class TwinksCheckModule implements CommandProvider {
+public class TwinksCheckModule {
+    private final Pattern STATUS_PATTERN = Pattern.compile("\\[(Активный|Истёкший)]");
     private final Path workDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Twinks");
     private final File checkFile = workDir.resolve("checktwinks.txt").toFile();
     private final File tempFile = workDir.resolve("temp.txt").toFile();
@@ -116,32 +114,37 @@ public class TwinksCheckModule implements CommandProvider {
         }
     }
 
-    @Override
-    public void registerCommands(CommandRegistry registry) {
-        registry.register(CommandSpec.of("twinks").group("Твинки").description("проверить твинки из checktwinks.txt").handler(this::cmdTwinks));
-    }
-
-    private void cmdTwinks(CommandContext ctx) {
+    @Subscribe(priority = 101)
+    public void onCommandSend(CommandSendEvent event) {
         if (checkingTwinks) {
-            notificationsService.error("Дождитесь окончания проверки твинков.");
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Дождитесь окончания проверки твинков.", 5f);
+            event.setCancelled(true);
             return;
         }
 
+        String[] parts = event.getCommand().split(" ");
+        if (parts.length < 2 || !parts[0].equals("hm") || !parts[1].equals("twinks")) return;
+
         if (userStateService.isInHub()) {
-            notificationsService.warning("В хабе этого делать нельзя.");
+            notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                    "В хабе этого делать нельзя.", 5f);
             return;
         }
 
         if (!checkFile.exists()) {
-            notificationsService.error("Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(workDir));
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(workDir), 5f);
             return;
         }
 
-        notificationsService.warning("Проверка твинков началась.");
+        notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                "Проверка твинков началась.", 5f);
 
         List<String> nicknames = readNicknamesFromFile();
         if (nicknames.isEmpty()) {
-            notificationsService.error("Файл checktwinks.txt пустой.");
+            notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
+                    "Файл checktwinks.txt пустой.", 5f);
             return;
         }
 
@@ -150,26 +153,26 @@ public class TwinksCheckModule implements CommandProvider {
             Files.createFile(tempFile.toPath());
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в TwinksCheckModule/cmdTwinks: %s%s".formatted(DARK_RED, e), 5f);
+                    "Исключение в TwinksCheckModule/onCommandSend: %s%s".formatted(DARK_RED, e), 5f);
         }
 
         checkingTwinks = true;
         int lastIndex = nicknames.size() - 1;
 
-        schedulerService.submit("TwinksCheckModule/cmdTwinks", () -> {
+        schedulerService.submit("TwinksCheckModule/onCommandSend", () -> {
             Set<String> blopNicknames = loadBlopNicknames();
 
             for (int i = 0; i <= lastIndex; i++) {
                 String nickname = nicknames.get(i);
                 boolean isInBLOP = checkIsInBLOP(nickname, blopNicknames);
 
-                schedulerService.schedule("TwinksCheckModule/cmdTwinks", () -> {
+                schedulerService.schedule("TwinksCheckModule/onCommandSend", () -> {
                     writeTempPlayer(nickname, isInBLOP);
                     chatService.chatMessage("/history %s 100".formatted(nickname));
                 }, i, TimeUnit.SECONDS);
 
                 if (i == lastIndex) {
-                    schedulerService.schedule("TwinksCheckModule/cmdTwinks", () -> {
+                    schedulerService.schedule("TwinksCheckModule/onCommandSend", () -> {
                         checkingTwinks = false;
                         List<PlayerEntry> results = parseHistory();
                         saveResults(results);
@@ -185,7 +188,8 @@ public class TwinksCheckModule implements CommandProvider {
         GoogleSheetsService.Spreadsheet spreadsheet = googleSheetsService.getPublicSpreadsheet(
                 "https://docs.google.com/spreadsheets/d/1UiUszqOVKgtIuMKfihMq-Soc9gRvXIi4CI2lVsYe5Ug");
         if (spreadsheet == null) {
-            notificationsService.warning("Не удалось загрузить BLOP таблицу. Проверка BLOP пропущена.");
+            notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
+                    "Не удалось загрузить BLOP таблицу. Проверка BLOP пропущена.", 5f);
             return nicknames;
         }
 
@@ -224,7 +228,9 @@ public class TwinksCheckModule implements CommandProvider {
     }
 
     private boolean isHistoryMessage(String message) {
-        return HolyWorldPatterns.isHistoryMessage(message);
+        return message.startsWith(" -- [") || message.startsWith("Игрок") || message.startsWith("по причина:")
+                || message.startsWith("История") || message.startsWith("Окончание через")
+                || message.startsWith("Разбанен:") || message.startsWith("Размьючен:") || message.trim().isEmpty();
     }
 
     private List<String> readNicknamesFromFile() {
@@ -340,17 +346,18 @@ public class TwinksCheckModule implements CommandProvider {
     }
 
     private boolean isNoHistory(List<String> lines) {
-        return HolyWorldPatterns.isNoHistory(lines);
+        return (lines.size() == 1 && lines.get(0).equals("История не найдена."))
+                || (lines.size() == 2 && lines.get(0).startsWith("История ") && lines.get(1).isEmpty());
     }
 
     private boolean checkBanStatus(String nickname, List<String> lines) {
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
-            if (!line.contains(HolyWorldPatterns.HISTORY_BAN_MARK) || !line.contains(nickname)) continue;
+            if (!line.contains("был забанен") || !line.contains(nickname)) continue;
 
-            Matcher matcher = HolyWorldPatterns.BAN_STATUS_PATTERN.matcher(line);
+            Matcher matcher = STATUS_PATTERN.matcher(line);
             if (!matcher.find() && i + 1 < lines.size()) {
-                matcher = HolyWorldPatterns.BAN_STATUS_PATTERN.matcher(lines.get(i + 1));
+                matcher = STATUS_PATTERN.matcher(lines.get(i + 1));
             }
             if (matcher.find() && "Активный".equals(matcher.group(1))) {
                 return true;
@@ -364,7 +371,7 @@ public class TwinksCheckModule implements CommandProvider {
 
         for (int i = 0; i < lines.size(); i++) {
             String line = lines.get(i);
-            if (!line.startsWith(HolyWorldPatterns.HISTORY_MARKER)) continue;
+            if (!line.startsWith(" -- [")) continue;
 
             List<String> entryLines = collectEntryLines(lines, i);
             i += entryLines.size() - 1;
@@ -384,7 +391,8 @@ public class TwinksCheckModule implements CommandProvider {
 
         for (int j = startIndex + 1; j < lines.size(); j++) {
             String next = lines.get(j);
-            if (HolyWorldPatterns.isHistoryBlockBoundary(next)) {
+            if (next.startsWith(" -- [") || next.startsWith("История") || next.startsWith("Окончание")
+                    || next.startsWith("Разбанен:") || next.startsWith("Размьючен:")) {
                 break;
             }
             entryLines.add(next);
@@ -403,16 +411,13 @@ public class TwinksCheckModule implements CommandProvider {
         String reason = StringUtils.EMPTY;
 
         for (String line : entryLines) {
-            HolyWorldPatterns.PunishmentKind kind = HolyWorldPatterns.classifyPunishment(line);
-            if (kind != null) {
-                type = switch (kind) {
-                    case BAN -> PunishmentType.BAN;
-                    case KICK -> PunishmentType.KICK;
-                    case MUTE -> PunishmentType.MUTE;
-                };
+            if (line.startsWith("Игрок ") && line.contains(" был ")) {
+                if (line.contains("был забанен")) type = PunishmentType.BAN;
+                else if (line.contains("был кикнут")) type = PunishmentType.KICK;
+                else if (line.contains("был замьючен")) type = PunishmentType.MUTE;
             }
-            if (line.startsWith(HolyWorldPatterns.HISTORY_REASON_PREFIX)) {
-                reason = HolyWorldPatterns.extractHistoryReason(line);
+            if (line.startsWith("по причина:")) {
+                reason = extractReason(line);
             }
         }
 
@@ -424,10 +429,20 @@ public class TwinksCheckModule implements CommandProvider {
         return new PunishmentEntry(type, reason, by, timeAgo, isActive);
     }
 
+    private String extractReason(String line) {
+        int first = line.indexOf('\'');
+        int last = line.lastIndexOf('\'');
+        if (first >= 0 && last > first) {
+            return line.substring(first + 1, last);
+        }
+        return line.replaceFirst("^по причина:\\s*", "").trim();
+    }
+
     private boolean checkIsActive(List<String> entryLines) {
         for (String line : entryLines) {
-            if (HolyWorldPatterns.isBanStatusActive(line)) {
-                return true;
+            Matcher matcher = STATUS_PATTERN.matcher(line);
+            if (matcher.find()) {
+                return "Активный".equals(matcher.group(1));
             }
         }
         return false;
@@ -446,7 +461,9 @@ public class TwinksCheckModule implements CommandProvider {
             File resultFile = workDir.resolve(hash + ".txt").toFile();
             Files.writeString(resultFile.toPath(), content);
 
-            notificationsService.success("Результат проверки твинков сохранены: %s".formatted(resultFile.getName()));
+            notificationsService.addNotification(NotificationType.SUCCESS,
+                    "%s%sУспех".formatted(GREEN, BOLD),
+                    "Результат проверки твинков сохранены: %s".formatted(resultFile.getName()), 5f);
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),

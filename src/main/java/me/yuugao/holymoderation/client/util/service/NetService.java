@@ -37,57 +37,16 @@ public class NetService {
     private final String journalApiUrl = "https://journal.holyworld.me/srv/api/v1/";
     private final Gson gson = new Gson();
 
-    public CompletableFuture<List<AbstractMap.SimpleEntry<String, String>>> getWhiteList() {
-        return getListAsync("https://holymoderation.alwaysdata.net/whitelist");
-    }
-
-    public CompletableFuture<List<AbstractMap.SimpleEntry<String, String>>> getBlackList() {
-        return getListAsync("https://holymoderation.alwaysdata.net/blacklist");
-    }
-
-    private CompletableFuture<List<AbstractMap.SimpleEntry<String, String>>> getListAsync(String url) {
-        return asyncExecutor.supplyAsync("NetService/getList " + url, () -> {
-            try {
-                HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
-                String response = getResponse(connection).toString();
-
-                // Backend format: { "hwid": "nickname", ... } (key = fingerprint, value = owner).
-                Gson gson = new Gson();
-                Type type = new TypeToken<Map<String, String>>() {
-                }.getType();
-                Map<String, String> data = gson.fromJson(response, type);
-
-                if (data == null) {
-                    return Collections.emptyList();
-                }
-
-                // Flatten into the internal contract: SimpleEntry(nickname, hwid).
-                // Note the key/value swap relative to the wire format.
-                List<AbstractMap.SimpleEntry<String, String>> result = new ArrayList<>();
-                for (Map.Entry<String, String> entry : data.entrySet()) {
-                    String hwid = entry.getKey();
-                    String player = entry.getValue();
-                    if (hwid == null || hwid.isEmpty() || player == null) continue;
-                    result.add(new AbstractMap.SimpleEntry<>(player, hwid));
-                }
-                return result;
-            } catch (Exception e) {
-                notificationsService.addNotification(NotificationType.EXCEPTION,
-                        "%s%sИсключение".formatted(DARK_RED, BOLD),
-                        "NetService/getList: %s".formatted(e), 5f);
-                return Collections.emptyList();
-            }
-        });
-    }
-
     public CompletableFuture<AbstractMap.SimpleEntry<String, String>> getLastUpdates() {
         return asyncExecutor.supplyAsync("NetService/getLastUpdates", () -> {
             try {
                 String lastUpdatesUrl = "https://raw.githubusercontent.com/Gr0wMan/HolyModeration-Releases/main/LATEST.txt";
                 HttpsURLConnection connection = openHttpsConnection(lastUpdatesUrl, "GET", null);
-                String response = getResponse(connection).toString();
-                String[] responseSplit = response.split("%%%");
-                return new AbstractMap.SimpleEntry<>(responseSplit[0], responseSplit[1]);
+                String response = getResponse(connection).toString().trim();
+                String[] responseSplit = response.split("%%%", 2);
+                String version = responseSplit[0].trim();
+                String description = responseSplit.length > 1 ? responseSplit[1].trim() : "";
+                return new AbstractMap.SimpleEntry<>(version, description);
             } catch (IOException e) {
                 notificationsService.addNotification(NotificationType.EXCEPTION,
                         "%s%sИсключение".formatted(DARK_RED, BOLD),
@@ -334,59 +293,6 @@ public class NetService {
         });
     }
 
-    public CompletableFuture<Void> sendLaunchData(java.util.List<String> hwids, String username) {
-        return asyncExecutor.runAsync("NetService/sendLaunchData", () -> {
-            String endpoint = "https://holymoderation.alwaysdata.net/api/launch";
-
-            try {
-                HttpsURLConnection connection = openHttpsConnection(endpoint, "POST", null);
-                if (connection == null) throw new IOException("Connection is null");
-                try {
-                    connection.setRequestMethod("POST");
-                    connection.setRequestProperty("Content-Type", "application/json");
-
-                    JsonObject body = new JsonObject();
-                    body.addProperty("username", username);
-                    com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
-                    for (String h : hwids) {
-                        arr.add(h);
-                    }
-                    body.add("hwids", arr);
-
-                    if (writeJson(connection, body)) {
-                        connection.getResponseCode();
-                    }
-                } finally {
-                    connection.disconnect();
-                }
-            } catch (IOException e) {
-                notificationsService.addNotification(NotificationType.EXCEPTION,
-                        "%s%sИсключение".formatted(DARK_RED, BOLD),
-                        "Системная ошибка: %s%s".formatted(DARK_RED, e.getMessage()), 5f);
-            }
-        });
-    }
-
-    public CompletableFuture<Boolean> downloadViewerJar(Path target) {
-        return asyncExecutor.supplyAsync("NetService/downloadViewerJar", () -> {
-            try {
-                String url = "https://holymoderation.alwaysdata.net/viewer";
-                loggerService.info("Downloading Viewer.jar from: " + url);
-                HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
-                if (connection == null) return false;
-                try (InputStream in = connection.getInputStream()) {
-                    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-                } finally {
-                    connection.disconnect();
-                }
-                return true;
-            } catch (IOException e) {
-                loggerService.exception("NetService/downloadViewerJar: " + e);
-                return false;
-            }
-        });
-    }
-
     private void setAuthHeaders(@NotNull HttpsURLConnection connection) {
         connection.setRequestProperty("x-token", configManagerService.getApiConfig().getApiToken());
         connection.setRequestProperty("Content-Type", "application/json");
@@ -408,7 +314,17 @@ public class NetService {
     }
 
     public StringBuilder getResponse(@NotNull HttpsURLConnection connection) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
+        int responseCode = connection.getResponseCode();
+        InputStream inputStream;
+        if (responseCode >= 200 && responseCode < 300) {
+            inputStream = connection.getInputStream();
+        } else {
+            inputStream = connection.getErrorStream();
+            if (inputStream == null) {
+                throw new IOException("HTTP %d: no response body".formatted(responseCode));
+            }
+        }
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = reader.readLine()) != null) response.append(line);

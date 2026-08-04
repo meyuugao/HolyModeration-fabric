@@ -45,7 +45,7 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
         float h = parentH / screenScale;
         float[] cfg = getConfig();
         notificationsService.renderNotificationsLocal(
-                ctx, z, cfg[0], cfg[1], cfg[2], w, h);
+                ctx, z, cfg[0], cfg[1], cfg[2], w, h, screenScale);
 
         ms.pop();
     }

@@ -26,6 +26,23 @@ public class ChatService {
     public final Text HMTextComponent = Text.of("%s%s[%s%sHM%s%s]%s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
     public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<',
             '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
+    public final String[] NoArgCommands = {
+            "autoban", "autocopy", "autodupeip", "autofly", "autogm3", "autogod", "autoha", "autotp", "autovanish",
+            "copy", "enableDebug", "disableDebug", "enable", "disable", "me", "net", "sounds", "spyfrz", "stats",
+            "textsclear", "textslist", "unfreezing", "unfrz", "twinks"
+    };
+    public final String[] PlayerCommands = {
+            "freezing", "frz", "sendtexts", "spy"
+    };
+    public final String[] OneArgCommands = {
+            "setapitoken", "setcopy", "setmarker", "setspydelay", "textadd", "textremove", "setsoundsvolume", "setvk"
+    };
+    public final String[] TwoArgCommands = {
+            "sban", "startcheckout", "textedit"
+    };
+    public final String[] FourArgCommands = {
+            "endcheckout"
+    };
     private final MinecraftService minecraftService;
     private final ConfigManagerService configManagerService;
     private final NotificationsService notificationsService;
@@ -52,7 +69,7 @@ public class ChatService {
 
     public String formatReceivedText(String text) {
         text = text.replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY);
-        for (String ignoredString : HolyWorldPatterns.IGNORED_PREFIXES) {
+        for (String ignoredString : new String[]{"[ALL] ʟ", "[Тихий] ❖", "SC |", "HW >", " ▬▬▬", "▬▬▬", "[PMS]:", "◀", "[HM]", "[HAC]", "[я"}) {
             if (text.startsWith(ignoredString)) return null;
         }
         text = text.replace(configManagerService.getSettingsConfig().getCopyButtonText().replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY), StringUtils.EMPTY);
@@ -60,7 +77,13 @@ public class ChatService {
     }
 
     public String formatLocation(String location) {
-        return HolyWorldPatterns.formatLocation(location);
+        return location.equals("l2anarchy") ? "lite120-1"
+                : location.equals("lanarchy") ? "lite-1"
+                  : location.equals("anarchy") ? "classic-1"
+                    : location.equals("lpvp") ? "lpvp"
+                      : location.startsWith("l2") ? "lite120-%s".formatted(location.split("anarchy")[1])
+                        : location.startsWith("l") ? "lite-%s".formatted(location.split("anarchy")[1])
+                          : "classic-%s".formatted(location.split("anarchy")[1]);
     }
 
     public boolean isArrayContains(String[] array, String value) {

@@ -1,7 +1,6 @@
 package me.yuugao.holymoderation.client.mixin;
 
 import me.yuugao.holymoderation.client.di.DIAccessor;
-import me.yuugao.holymoderation.client.util.service.LoggerService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBus;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;

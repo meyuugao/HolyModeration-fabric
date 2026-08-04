@@ -19,6 +19,9 @@ public class Drawable implements MouseHoverable, MouseScrollable {
     @Setter
     protected float width, height;
     @Getter
+    @Setter
+    protected float userScale = 1f;
+    @Getter
     protected float screenScale;
     protected float relX, relY;
 
@@ -38,11 +41,11 @@ public class Drawable implements MouseHoverable, MouseScrollable {
     }
 
     public float getScaledWidth() {
-        return width * scale.get() * screenScale;
+        return width * scale.get() * screenScale * userScale;
     }
 
     public float getScaledHeight() {
-        return height * scale.get() * screenScale;
+        return height * scale.get() * screenScale * userScale;
     }
 
     public float getBasePivotX() {
@@ -102,7 +105,7 @@ public class Drawable implements MouseHoverable, MouseScrollable {
     public float[] screenToLocal(float parW, float parH, float mouseX, float mouseY) {
         float anchorX = getAnchorX(parW);
         float anchorY = getAnchorY(parH);
-        float totalScale = scale.get() * screenScale;
+        float totalScale = scale.get() * screenScale * userScale;
 
         float localX = (mouseX - anchorX) / totalScale + getBasePivotX();
         float localY = (mouseY - anchorY) / totalScale + getBasePivotY();

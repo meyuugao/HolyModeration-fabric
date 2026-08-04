@@ -1,13 +1,10 @@
 package me.yuugao.holymoderation.client.util.service;
 
-import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.di.DIContainer;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
 import me.yuugao.holymoderation.client.modules.impl.*;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 
 import java.util.ArrayList;
@@ -23,7 +20,6 @@ public class ModuleManagerService {
     private final GuiManagerService guiManagerService;
     private final LoggerService loggerService;
     private final DIContainer di;
-    private final CommandRegistry commandRegistry;
 
     private final Map<Class<?>, Object> activeModules = new LinkedHashMap<>();
 
@@ -57,10 +53,6 @@ public class ModuleManagerService {
 
         if (module instanceof DrawableModule<?> drawable) {
             guiManagerService.addDrawableModule(drawable);
-        }
-
-        if (module instanceof CommandProvider provider) {
-            provider.registerCommands(commandRegistry);
         }
 
         loggerService.debug("Module registered: %s".formatted(moduleClass.getSimpleName()));
