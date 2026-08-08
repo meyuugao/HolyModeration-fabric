@@ -1,8 +1,5 @@
 package me.yuugao.holymoderation.client.gui.drawable;
 
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
-
 import net.minecraft.client.gui.DrawContext;
 
 public interface MouseHoverable {

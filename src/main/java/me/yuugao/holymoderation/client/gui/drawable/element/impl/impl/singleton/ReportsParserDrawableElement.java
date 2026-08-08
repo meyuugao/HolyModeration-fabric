@@ -146,8 +146,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
         // clear / start buttons
         if (clearButton.hitInParent(parentW, parentH, localX, localY)) return true;
-        if (startButton.hitInParent(parentW, parentH, localX, localY)) return true;
-        return false;
+        return startButton.hitInParent(parentW, parentH, localX, localY);
     }
 
     @Override

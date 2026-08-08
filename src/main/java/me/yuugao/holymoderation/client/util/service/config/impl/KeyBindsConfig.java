@@ -1,8 +1,6 @@
 package me.yuugao.holymoderation.client.util.service.config.impl;
 
 import me.yuugao.holymoderation.client.util.service.config.Config;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import org.lwjgl.glfw.GLFW;
 
@@ -18,7 +16,7 @@ import lombok.Setter;
 @Getter
 public class KeyBindsConfig extends Config {
     @Expose
-    private Map<String, KeyBindConfig> keyBinds = new HashMap<>();
+    private final Map<String, KeyBindConfig> keyBinds = new HashMap<>();
 
     public KeyBindsConfig() {
         super("keyBinds");
@@ -49,7 +47,6 @@ public class KeyBindsConfig extends Config {
         }
     }
 
-    @DontObf({ObfRule.MAP_METHOD, ObfRule.MAP_FIELD})
     public enum KeyBindType {
         SINGLE_PRESS,
         HOLD
@@ -59,13 +56,10 @@ public class KeyBindsConfig extends Config {
     @Setter
     public static class KeyBindConfig {
         @Expose
-        @DontObf(ObfRule.MAP_FIELD)
         private final Set<Integer> modifierKeys = new HashSet<>();
         @Expose
-        @DontObf(ObfRule.MAP_FIELD)
         private int mainKey;
         @Expose
-        @DontObf(ObfRule.MAP_FIELD)
         private KeyBindType type;
 
         public KeyBindConfig(KeyBindType type, int mainKey, int... modifiers) {

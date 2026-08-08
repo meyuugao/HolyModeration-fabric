@@ -1,8 +1,6 @@
 package me.yuugao.holymoderation.client.gui.screen;
 
 import me.yuugao.holymoderation.client.util.service.AnimationService;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.minecraft.client.gui.DrawContext;
@@ -24,7 +22,6 @@ public class AnimatedGuiScreen extends GuiScreen {
     }
 
     @Override
-    @DontObf(ObfRule.MAP_METHOD)
     protected void init() {
         progressAnim.reset(0f);
         progressAnim.setTarget(1f).setSpeed(1.2f);
@@ -32,7 +29,6 @@ public class AnimatedGuiScreen extends GuiScreen {
     }
 
     @Override
-    @DontObf(ObfRule.MAP_METHOD)
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
         progressAnim.update();
         animValue = progressAnim.get();
@@ -48,7 +44,6 @@ public class AnimatedGuiScreen extends GuiScreen {
     }
 
     @Override
-    @DontObf(ObfRule.MAP_METHOD)
     public void close() {
         if (!closing) {
             closing = true;
@@ -57,7 +52,6 @@ public class AnimatedGuiScreen extends GuiScreen {
     }
 
     @Override
-    @DontObf(ObfRule.MAP_METHOD)
     public void removed() {
         super.removed();
     }

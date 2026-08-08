@@ -2,8 +2,6 @@ package me.yuugao.holymoderation.client.util.service.eventbus;
 
 import me.yuugao.holymoderation.client.util.service.LoggerService;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.Event;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -83,7 +81,6 @@ public class EventBus {
         }
     }
 
-    @DontObf(ObfRule.MAP_METHOD)
     private record Subscriber(Object target, Method method, int priority, LoggerService loggerService) {
         private Subscriber(Object target, Method method, int priority, LoggerService loggerService) {
             this.target = target;

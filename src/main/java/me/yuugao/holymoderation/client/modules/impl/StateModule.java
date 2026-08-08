@@ -5,16 +5,10 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
-import me.yuugao.holymoderation.client.util.command.Argument;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
+import me.yuugao.holymoderation.client.util.command.*;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.ApiConfig;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
@@ -53,7 +47,6 @@ public class StateModule implements CommandProvider {
     private final NotificationsService notificationsService;
     private final SoundService soundService;
     private final SchedulerService schedulerService;
-    private final UserValidationService userValidationService;
 
     @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
@@ -65,9 +58,7 @@ public class StateModule implements CommandProvider {
             userStateService.setUserNickname(player.getName().getString());
         }
 
-        userValidationService.onJoinServer();
-
-        userStateService.setConnected(true);
+       userStateService.setConnected(true);
         checkServerAddress(event);
 
         if (!userStateService.isOnHW()) {
@@ -160,7 +151,9 @@ public class StateModule implements CommandProvider {
         registry.register(CommandSpec.of("setapitoken", Argument.text("токен")).group("Система").description("установить API-ключ журнала").handler(this::cmdSetApiToken));
     }
 
-    /** Common gate: returns true (and notifies) when the command must be ignored. */
+    /**
+     * Common gate: returns true (and notifies) when the command must be ignored.
+     */
     private boolean blocked() {
         if (!userStateService.isOnHW()) return true;
         if (!userStateService.isGameInitCompleted()) {

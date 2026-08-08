@@ -9,8 +9,6 @@ import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
@@ -40,7 +38,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     }
 
     @Override
-    @DontObf(ObfRule.MAP_METHOD)
     public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
         super.render(ctx, mouseX, mouseY, tickDelta);
 

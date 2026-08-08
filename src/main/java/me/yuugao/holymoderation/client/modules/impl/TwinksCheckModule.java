@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.modules.impl;
 
-import static me.yuugao.holymoderation.client.util.Colors.*;
+import static me.yuugao.holymoderation.client.util.Colors.BOLD;
+import static me.yuugao.holymoderation.client.util.Colors.DARK_RED;
 
 
 import me.yuugao.holymoderation.client.di.annotations.Inject;
@@ -33,7 +34,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.google.common.hash.Hashing;
 import lombok.RequiredArgsConstructor;

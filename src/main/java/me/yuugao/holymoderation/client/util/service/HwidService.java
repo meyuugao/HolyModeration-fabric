@@ -12,11 +12,7 @@ import java.util.List;
 import com.google.common.hash.Hashing;
 import lombok.Getter;
 import oshi.SystemInfo;
-import oshi.hardware.ComputerSystem;
-import oshi.hardware.HWDiskStore;
-import oshi.hardware.HardwareAbstractionLayer;
-import oshi.hardware.CentralProcessor;
-import oshi.hardware.NetworkIF;
+import oshi.hardware.*;
 
 @Getter
 @Singleton
@@ -27,6 +23,10 @@ public class HwidService {
      * hardware swaps (replace 4 of 5 components, the remaining 1 still triggers a ban).
      */
     private final List<String> hwids = new ArrayList<>();
+
+    private static boolean isUsable(String value) {
+        return value != null && !value.isEmpty() && !"unknown".equalsIgnoreCase(value.trim());
+    }
 
     public void calculateHwid() {
         hwids.clear();
@@ -74,7 +74,9 @@ public class HwidService {
         }
     }
 
-    /** Hashes a raw value and appends to the list. Returns true if a usable value was added. */
+    /**
+     * Hashes a raw value and appends to the list. Returns true if a usable value was added.
+     */
     private boolean addFingerprint(String tag, String raw) {
         if (!isUsable(raw)) return false;
         String hash = Hashing.sha256().hashString(tag + ":" + raw, StandardCharsets.UTF_8).toString();
@@ -85,11 +87,9 @@ public class HwidService {
         return false;
     }
 
-    private static boolean isUsable(String value) {
-        return value != null && !value.isEmpty() && !"unknown".equalsIgnoreCase(value.trim());
-    }
-
-    /** Unmodifiable view of all fingerprints. */
+    /**
+     * Unmodifiable view of all fingerprints.
+     */
     public List<String> getHwidsView() {
         return Collections.unmodifiableList(hwids);
     }

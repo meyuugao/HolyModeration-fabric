@@ -5,19 +5,16 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
-import me.yuugao.holymoderation.client.util.command.Argument;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
-import me.yuugao.holymoderation.client.util.service.*;
+import me.yuugao.holymoderation.client.util.command.*;
+import me.yuugao.holymoderation.client.util.service.ChatService;
+import me.yuugao.holymoderation.client.util.service.CheckoutsService;
+import me.yuugao.holymoderation.client.util.service.NotificationsService;
+import me.yuugao.holymoderation.client.util.service.PunishmentsService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.ApiConfig;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
 import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import org.apache.commons.lang3.StringUtils;
 

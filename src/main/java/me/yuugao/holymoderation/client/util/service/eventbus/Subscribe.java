@@ -1,8 +1,5 @@
 package me.yuugao.holymoderation.client.util.service.eventbus;
 
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

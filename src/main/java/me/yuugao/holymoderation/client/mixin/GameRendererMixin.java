@@ -4,8 +4,6 @@ import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBus;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.render.RenderEvent;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -23,7 +21,6 @@ import com.llamalad7.mixinextras.sugar.Local;
 
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
-    @DontObf(ObfRule.MAP_FIELD)
     @Shadow
     @Final
     MinecraftClient client;

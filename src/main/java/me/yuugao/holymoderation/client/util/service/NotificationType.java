@@ -1,13 +1,9 @@
 package me.yuugao.holymoderation.client.util.service;
 
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
-
 import java.awt.Color;
 
 import lombok.Getter;
 
-@DontObf({ObfRule.MAP_CLASS, ObfRule.MAP_METHOD, ObfRule.MAP_FIELD, ObfRule.MAP_LOCALVARS})
 @Getter
 public enum NotificationType {
     SUCCESS(

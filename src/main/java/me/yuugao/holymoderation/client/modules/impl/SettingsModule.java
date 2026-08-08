@@ -3,22 +3,14 @@ package me.yuugao.holymoderation.client.modules.impl;
 import static me.yuugao.holymoderation.client.util.Colors.*;
 
 
-import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
-import me.yuugao.holymoderation.client.util.command.Argument;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
+import me.yuugao.holymoderation.client.util.command.*;
 import me.yuugao.holymoderation.client.util.service.ChatService;
-import me.yuugao.holymoderation.client.util.service.LoggerService;
 import me.yuugao.holymoderation.client.util.service.NotificationType;
 import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,7 +18,6 @@ import java.util.List;
 
 import lombok.RequiredArgsConstructor;
 
-@DontObf(ObfRule.OBF_STRING)
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class SettingsModule implements CommandProvider {

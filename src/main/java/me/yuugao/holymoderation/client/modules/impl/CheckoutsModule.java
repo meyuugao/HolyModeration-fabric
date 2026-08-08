@@ -7,11 +7,7 @@ import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.singleton.CheckoutsDrawableElement;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
-import me.yuugao.holymoderation.client.util.command.Argument;
-import me.yuugao.holymoderation.client.util.command.CommandContext;
-import me.yuugao.holymoderation.client.util.command.CommandProvider;
-import me.yuugao.holymoderation.client.util.command.CommandRegistry;
-import me.yuugao.holymoderation.client.util.command.CommandSpec;
+import me.yuugao.holymoderation.client.util.command.*;
 import me.yuugao.holymoderation.client.util.service.*;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
@@ -20,12 +16,9 @@ import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.Com
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageReceiveEvent;
 import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Arrays;
 import java.util.List;
 
 @Singleton

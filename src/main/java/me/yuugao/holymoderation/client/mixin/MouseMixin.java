@@ -6,13 +6,10 @@ import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBus;
 import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.MouseClickEvent;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
 
 import net.minecraft.client.Mouse;
 
 import org.lwjgl.glfw.GLFW;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,11 +18,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Mouse.class)
 public abstract class MouseMixin {
-    @DontObf({ObfRule.MAP_METHOD})
     @Shadow
     public abstract double getX();
 
-    @DontObf({ObfRule.MAP_METHOD})
     @Shadow
     public abstract double getY();
 

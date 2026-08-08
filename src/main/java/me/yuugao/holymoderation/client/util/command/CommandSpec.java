@@ -7,7 +7,9 @@ public final class CommandSpec {
     private final List<Argument> arguments;
     private final CommandHandler handler;
     private final String description;
-    /** Logical group for /hm help (usually the owning module's display name). */
+    /**
+     * Logical group for /hm help (usually the owning module's display name).
+     */
     private final String group;
 
     private CommandSpec(String name, List<Argument> arguments, CommandHandler handler,
@@ -59,7 +61,9 @@ public final class CommandSpec {
         return group;
     }
 
-    /** Human-readable signature, e.g. "/hm textedit <номер> <новый_текст>". */
+    /**
+     * Human-readable signature, e.g. "/hm textedit <номер> <новый_текст>".
+     */
     public String syntax() {
         StringBuilder sb = new StringBuilder("/hm ").append(name);
         for (Argument a : arguments) {

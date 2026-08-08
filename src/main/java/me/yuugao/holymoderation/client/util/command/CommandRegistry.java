@@ -8,8 +8,9 @@ import me.yuugao.holymoderation.client.util.service.NotificationType;
 import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
-import me.yuugao.obfuscator.DontObf;
-import me.yuugao.obfuscator.ObfRule;
+
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -20,10 +21,6 @@ import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
-
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
@@ -39,7 +36,9 @@ public class CommandRegistry {
         loggerService.debug("Command registered: %s".formatted(spec.name()));
     }
 
-    /** All registered specs (insertion-ordered). Used by /hm help. */
+    /**
+     * All registered specs (insertion-ordered). Used by /hm help.
+     */
     public Collection<CommandSpec> getSpecs() {
         return specs.values();
     }
@@ -79,9 +78,7 @@ public class CommandRegistry {
         int provided = Math.max(0, split.length - 2);
         // Only include args that were actually provided, so hasArg(i) reflects presence.
         String[] args = new String[provided];
-        for (int i = 0; i < provided; i++) {
-            args[i] = split[i + 2];
-        }
+        System.arraycopy(split, 2, args, 0, provided);
         return new CommandContext(args);
     }
 

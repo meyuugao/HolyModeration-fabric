@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.util.service;
 
-import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.di.DIContainer;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
