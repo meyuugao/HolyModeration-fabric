@@ -192,7 +192,10 @@ public class NetModule implements CommandProvider {
                         "%s%sВаша версия HolyModeration устарела. Новейшая версия: %s%s%s%s%s, ваша: %s%s%s".formatted(
                                 GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, apiConfig.getCurrentVersion()
                         ),
-                        "%s%sОписание обновления: %s%s%s".formatted(AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n")),
+                        "%s%sОписание обновления: %s%s%s\n%s%sДля полной работы мода скачайте последнюю версию. Сейчас доступны только команды: %s%s/hm net%s, %s%s/hm sban%s, %s%s/hm frz%s, %s%s/hm unfrz%s.".formatted(
+                                AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n"),
+                                GOLD, BOLD,
+                                WHITE, GOLD, WHITE, WHITE, GOLD, WHITE, WHITE, GOLD, WHITE, WHITE, GOLD, WHITE),
                         3600f, "update.wav");
 
                 chatService.clientMessage(chatService.openURLTextComponent(
@@ -201,8 +204,11 @@ public class NetModule implements CommandProvider {
                         "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/%s".formatted(lastVersion)
                 ));
 
-                modStateService.block();
-                return;
+                // Restricted mode: only journal sync and checkout commands keep working,
+                // but the sync itself below still runs so the journal stays up to date.
+                modStateService.requireUpdate();
+            } else {
+                modStateService.clearUpdateRequired();
             }
 
             // Step 2 — sounds + journal sync.

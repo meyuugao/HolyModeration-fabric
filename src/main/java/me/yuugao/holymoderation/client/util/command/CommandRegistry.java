@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.util.command;
 
+import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.util.Colors;
@@ -8,6 +9,7 @@ import me.yuugao.holymoderation.client.util.service.NotificationType;
 import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.service.state.ModStateService;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -15,6 +17,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -27,6 +30,11 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 
 public class CommandRegistry {
+    /**
+     * Commands that keep working while the mod requires an update (journal sync + checkout flow).
+     */
+    private static final Set<String> UPDATE_REQUIRED_COMMANDS = Set.of("net", "sban", "frz", "unfrz");
+
     private final LoggerService loggerService;
     private final NotificationsService notificationsService;
     private final Map<String, CommandSpec> specs = new LinkedHashMap<>();
@@ -51,6 +59,8 @@ public class CommandRegistry {
         // Команды /hm обрабатываются только локально — на сервер не отправляются.
         event.setCancelled(true);
 
+        if (!passesModStateGate(eventCommand)) return;
+
         String[] headSplit = eventCommand.split(" ");
         if (headSplit.length < 2) return;
 
@@ -67,6 +77,31 @@ public class CommandRegistry {
         } catch (Exception e) {
             loggerService.exception("Исключение в CommandRegistry/onCommandSend (%s): %s".formatted(spec.name(), e));
         }
+    }
+
+    /**
+     * Gate on the global mod state: when the mod is blocked (nickname mismatch with the
+     * journal profile, non-HW server) nothing responds at all; when it is merely disabled
+     * via /hm disable, only /hm enable stays available; when an update is required, only
+     * the journal sync and checkout commands keep working.
+     */
+    private boolean passesModStateGate(String eventCommand) {
+        // Lazy lookup: constructor injection here would create a DI cycle
+        // (CommandRegistry -> ModStateService -> ModuleManagerService -> CommandRegistry).
+        ModStateService modStateService = DIAccessor.getDI().get(ModStateService.class);
+
+        if (modStateService.isBlocked() || modStateService.isForceBlocked()) {
+            return false;
+        }
+        String[] split = eventCommand.split(" ");
+        String subCommand = split.length >= 2 ? split[1] : "";
+        if (!modStateService.isEnabled()) {
+            return subCommand.equals("enable");
+        }
+        if (modStateService.isUpdateRequired()) {
+            return UPDATE_REQUIRED_COMMANDS.contains(subCommand);
+        }
+        return true;
     }
 
     private boolean isHmCommand(String eventCommand) {
