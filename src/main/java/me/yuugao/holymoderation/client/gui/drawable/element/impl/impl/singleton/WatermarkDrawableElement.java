@@ -38,13 +38,18 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
     public WatermarkDrawableElement(AnimationService animationService, ConfigManagerService configManagerService,
                                     UserStateService userStateService, MinecraftService minecraftService,
                                     Render2DService render2DService, WatermarkRenderStateProvider watermarkRenderStateProvider) {
-        super(animationService, PivotMode.LEFT_UP, watermarkRenderStateProvider);
+        super(animationService, PivotMode.LEFT_UP, configManagerService, watermarkRenderStateProvider);
 
         this.lastTick = System.currentTimeMillis();
         this.configManagerService = configManagerService;
         this.userStateService = userStateService;
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
+    }
+
+    @Override
+    public String getHudElementId() {
+        return "watermark";
     }
 
     @Override

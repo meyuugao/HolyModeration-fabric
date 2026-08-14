@@ -18,7 +18,6 @@ import me.yuugao.holymoderation.client.util.service.state.ModStateService;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
@@ -26,17 +25,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class NetModule implements CommandProvider {
-    public static final Map<Integer, String> RANKS = new HashMap<>() {{
-        put(1, "%s%sСтажёр".formatted(AQUA, BOLD));
-        put(2, "%s%sМл. Сотрудник".formatted(YELLOW, BOLD));
-        put(3, "%s%sСотрудник".formatted(GOLD, BOLD));
-        put(4, "%s%sСотрудник+".formatted(GOLD, BOLD));
-        put(5, "%s%sВед. Сотрудник".formatted(GOLD, BOLD));
-        put(6, "%s%sСпектатор".formatted(GRAY, BOLD));
-        put(7, "%s%sСт. Сотрудник".formatted(RED, BOLD));
-        put(8, "%s%sАдмин".formatted(RED, BOLD));
-        put(9, "%s%sКуратор".formatted(RED, BOLD));
-    }};
+    public static final Map<Integer, String> RANKS = Map.of(
+            1, "%s%sСтажёр".formatted(AQUA, BOLD),
+            2, "%s%sМл. Сотрудник".formatted(YELLOW, BOLD),
+            3, "%s%sСотрудник".formatted(GOLD, BOLD),
+            4, "%s%sСотрудник+".formatted(GOLD, BOLD),
+            5, "%s%sВед. Сотрудник".formatted(GOLD, BOLD),
+            6, "%s%sСпектатор".formatted(GRAY, BOLD),
+            7, "%s%sСт. Сотрудник".formatted(RED, BOLD),
+            8, "%s%sАдмин".formatted(RED, BOLD),
+            9, "%s%sКуратор".formatted(RED, BOLD)
+    );
     private final NotificationsService notificationsService;
     private final NetService netService;
     private final ConfigManagerService configManagerService;
@@ -178,11 +177,8 @@ public class NetModule implements CommandProvider {
     private void refresh() {
         ApiConfig apiConfig = configManagerService.getApiConfig();
 
-        // Fully async: no blocking .get() on the render/event thread.
-        // Step 1 — version check. If outdated, block and abort; otherwise proceed to sync.
         netService.getLastUpdates().thenAccept(lastUpdates -> {
             if (lastUpdates == null) {
-                // Network/parse failure in NetService already reported; just abort.
                 return;
             }
             String lastVersion = lastUpdates.getKey();
@@ -193,7 +189,10 @@ public class NetModule implements CommandProvider {
                         "%s%sВаша версия HolyModeration устарела. Новейшая версия: %s%s%s%s%s, ваша: %s%s%s".formatted(
                                 GOLD, BOLD, DARK_GREEN, BOLD, lastVersion, GOLD, BOLD, DARK_GREEN, BOLD, apiConfig.getCurrentVersion()
                         ),
-                        "%s%sОписание обновления: %s%s%s".formatted(AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n")),
+                        "%s%sОписание обновления: %s%s%s\n%s%sДля полной работы мода скачайте последнюю версию. Сейчас доступны только команды: %s%s/hm net%s, %s%s/hm sban%s, %s%s/hm frz%s, %s%s/hm unfrz%s.".formatted(
+                                AQUA, BOLD, LIGHT_PURPLE, BOLD, description.replace("\\n", "\n"),
+                                GOLD, BOLD,
+                                WHITE, GOLD, WHITE, WHITE, GOLD, WHITE, WHITE, GOLD, WHITE, WHITE, GOLD, WHITE),
                         3600f, "update.wav");
 
                 chatService.clientMessage(chatService.openURLTextComponent(
@@ -202,11 +201,11 @@ public class NetModule implements CommandProvider {
                         "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/%s".formatted(lastVersion)
                 ));
 
-                modStateService.block();
-                return;
+                modStateService.requireUpdate();
+            } else {
+                modStateService.clearUpdateRequired();
             }
 
-            // Step 2 — sounds + journal sync.
             netService.downloadSounds().thenRun(() -> {
                 if (configManagerService.getApiConfig().getApiToken().isEmpty()) {
                     modStateService.setOnlineMode(false);

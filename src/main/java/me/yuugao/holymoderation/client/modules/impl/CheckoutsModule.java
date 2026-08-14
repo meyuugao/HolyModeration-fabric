@@ -75,7 +75,6 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         registry.register(CommandSpec.of("endcheckout", Argument.choice("результат", List.of("clean", "ban", "autobuy", "autosell")), Argument.player("игрок"), Argument.choice("снести_стеш", List.of("true", "false")), Argument.text("причина_бана")).group("Проверки").description("завершить проверку в журнале").handler(this::cmdEndCheckout));
     }
 
-    // ===== Server-namespace intercept: /freezing, /frz (cancel + replace) =====
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
         String checkoutPlayer = playerStateService.getCheckoutPlayer();
@@ -122,7 +121,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
             notificationsService.warning("Вы никого не проверяете.");
             return;
         }
-        checkoutsService.endCheckOut(false);
+        checkoutsService.endCheckOut(false, true);
     }
 
     private void cmdSban(CommandContext ctx) {
@@ -138,7 +137,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         String time = ctx.arg(0);
         String reason = ctx.hasArg(1) ? "2.4 (%s)".formatted(ctx.arg(1)) : "2.4";
         if (!punishmentsService.punish("/banip", checkoutPlayer, time, reason, true)) return;
-        checkoutsService.endCheckOut(false);
+        checkoutsService.endCheckOut(false, false);
     }
 
     private void cmdSendTexts(CommandContext ctx) {
@@ -218,13 +217,8 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
             if (receivedText.equals(HolyWorldPatterns.FREEZE_OK)) startingCheckout = false;
             else if (receivedText.equals(HolyWorldPatterns.FREEZE_NOT_FOUND)) {
                 startingCheckout = false;
-                checkoutsService.endCheckOut(true);
+                checkoutsService.endCheckOut(true, false);
             }
-        }
-
-        if (!checkoutPlayer.isEmpty() && settingsConfig.isAutoBanEnabled() && HolyWorldPatterns.isFreezeLeave(receivedText, checkoutPlayer)) {
-            punishmentsService.punish("/banip", checkoutPlayer, "30d", "2.4 (Лив с проверки)", true);
-            checkoutsService.endCheckOut(false);
         }
 
         if (settingsConfig.isAutoAnyDeskEnabled() && !checkoutPlayer.isEmpty() && receivedText.contains(checkoutPlayer)) {

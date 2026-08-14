@@ -31,12 +31,13 @@ import java.util.List;
 
 @Singleton
 public class ReportsParserDrawableElement extends StatefulDrawableElement<ReportsParserRenderState> {
-    private final float ITEM_HEIGHT = 24f;
-    private final float ITEM_SPACING = 4f;
-    private final float LIST_HEIGHT_FACTOR = 0.81f;
-    private final float EDGE_PADDING = 5f;
-    private final float BUTTON_WIDTH_FACTOR = 0.84f;
-    private final float SCROLL_SPEED = 12f;
+    private static final Identifier CLEAR_ICON = Identifier.of("minecraft", "textures/gui/clear.png");
+    private static final float ITEM_HEIGHT = 24f;
+    private static final float ITEM_SPACING = 4f;
+    private static final float LIST_HEIGHT_FACTOR = 0.81f;
+    private static final float EDGE_PADDING = 5f;
+    private static final float BUTTON_WIDTH_FACTOR = 0.84f;
+    private static final float SCROLL_SPEED = 12f;
     private final TextButtonDrawableElement startButton;
     private final ImageButtonDrawableElement clearButton;
     private final List<TextButtonDrawableElement> playerButtons = new ArrayList<>();
@@ -54,7 +55,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
                                         DrawableElementFactory drawableElementFactory,
                                         ChatService chatService,
                                         ReportsParserRenderStateProvider reportsParserRenderStateProvider) {
-        super(animationService, PivotMode.CENTER, reportsParserRenderStateProvider);
+        super(animationService, PivotMode.CENTER, configManagerService, reportsParserRenderStateProvider);
 
         this.drawableElementFactory = drawableElementFactory;
         this.render2DService = render2DService;
@@ -65,6 +66,11 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         this.startButton = drawableElementFactory.createTextButton(PivotMode.LEFT_DOWN,
                 this::parseReportsFromContainer, true, Text.literal("пропарсить"));
         this.clearButton = drawableElementFactory.createImageButton(PivotMode.RIGHT_DOWN, this::clearPlayers, true);
+    }
+
+    @Override
+    public String getHudElementId() {
+        return "reportsparser";
     }
 
     @Override
@@ -85,10 +91,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         scrollOffset = 0f;
     }
 
-    /**
-     * Reads the open "Жалобы на игроков" container, extracts player names from item lore,
-     * and populates the button list.
-     */
     private void parseReportsFromContainer() {
         PlayerEntity player = minecraftService.getPlayer();
         if (player == null) return;
@@ -113,11 +115,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         chatService.clientMessage(Text.literal("Спарсено жалоб: " + playerButtons.size()));
     }
 
-    /**
-     * Hit-test a click against the buttons rendered inside this panel. Buttons are laid out
-     * in the parent's local coordinate space (set via updateRenderForParent), so we convert
-     * the screen click to local first, then check each visible button topmost-first.
-     */
     @Override
     public boolean handleClick(me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx screen) {
         if (scale.get() < 0.01f) return false;
@@ -132,9 +129,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         float parentW = getWidth();
         float parentH = getHeight();
 
-        // player buttons (topmost, in reverse so the visually-top one wins).
-        // Button geometry (relativePos + width/height) is set during render() each frame;
-        // since clicks arrive right after a render, those values are current.
         float itemTotal = ITEM_HEIGHT + ITEM_SPACING;
         float listHeight = parentH * LIST_HEIGHT_FACTOR;
         int firstIdx = Math.max(0, (int) Math.floor(scrollOffset / itemTotal));
@@ -144,7 +138,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
             if (b.hitInParent(parentW, parentH, localX, localY)) return true;
         }
 
-        // clear / start buttons
         if (clearButton.hitInParent(parentW, parentH, localX, localY)) return true;
         return startButton.hitInParent(parentW, parentH, localX, localY);
     }
@@ -192,8 +185,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
                 getHeight() / 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
 
-        Identifier clearIcon = Identifier.of("minecraft", "textures/gui/clear.png");
-        clearButton.updateRenderForParent(ctx, clearIcon, 0.92f, 0.95f, 5f, 0.13f,
+        clearButton.updateRenderForParent(ctx, CLEAR_ICON, 0.92f, 0.95f, 5f, 0.13f,
                 getWidth(), getHeight(), z, 6f,
                 guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
 

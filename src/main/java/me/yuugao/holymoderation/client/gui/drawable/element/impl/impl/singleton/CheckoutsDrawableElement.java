@@ -35,7 +35,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
     public CheckoutsDrawableElement(AnimationService animationService, MinecraftService minecraftService,
                                     Render2DService render2DService, ConfigManagerService configManagerService,
                                     CheckoutsRenderStateProvider checkoutsRenderStateProvider) {
-        super(animationService, PivotMode.DOWN, checkoutsRenderStateProvider);
+        super(animationService, PivotMode.DOWN, configManagerService, checkoutsRenderStateProvider);
 
         this.currentWidth = animationService.createValue(1f);
         this.currentHeight = animationService.createValue(1f);
@@ -43,6 +43,11 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
         this.configManagerService = configManagerService;
+    }
+
+    @Override
+    public String getHudElementId() {
+        return "checkouts";
     }
 
     @Override
@@ -102,7 +107,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(
-                ms, 0f, 0f, getWidth(), getHeight(), 1000,
+                ms, 0f, 0f, getWidth(), getHeight(), z,
                 10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
 
         render2DService.renderText(

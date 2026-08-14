@@ -13,8 +13,6 @@ import me.yuugao.holymoderation.client.util.service.state.PlayerStateService;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Arrays;
 
 import lombok.RequiredArgsConstructor;
@@ -32,16 +30,17 @@ public class MessageModule {
         SettingsConfig settingsConfig = configManagerService.getSettingsConfig();
 
         Text component = event.getMessage();
-        String message = component.getString().replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY);
+        String message = ChatService.stripColor(component.getString());
 
-        if (!checkoutPlayer.isEmpty() && (message.contains(":") &&
-                Arrays.asList(message.split(":")[0].split(" ")).contains(checkoutPlayer)) &&
+        if (!checkoutPlayer.isEmpty() && message.contains(":") &&
+                Arrays.asList(message.split(":")[0].split(" ")).contains(checkoutPlayer) &&
                 (message.startsWith("ʟ") || message.startsWith("ɢ"))) {
-            String playerPart = message.split(": ")[message.split(": ").length - 1];
+            String[] colonSpaceParts = message.split(": ");
+            String playerPart = colonSpaceParts[colonSpaceParts.length - 1];
             String originalTip = "Оригинальное сообщение: %s\nНажмите, чтобы скопировать сообщение игрока.".formatted(message);
             event.setMessage(chatService.generateComponent(
                     Text.literal("%s §f%s §5-> ".formatted(settingsConfig.getPlayerMarker(), checkoutPlayer)),
-                    chatService.copyTextComponent(playerPart, originalTip, message.split(": ")[1])
+                    chatService.copyTextComponent(playerPart, originalTip, colonSpaceParts[1])
             ));
         } else if (settingsConfig.isCopyButtonEnabled() && !message.startsWith("[HM]")) {
             MutableText copyComponent = Text.literal(" ")

@@ -46,7 +46,32 @@ public class NotificationsService {
         notificationPool.clear();
     }
 
-    // ===== Convenience helpers (canonical titles used across all modules) =====
+    public void showPreview() {
+        if (notificationPool.stream().noneMatch(n -> n.isPreview)) {
+            Notification n = new Notification(NotificationType.SUCCESS,
+                    "%s%sПример уведомления".formatted(Colors.GREEN, Colors.BOLD),
+                    "Скролл меняет размер уведомлений", Float.MAX_VALUE);
+            n.isPreview = true;
+            n.state = State.IDLE;
+            n.initialized = true;
+            notificationPool.add(n);
+        }
+    }
+
+    public void hidePreview() {
+        notificationPool.removeIf(n -> n.isPreview);
+    }
+
+    public float getNotificationsStackHeight(float spacing) {
+        float total = 0f;
+        for (Notification n : notificationPool) {
+            if (n.state != State.HIDING) {
+                total += n.height + spacing;
+            }
+        }
+        return Math.max(0f, total - spacing);
+    }
+
     public void error(String text) {
         addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(Colors.RED, Colors.BOLD), text, 5f);
     }
@@ -72,7 +97,7 @@ public class NotificationsService {
     }
 
     public void renderNotificationsLocal(DrawContext ctx, int z, float stackDirY, float hideDirX, float hideDirY,
-                                         float screenWidth, float screenHeight) {
+                                         float screenWidth, float screenHeight, float notifBaseWidth) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         long now = System.nanoTime();
         float delta = (now - lastNano) / 1_000_000_000f;
@@ -80,29 +105,19 @@ public class NotificationsService {
 
         float margin = 8f;
         float spacing = 10f;
-        float width = screenWidth / 6f;
+        float width = notifBaseWidth;
         float radius = 6f;
         float blur = 6f;
         float outline = 1.5f;
         float padding = 8f;
 
         for (Notification n : notificationPool) {
-            int wrap = Math.max(1, (int) (width - padding * 2));
-            n.titleLines.clear();
-            for (String s : n.title.split("\n")) {
-                n.titleLines.addAll(tr.wrapLines(Text.literal(s), wrap));
-            }
-            n.bodyLines.clear();
-            for (String s : n.text.split("\n")) {
-                n.bodyLines.addAll(tr.wrapLines(Text.literal(s), wrap));
-            }
-            n.width = width;
-            n.height = padding + n.titleLines.size() * tr.fontHeight + 4f + n.bodyLines.size() * tr.fontHeight + padding;
+            n.ensureLayout(tr, width, padding);
         }
 
         for (Notification n : notificationPool) {
             n.elapsed += delta;
-            if (n.state == State.IDLE && n.elapsed >= n.liveTime) {
+            if (n.state == State.IDLE && !n.isPreview && n.elapsed >= n.liveTime) {
                 n.state = State.HIDING;
             }
         }
@@ -195,15 +210,34 @@ public class NotificationsService {
         float targetX, targetY;
         float width, height;
         boolean initialized;
+        boolean isPreview;
         State state = State.SPAWNING;
         List<OrderedText> titleLines = new ArrayList<>();
         List<OrderedText> bodyLines = new ArrayList<>();
+        private int lastWrapWidth = Integer.MIN_VALUE;
 
         Notification(NotificationType type, String title, String text, float liveTime) {
             this.type = type;
             this.title = title;
             this.text = text;
             this.liveTime = liveTime;
+        }
+
+        void ensureLayout(TextRenderer tr, float notifWidth, float padding) {
+            this.width = notifWidth;
+            int wrap = Math.max(1, (int) (notifWidth - padding * 2));
+            if (wrap == lastWrapWidth) return;
+            lastWrapWidth = wrap;
+
+            titleLines.clear();
+            for (String s : title.split("\n")) {
+                titleLines.addAll(tr.wrapLines(Text.literal(s), wrap));
+            }
+            bodyLines.clear();
+            for (String s : text.split("\n")) {
+                bodyLines.addAll(tr.wrapLines(Text.literal(s), wrap));
+            }
+            height = padding + titleLines.size() * tr.fontHeight + 4f + bodyLines.size() * tr.fontHeight + padding;
         }
     }
 }

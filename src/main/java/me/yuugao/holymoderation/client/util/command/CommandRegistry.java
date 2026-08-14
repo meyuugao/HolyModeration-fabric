@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.util.command;
 
+import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.util.Colors;
@@ -8,6 +9,7 @@ import me.yuugao.holymoderation.client.util.service.NotificationType;
 import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
+import me.yuugao.holymoderation.client.util.service.state.ModStateService;
 
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
@@ -15,6 +17,7 @@ import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -27,6 +30,8 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 
 public class CommandRegistry {
+    private static final Set<String> UPDATE_REQUIRED_COMMANDS = Set.of("net", "sban", "frz", "unfrz");
+
     private final LoggerService loggerService;
     private final NotificationsService notificationsService;
     private final Map<String, CommandSpec> specs = new LinkedHashMap<>();
@@ -36,9 +41,6 @@ public class CommandRegistry {
         loggerService.debug("Command registered: %s".formatted(spec.name()));
     }
 
-    /**
-     * All registered specs (insertion-ordered). Used by /hm help.
-     */
     public Collection<CommandSpec> getSpecs() {
         return specs.values();
     }
@@ -46,8 +48,14 @@ public class CommandRegistry {
     @Subscribe(priority = 100)
     public void onCommandSend(CommandSendEvent event) {
         String eventCommand = event.getCommand();
+        if (!isHmCommand(eventCommand)) return;
+
+        event.setCancelled(true);
+
+        if (!passesModStateGate(eventCommand)) return;
+
         String[] headSplit = eventCommand.split(" ");
-        if (!eventCommand.startsWith("hm") || headSplit.length < 2) return;
+        if (headSplit.length < 2) return;
 
         CommandSpec spec = specs.get(headSplit[1]);
         if (spec == null) return;
@@ -64,19 +72,34 @@ public class CommandRegistry {
         }
     }
 
-//    @Subscribe(priority = -100)
-//    public void onCommandSendSecond(CommandSendEvent event) {
-//        if (event.getCommand().startsWith("hm")) event.setCancelled(true);
-//    } //tip: фикс
+    private boolean passesModStateGate(String eventCommand) {
 
-    private CommandContext buildContext(String eventCommand, int argumentCount) {
+        ModStateService modStateService = DIAccessor.getDI().get(ModStateService.class);
+
+        if (modStateService.isBlocked() || modStateService.isForceBlocked()) {
+            return false;
+        }
+        String[] split = eventCommand.split(" ");
+        String subCommand = split.length >= 2 ? split[1] : "";
+        if (!modStateService.isEnabled()) {
+            return subCommand.equals("enable");
+        }
+        if (modStateService.isUpdateRequired()) {
+            return UPDATE_REQUIRED_COMMANDS.contains(subCommand);
+        }
+        return true;
+    }
+
+    private boolean isHmCommand(String eventCommand) {
+        return eventCommand.equals("hm") || eventCommand.startsWith("hm ");
+    }
+
+private CommandContext buildContext(String eventCommand, int argumentCount) {
         if (argumentCount == 0) {
             return new CommandContext(new String[0]);
         }
-        // split exactly as the legacy handlers did: limit = argCount + 2 ("hm" + name + args)
         String[] split = eventCommand.split(" ", argumentCount + 2);
         int provided = Math.max(0, split.length - 2);
-        // Only include args that were actually provided, so hasArg(i) reflects presence.
         String[] args = new String[provided];
         System.arraycopy(split, 2, args, 0, provided);
         return new CommandContext(args);
@@ -91,8 +114,6 @@ public class CommandRegistry {
             hm.then(node);
         }
 
-        // Brigadier merges nodes by name via addChild, so registering "hm" again
-        // appends new children to the existing root node without conflict.
         dispatcher.register(hm);
     }
 
@@ -110,11 +131,7 @@ public class CommandRegistry {
         parent.then(ab);
     }
 
-    /**
-     * Build the help text grouped by spec.group(). Returns a colored, multi-line string.
-     */
     public String buildHelpText() {
-        // group -> list of specs, preserving group first-seen order and spec order within group
         java.util.Map<String, java.util.List<CommandSpec>> byGroup = new java.util.LinkedHashMap<>();
         for (CommandSpec s : specs.values()) {
             if (s.name().equals("help")) continue;
@@ -140,10 +157,6 @@ public class CommandRegistry {
         return sb.toString();
     }
 
-    /**
-     * Register the built-in /hm help command. Must be called AFTER all modules have registered
-     * their commands so help sees them at dispatch time (specs are read lazily in the handler).
-     */
     public void registerHelpCommand() {
         if (specs.containsKey("help")) return;
         register(CommandSpec.of("help")

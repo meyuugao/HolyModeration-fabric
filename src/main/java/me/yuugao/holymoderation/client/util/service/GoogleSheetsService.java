@@ -25,6 +25,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class GoogleSheetsService {
+    private static final Pattern CELL_REF_PATTERN = Pattern.compile("^([A-Z]+)(\\d*)$");
+    private static final Pattern SPREADSHEET_ID_PATTERN = Pattern.compile("/d/([a-zA-Z0-9-_]+)");
+    private static final Pattern GID_PATTERN = Pattern.compile("[#&]gid=(\\d+)");
+    private static final Pattern HYPERLINK_PATTERN = Pattern.compile("=HYPERLINK\\(\"([^\"]+)\"\\s*;?\\s*\"([^\"]+)\"\\)", Pattern.CASE_INSENSITIVE);
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+
     private final NotificationsService notificationsService;
 
     static int parseColumnToIndex(String col) {
@@ -36,8 +42,7 @@ public class GoogleSheetsService {
     }
 
     static int @Nullable [] parseCellReference(String ref) {
-        Pattern columnPattern = Pattern.compile("^([A-Z]+)(\\d*)$");
-        Matcher matcher = columnPattern.matcher(ref.toUpperCase());
+        Matcher matcher = CELL_REF_PATTERN.matcher(ref.toUpperCase());
         if (!matcher.find()) return null;
 
         String colPart = matcher.group(1);
@@ -63,20 +68,19 @@ public class GoogleSheetsService {
                     .GET()
                     .build();
 
-            HttpClient httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
                 return new Spreadsheet(spreadsheetId, gid, parseCsv(response.body()));
             }
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в NetService/executeGetRequest: %s%s".formatted(DARK_RED, e), 5f);
+                    "Исключение в GoogleSheetsService/getPublicSpreadsheet: %s%s".formatted(DARK_RED, e), 5f);
             return null;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в NetService/executeGetRequest: %s%s".formatted(DARK_RED, e), 5f);
+                    "Исключение в GoogleSheetsService/getPublicSpreadsheet: %s%s".formatted(DARK_RED, e), 5f);
             return null;
         }
 
@@ -84,14 +88,12 @@ public class GoogleSheetsService {
     }
 
     private String extractSpreadsheetId(String url) {
-        Pattern sheetIdPattern = Pattern.compile("/d/([a-zA-Z0-9-_]+)");
-        Matcher matcher = sheetIdPattern.matcher(url);
+        Matcher matcher = SPREADSHEET_ID_PATTERN.matcher(url);
         return matcher.find() ? matcher.group(1) : null;
     }
 
     private String extractGid(String url) {
-        Pattern gidPattern = Pattern.compile("[#&]gid=(\\d+)");
-        Matcher matcher = gidPattern.matcher(url);
+        Matcher matcher = GID_PATTERN.matcher(url);
         return matcher.find() ? matcher.group(1) : "0";
     }
 
@@ -154,8 +156,7 @@ public class GoogleSheetsService {
     }
 
     private CellData parseCellData(String raw) {
-        Pattern hyperlinkPattern = Pattern.compile("=HYPERLINK\\(\"([^\"]+)\"\\s*;?\\s*\"([^\"]+)\"\\)", Pattern.CASE_INSENSITIVE);
-        Matcher matcher = hyperlinkPattern.matcher(raw);
+        Matcher matcher = HYPERLINK_PATTERN.matcher(raw);
         if (matcher.find()) {
             return new CellData(matcher.group(2), matcher.group(1));
         }
@@ -173,21 +174,6 @@ public class GoogleSheetsService {
             this.data = data;
         }
 
-        @Nullable
-        public CellData getCell(String cellRef) {
-            int[] coords = parseCellReference(cellRef);
-            if (coords == null) return null;
-            return getCell(coords[0], coords[1]);
-        }
-
-        @Nullable
-        public CellData getCell(int col, int row) {
-            if (row < 0 || row >= data.size()) return null;
-            List<CellData> rowData = data.get(row);
-            if (col < 0 || col >= rowData.size()) return null;
-            return rowData.get(col);
-        }
-
         public List<CellData> getColumn(String colRef) {
             int col = parseColumnToIndex(colRef);
             if (col < 0) return new ArrayList<>();
@@ -197,66 +183,6 @@ public class GoogleSheetsService {
                 result.add(col < row.size() ? row.get(col) : new CellData("", null));
             }
             return result;
-        }
-
-        public List<CellData> getRow(int row) {
-            if (row < 0 || row >= data.size()) return new ArrayList<>();
-            return new ArrayList<>(data.get(row));
-        }
-
-        public List<List<CellData>> getRange(String range) {
-            String[] parts = range.split("-");
-            if (parts.length != 2) return new ArrayList<>();
-
-            int[] start = parseCellReference(parts[0].trim());
-            int[] end = parseCellReference(parts[1].trim());
-
-            if (start == null || end == null) return new ArrayList<>();
-
-            return getRange(start[0], start[1], end[0], end[1]);
-        }
-
-        public List<List<CellData>> getRange(int startCol, int startRow, int endCol, int endRow) {
-            List<List<CellData>> result = new ArrayList<>();
-
-            int minRow = Math.min(startRow, endRow);
-            int maxRow = Math.min(Math.max(startRow, endRow), data.size() - 1);
-            int minCol = Math.min(startCol, endCol);
-            int maxCol = Math.max(startCol, endCol);
-
-            for (int r = minRow; r <= maxRow; r++) {
-                List<CellData> rowResult = new ArrayList<>();
-                List<CellData> rowData = data.get(r);
-
-                for (int c = minCol; c <= maxCol; c++) {
-                    rowResult.add(c < rowData.size() ? rowData.get(c) : new CellData("", null));
-                }
-                result.add(rowResult);
-            }
-
-            return result;
-        }
-
-        public List<CellData> getFlatRange(String range) {
-            List<List<CellData>> matrix = getRange(range);
-            List<CellData> flat = new ArrayList<>();
-            for (List<CellData> row : matrix) {
-                flat.addAll(row);
-            }
-            return flat;
-        }
-
-        public int getRowCount() {
-            return data.size();
-        }
-
-        public int getColumnCount(int row) {
-            if (row < 0 || row >= data.size()) return 0;
-            return data.get(row).size();
-        }
-
-        public boolean isEmpty() {
-            return data.isEmpty();
         }
     }
 

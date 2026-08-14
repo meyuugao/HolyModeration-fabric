@@ -32,15 +32,15 @@ public class CheckoutsService {
 
     private final List<ScheduledFuture<?>> futures = new ArrayList<>();
 
-    public void endCheckOut(boolean playerNotFound) {
+    public void endCheckOut(boolean playerNotFound, boolean sendUnfreeze) {
         SettingsConfig settingsConfig = configManagerService.getSettingsConfig();
         String checkoutPlayer = playerStateService.getCheckoutPlayer();
 
         if (!checkoutPlayer.isEmpty()) {
-            if (!playerNotFound) {
+            chatService.chatMessage("/prova");
+            if (sendUnfreeze) {
                 chatService.chatMessage("/freezing %s".formatted(checkoutPlayer));
             }
-            chatService.chatMessage("/prova");
             if (settingsConfig.isAutoVanishEnabled() && !userStateService.isVanishEnabled()) {
                 chatService.chatMessage("/v");
                 userStateService.setVanishEnabled(true);

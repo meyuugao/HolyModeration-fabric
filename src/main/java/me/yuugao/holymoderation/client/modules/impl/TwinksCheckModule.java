@@ -41,9 +41,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class TwinksCheckModule implements CommandProvider {
-    private final Path workDir = Paths.get(System.getProperty("user.home"), "HolyModeration", "Twinks");
-    private final File checkFile = workDir.resolve("checktwinks.txt").toFile();
-    private final File tempFile = workDir.resolve("temp.txt").toFile();
+    private static final Path WORK_DIR = Paths.get(System.getProperty("user.home"), "HolyModeration", "Twinks");
+    private static final File CHECK_FILE = WORK_DIR.resolve("checktwinks.txt").toFile();
+    private static final File TEMP_FILE = WORK_DIR.resolve("temp.txt").toFile();
+    private static final double HOURS_PER_DAY = 24.0;
+    private static final double MINUTES_PER_DAY = 1440.0;
+    private static final int RECENT_DAYS_WINDOW = 30;
     private final UserStateService userStateService;
     private final NotificationsService notificationsService;
     private final ChatService chatService;
@@ -89,7 +92,7 @@ public class TwinksCheckModule implements CommandProvider {
             }
         }
 
-        return days + (hours / 24.0) + (minutes / 1440.0) <= 30;
+        return days + (hours / HOURS_PER_DAY) + (minutes / MINUTES_PER_DAY) <= RECENT_DAYS_WINDOW;
     }
 
     private static String sanitizeNickname(String nick) {
@@ -107,8 +110,8 @@ public class TwinksCheckModule implements CommandProvider {
     @PostConstruct
     private void init() {
         try {
-            if (!Files.exists(workDir)) {
-                Files.createDirectories(workDir);
+            if (!Files.exists(WORK_DIR)) {
+                Files.createDirectories(WORK_DIR);
             }
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
@@ -132,8 +135,8 @@ public class TwinksCheckModule implements CommandProvider {
             return;
         }
 
-        if (!checkFile.exists()) {
-            notificationsService.error("Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(workDir));
+        if (!CHECK_FILE.exists()) {
+            notificationsService.error("Не найден файл 'checktwinks.txt' по пути '%s'.".formatted(WORK_DIR));
             return;
         }
 
@@ -146,8 +149,8 @@ public class TwinksCheckModule implements CommandProvider {
         }
 
         try {
-            Files.deleteIfExists(tempFile.toPath());
-            Files.createFile(tempFile.toPath());
+            Files.deleteIfExists(TEMP_FILE.toPath());
+            Files.createFile(TEMP_FILE.toPath());
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
                     "Исключение в TwinksCheckModule/cmdTwinks: %s%s".formatted(DARK_RED, e), 5f);
@@ -232,7 +235,7 @@ public class TwinksCheckModule implements CommandProvider {
 
         for (Charset charset : List.of(StandardCharsets.UTF_8, StandardCharsets.UTF_16LE)) {
             try (BufferedReader br = new BufferedReader(
-                    new InputStreamReader(Files.newInputStream(checkFile.toPath()), charset))) {
+                    new InputStreamReader(Files.newInputStream(CHECK_FILE.toPath()), charset))) {
 
                 br.mark(1);
                 if (br.read() != 0xFEFF) br.reset();
@@ -248,7 +251,7 @@ public class TwinksCheckModule implements CommandProvider {
                 }
 
                 return nicknames;
-            } catch (IOException ignored) {
+            } catch (IOException e) {
             }
         }
 
@@ -264,11 +267,11 @@ public class TwinksCheckModule implements CommandProvider {
 
     private void writeTempPlayer(String nickname, boolean isInBLOP) {
         try {
-            boolean isEmpty = tempFile.length() == 0;
+            boolean isEmpty = TEMP_FILE.length() == 0;
             String header = isEmpty
                     ? "PLAYER: " + nickname + " | BLOP: " + isInBLOP
                     : System.lineSeparator() + "PLAYER: " + nickname + " | BLOP: " + isInBLOP;
-            Files.writeString(tempFile.toPath(), header, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            Files.writeString(TEMP_FILE.toPath(), header, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION,
                     "%s%sИсключение".formatted(DARK_RED, BOLD),
@@ -278,7 +281,7 @@ public class TwinksCheckModule implements CommandProvider {
 
     private void writeTempData(String message) {
         try {
-            Files.writeString(tempFile.toPath(), System.lineSeparator() + "DATA: " + message,
+            Files.writeString(TEMP_FILE.toPath(), System.lineSeparator() + "DATA: " + message,
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             notificationsService.addNotification(NotificationType.EXCEPTION,
@@ -289,11 +292,11 @@ public class TwinksCheckModule implements CommandProvider {
 
     private List<PlayerEntry> parseHistory() {
         List<PlayerEntry> results = new ArrayList<>();
-        if (!tempFile.exists()) return results;
+        if (!TEMP_FILE.exists()) return results;
 
         try {
-            List<String> lines = Files.readAllLines(tempFile.toPath());
-            Files.deleteIfExists(tempFile.toPath());
+            List<String> lines = Files.readAllLines(TEMP_FILE.toPath());
+            Files.deleteIfExists(TEMP_FILE.toPath());
 
             String currentNickname = null;
             boolean currentIsInBLOP = false;
@@ -443,7 +446,7 @@ public class TwinksCheckModule implements CommandProvider {
 
             String content = sb.toString();
             String hash = Hashing.sha256().hashString(content, StandardCharsets.UTF_8).toString();
-            File resultFile = workDir.resolve(hash + ".txt").toFile();
+            File resultFile = WORK_DIR.resolve(hash + ".txt").toFile();
             Files.writeString(resultFile.toPath(), content);
 
             notificationsService.success("Результат проверки твинков сохранены: %s".formatted(resultFile.getName()));
@@ -474,34 +477,6 @@ public class TwinksCheckModule implements CommandProvider {
     private String formatPunishment(PunishmentEntry p) {
         return p.type().name() + "|" + escapePipe(p.reason()) + "|" + escapePipe(p.by()) + "|"
                 + escapePipe(p.timeAgo()) + "|" + p.isActive();
-    }
-
-    public List<PlayerEntry> loadResults(File file) {
-        List<PlayerEntry> results = new ArrayList<>();
-
-        try {
-            List<String> lines = Files.readAllLines(file.toPath());
-            PlayerEntryParser parser = new PlayerEntryParser();
-
-            for (String line : lines) {
-                parser.processLine(line);
-                if (parser.isComplete()) {
-                    results.add(parser.build());
-                    parser.reset();
-                }
-            }
-
-            PlayerEntry last = parser.build();
-            if (last != null) {
-                results.add(last);
-            }
-        } catch (IOException e) {
-            notificationsService.addNotification(NotificationType.EXCEPTION,
-                    "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в TwinksCheckModule/loadResults: %s%s".formatted(DARK_RED, e), 5f);
-        }
-
-        return results;
     }
 
     public enum PunishmentType {

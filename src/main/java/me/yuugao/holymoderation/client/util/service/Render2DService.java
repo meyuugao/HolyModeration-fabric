@@ -148,6 +148,8 @@ public class Render2DService {
         tr.draw(text, x, y, color, shadow, ms.peek().getPositionMatrix(), textBuffers,
                 TextRenderer.TextLayerType.NORMAL, 0, 15728880);
 
+        textBuffers.draw();
+
         ms.pop();
     }
 

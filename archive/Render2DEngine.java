@@ -805,7 +805,6 @@ public class Render2DEngine {
         BufferRenderer.drawWithGlobalProgram(bufferBuilder.end());
     }
 
-    //http://www.java2s.com/example/java/2d-graphics/check-if-a-color-is-more-dark-than-light.html
     public static boolean isDark(Color color) {
         return isDark(color.getRed() / 255.0f, color.getGreen() / 255.0f, color.getBlue() / 255.0f);
     }
