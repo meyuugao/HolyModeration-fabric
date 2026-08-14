@@ -6,9 +6,10 @@ import me.yuugao.holymoderation.client.util.Colors;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+
+import org.joml.Matrix3x2fStack;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -176,13 +177,13 @@ public class NotificationsService {
 
         for (Notification n : notificationPool) {
             if (n.y + n.height < 0 || n.y > screenHeight) continue;
-            MatrixStack ms = ctx.getMatrices();
+            Matrix3x2fStack ms = ctx.getMatrices();
             Color bg = n.type.getBg();
             Color ol = n.type.getOutline();
             render2DService.setupRender();
-            ms.push();
-            render2DService.renderSoftRoundedRectOutline(ms, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
-            ms.translate(n.x, n.y, 0);
+            ms.pushMatrix();
+            render2DService.renderSoftRoundedRectOutline(ctx, n.x, n.y, n.width, n.height, z, radius, bg, ol, outline, blur);
+            ms.translate(n.x, n.y);
             float ty = padding;
             for (OrderedText line : n.titleLines) {
                 render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
@@ -193,7 +194,7 @@ public class NotificationsService {
                 render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
-            ms.pop();
+            ms.popMatrix();
             render2DService.endRender();
         }
     }

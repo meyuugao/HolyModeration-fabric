@@ -8,6 +8,7 @@ import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.render.R
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.RenderTickCounter;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,15 +32,14 @@ public class GameRendererMixin {
             method = "render",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/util/profiler/Profiler;push(Ljava/lang/String;)V",
-                    ordinal = 1
+                    target = "Lnet/minecraft/client/gui/hud/InGameHud;render(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/client/render/RenderTickCounter;)V"
             )
     )
-    private void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
+    private void onRender(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
         if (client.world != null && !isScreenRendering) {
             EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
-            eventBus.invokeEvent(new RenderEvent(drawContext, 0, 0, tickDelta));
+            eventBus.invokeEvent(new RenderEvent(drawContext, 0, 0, tickCounter.getTickProgress(false)));
         }
 
         isScreenRendering = false;
@@ -52,7 +52,7 @@ public class GameRendererMixin {
                     target = "Lnet/minecraft/client/gui/screen/Screen;renderWithTooltip(Lnet/minecraft/client/gui/DrawContext;IIF)V"
             )
     )
-    private void beforeScreen(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
+    private void beforeScreen(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci) {
         isScreenRendering = true;
     }
 }

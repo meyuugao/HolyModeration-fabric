@@ -14,7 +14,6 @@ import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -53,7 +52,6 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
     @Override
     protected void render(DrawContext ctx, int z, SpyRenderState renderState) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManagerService.getGuiConfig();
 
         String[] current = renderState.stringsToRender();
@@ -89,7 +87,7 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
         render2DService.setupRender();
 
         float baseY = (getHeight() - textBlockHeight) / 2f + 0.5f;
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
+        render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(), getHeight(), z,
                 10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
 
         render2DService.renderText(tr, display0, (int) (getWidth() / 2f - tr.getWidth(display0) / 2f),

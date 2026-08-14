@@ -6,7 +6,6 @@ import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -28,11 +27,9 @@ public class ColorPickerDrawableElement extends DrawableElement {
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        MatrixStack ms = ctx.getMatrices();
-
         render2DService.setupRender();
 
-        render2DService.renderRGBPalette(ms, 0f, 0f, z, radius, outlineColor, outlineWidth);
+        render2DService.renderRGBPalette(ctx, 0f, 0f, z, radius, outlineColor, outlineWidth);
 
         render2DService.endRender();
     }

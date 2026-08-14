@@ -14,7 +14,6 @@ import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -90,7 +89,6 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
 
     private void renderContent(String display, DrawContext ctx, int z) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManagerService.getGuiConfig();
 
         float targetWidth = tr.getWidth(display) + 16f;
@@ -107,7 +105,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(
-                ms, 0f, 0f, getWidth(), getHeight(), z,
+                ctx, 0f, 0f, getWidth(), getHeight(), z,
                 10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
 
         render2DService.renderText(

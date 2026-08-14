@@ -8,6 +8,7 @@ import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.MouseClickEvent;
 
 import net.minecraft.client.Mouse;
+import net.minecraft.client.input.MouseInput;
 
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,7 +26,8 @@ public abstract class MouseMixin {
     public abstract double getY();
 
     @Inject(method = "onMouseButton", at = @At("HEAD"))
-    private void onMouseButton(long window, int button, int action, int mods, CallbackInfo ci) {
+    private void onMouseButton(long window, MouseInput mouseInput, int action, CallbackInfo ci) {
+        int button = mouseInput.button();
         InputService inputService = DIAccessor.getDI().get(InputService.class);
         inputService.updateMouseButton(button, action);
 

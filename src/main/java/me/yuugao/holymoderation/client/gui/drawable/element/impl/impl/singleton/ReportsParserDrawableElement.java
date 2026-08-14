@@ -19,7 +19,6 @@ import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
 import net.minecraft.client.util.Window;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.slot.Slot;
@@ -166,7 +165,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
     @Override
     protected void render(DrawContext ctx, int z, ReportsParserRenderState state) {
         GuiConfig guiConfig = configManagerService.getGuiConfig();
-        MatrixStack ms = ctx.getMatrices();
 
         this.scale.setTarget(state.animTarget());
         this.scale.update();
@@ -182,7 +180,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
         render2DService.setupRender();
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
+        render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(), getHeight(), z,
                 getHeight() / 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
 
         clearButton.updateRenderForParent(ctx, CLEAR_ICON, 0.92f, 0.95f, 5f, 0.13f,

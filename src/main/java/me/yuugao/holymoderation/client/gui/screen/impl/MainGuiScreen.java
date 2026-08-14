@@ -11,8 +11,9 @@ import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
+
+import org.joml.Matrix3x2fStack;
 
 import java.awt.Color;
 
@@ -41,7 +42,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     public void render(DrawContext ctx, int mouseX, int mouseY, float tickDelta) {
         super.render(ctx, mouseX, mouseY, tickDelta);
 
-        MatrixStack ms = ctx.getMatrices();
+        Matrix3x2fStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManagerService.getGuiConfig();
 
         float targetWidth = 435f;
@@ -58,7 +59,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         render2DService.setupRender();
 
-        ms.push();
+        ms.pushMatrix();
 
         float windowWidth = ctx.getScaledWindowWidth();
         float windowHeight = ctx.getScaledWindowHeight();
@@ -66,11 +67,11 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         this.x = (windowWidth - width * screenScale) / 2f;
         this.y = (windowHeight - height * screenScale) / 2f;
 
-        ms.translate(x, y, 0);
-        ms.scale(screenScale, screenScale, 1f);
+        ms.translate(x, y);
+        ms.scale(screenScale, screenScale);
 
         render2DService.renderSoftRoundedRectOutline(
-                ms, 0f, 0f,
+                ctx, 0f, 0f,
                 Math.max(1, this.width), Math.max(1, this.height),
                 renderPriority, 10f,
                 guiConfig.getSecondColor(), outlineColor,
@@ -81,7 +82,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         int relMouseY = (int) ((mouseY - y) / screenScale);
         renderTabs(ctx, relMouseX, relMouseY, tickDelta);
 
-        ms.pop();
+        ms.popMatrix();
 
         render2DService.endRender();
     }

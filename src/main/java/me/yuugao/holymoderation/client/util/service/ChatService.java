@@ -16,6 +16,7 @@ import net.minecraft.text.Text;
 
 import org.apache.commons.lang3.StringUtils;
 
+import java.net.URI;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
@@ -37,7 +38,7 @@ public class ChatService {
 
         if (networkHandler != null) {
             if (message.startsWith("/")) {
-                networkHandler.sendCommand(message.substring(1));
+                networkHandler.sendChatCommand(message.substring(1));
             } else {
                 networkHandler.sendChatMessage(message);
             }
@@ -122,39 +123,39 @@ public class ChatService {
         Text suggestComponent = Text.of(componentText);
         return suggestComponent.copy().setStyle(
                 suggestComponent.getStyle()
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of("Нажмите, чтобы подставить команду.")))
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, stripColor(componentText))));
+                        .withHoverEvent(new HoverEvent.ShowText(Text.of("Нажмите, чтобы подставить команду.")))
+                        .withClickEvent(new ClickEvent.SuggestCommand(stripColor(componentText))));
     }
 
     public MutableText suggestTextComponent(String componentText, String hint, String toSuggestText) {
         Text suggestComponent = Text.of(componentText);
         return suggestComponent.copy().setStyle(
                 suggestComponent.getStyle()
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint)))
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, toSuggestText)));
+                        .withHoverEvent(new HoverEvent.ShowText(Text.of(hint)))
+                        .withClickEvent(new ClickEvent.SuggestCommand(toSuggestText)));
     }
 
     public MutableText hoverTextComponent(String componentText, String hint) {
         Text hoverComponent = Text.of(componentText);
         return hoverComponent.copy().setStyle(
                 hoverComponent.getStyle()
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint))));
+                        .withHoverEvent(new HoverEvent.ShowText(Text.of(hint))));
     }
 
     public MutableText copyTextComponent(String componentText, String hint, String toCopyText) {
         Text copyComponent = Text.of(componentText);
         return copyComponent.copy().setStyle(
                 copyComponent.getStyle()
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint)))
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.COPY_TO_CLIPBOARD, toCopyText)));
+                        .withHoverEvent(new HoverEvent.ShowText(Text.of(hint)))
+                        .withClickEvent(new ClickEvent.CopyToClipboard(toCopyText)));
     }
 
     public MutableText openURLTextComponent(String componentText, String hint, String url) {
         Text openURLComponent = Text.of(componentText);
         return openURLComponent.copy().setStyle(
                 openURLComponent.getStyle()
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of(hint)))
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url)));
+                        .withHoverEvent(new HoverEvent.ShowText(Text.of(hint)))
+                        .withClickEvent(new ClickEvent.OpenUrl(URI.create(url))));
     }
 
     public MutableText generateComponent(Text... components) {

@@ -100,7 +100,7 @@ public abstract class Argument {
                     if (client.getNetworkHandler() == null) return builder.buildFuture();
                     String remaining = builder.getRemaining().toLowerCase();
                     client.getNetworkHandler().getPlayerList().stream()
-                            .map(p -> p.getProfile().getName())
+                            .map(p -> p.getDisplayName().getString())
                             .filter(n -> n != null && n.toLowerCase().startsWith(remaining))
                             .forEach(builder::suggest);
                     return builder.buildFuture();

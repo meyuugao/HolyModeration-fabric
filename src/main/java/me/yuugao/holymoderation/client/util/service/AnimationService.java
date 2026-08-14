@@ -12,7 +12,7 @@ public class AnimationService {
     private final MinecraftService minecraftService;
 
     public float animate(float current, float target, float speed) {
-        float delta = minecraftService.getClient().getLastFrameDuration();
+        float delta = minecraftService.getClient().getRenderTickCounter().getDynamicDeltaTicks();
         if (delta <= 0f) return current;
 
         float step = (target - current) * delta * speed;

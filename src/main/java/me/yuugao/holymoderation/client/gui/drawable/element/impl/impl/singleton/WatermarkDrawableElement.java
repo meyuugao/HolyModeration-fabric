@@ -15,7 +15,6 @@ import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 
 import java.util.Random;
 
@@ -65,7 +64,6 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
     @Override
     protected void render(DrawContext ctx, int z, WatermarkRenderState state) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
-        MatrixStack ms = ctx.getMatrices();
         GuiConfig guiConfig = configManagerService.getGuiConfig();
 
         long now = System.currentTimeMillis();
@@ -91,7 +89,7 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
 
         render2DService.setupRender();
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(),
+        render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(),
                 getHeight(), z, 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.2f, 3);
 
         render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),

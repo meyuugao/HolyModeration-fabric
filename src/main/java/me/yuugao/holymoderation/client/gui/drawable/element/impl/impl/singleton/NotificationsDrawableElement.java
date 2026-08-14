@@ -12,7 +12,8 @@ import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
+
+import org.joml.Matrix3x2fStack;
 
 @Singleton
 public class NotificationsDrawableElement extends StatefulDrawableElement<NotificationsRenderState> {
@@ -58,9 +59,9 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
             notificationsService.hidePreview();
         }
 
-        MatrixStack ms = ctx.getMatrices();
-        ms.push();
-        ms.scale(screenScale, screenScale, 1f);
+        Matrix3x2fStack ms = ctx.getMatrices();
+        ms.pushMatrix();
+        ms.scale(screenScale, screenScale);
 
         float w = parentW / screenScale;
         float h = parentH / screenScale;
@@ -69,7 +70,7 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
         notificationsService.renderNotificationsLocal(
                 ctx, z, cfg[0], cfg[1], cfg[2], w, h, notifBaseWidth);
 
-        ms.pop();
+        ms.popMatrix();
 
         float stackHeight = notificationsService.getNotificationsStackHeight(10f);
         setWidth(notifBaseWidth * screenScale);

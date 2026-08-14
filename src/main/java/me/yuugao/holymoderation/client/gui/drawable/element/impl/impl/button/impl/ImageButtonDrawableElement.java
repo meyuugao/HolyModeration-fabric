@@ -11,9 +11,10 @@ import me.yuugao.holymoderation.client.util.service.*;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.resource.Resource;
 import net.minecraft.util.Identifier;
+
+import org.joml.Matrix3x2fStack;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -43,7 +44,7 @@ public class ImageButtonDrawableElement extends ButtonDrawableElement {
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        MatrixStack ms = ctx.getMatrices();
+        Matrix3x2fStack ms = ctx.getMatrices();
 
         float scaledImgW = imageWidth * scale;
         float scaledImgH = imageHeight * scale;
@@ -56,14 +57,14 @@ public class ImageButtonDrawableElement extends ButtonDrawableElement {
 
         render2DService.setupRender();
 
-        ms.push();
+        ms.pushMatrix();
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, buttonW, buttonH, z, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
+        render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, buttonW, buttonH, z, radius, buttonColor, outlineColor, outlineWidth, blurWidth);
 
-        ms.translate(imgX, imgY, 0);
+        ms.translate(imgX, imgY);
         render2DService.renderImage(ctx, image, 0f, 0f, scaledImgW, scaledImgH, z);
 
-        ms.pop();
+        ms.popMatrix();
 
         render2DService.endRender();
     }

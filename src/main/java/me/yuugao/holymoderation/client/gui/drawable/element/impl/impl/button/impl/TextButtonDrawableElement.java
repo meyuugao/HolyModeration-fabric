@@ -9,8 +9,9 @@ import me.yuugao.holymoderation.client.util.service.Render2DService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
+
+import org.joml.Matrix3x2fStack;
 
 import java.awt.Color;
 
@@ -35,7 +36,7 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        MatrixStack ms = ctx.getMatrices();
+        Matrix3x2fStack ms = ctx.getMatrices();
 
         int textWidth = tr.getWidth(text);
         int textHeight = tr.fontHeight;
@@ -55,19 +56,19 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
 
         render2DService.setupRender();
 
-        ms.push();
+        ms.pushMatrix();
 
-        ms.translate(offsetX, offsetY, 0);
-        ms.scale(scale, scale, 1f);
+        ms.translate(offsetX, offsetY);
+        ms.scale(scale, scale);
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, idealWidth, idealHeight, z,
+        render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, idealWidth, idealHeight, z,
                 radius, buttonColor, outlineColor, outlineWidth, blurWidth);
 
         float textX = (idealWidth - textWidth) / 2f;
         float textY = (idealHeight - textHeight) / 2f;
         render2DService.renderText(tr, text.asOrderedText(), (int) textX, (int) textY, z, 0xffffffff, false, ctx);
 
-        ms.pop();
+        ms.popMatrix();
 
         render2DService.endRender();
     }
