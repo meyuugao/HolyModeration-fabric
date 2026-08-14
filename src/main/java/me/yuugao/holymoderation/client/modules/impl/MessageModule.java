@@ -35,8 +35,6 @@ public class MessageModule {
         if (!checkoutPlayer.isEmpty() && message.contains(":") &&
                 Arrays.asList(message.split(":")[0].split(" ")).contains(checkoutPlayer) &&
                 (message.startsWith("ʟ") || message.startsWith("ɢ"))) {
-            // Split once by ": " — playerPart is the last segment, the copy payload is segment [1].
-            // (Same indexing as the previous triple-split, just computed a single time.)
             String[] colonSpaceParts = message.split(": ");
             String playerPart = colonSpaceParts[colonSpaceParts.length - 1];
             String originalTip = "Оригинальное сообщение: %s\nНажмите, чтобы скопировать сообщение игрока.".formatted(message);

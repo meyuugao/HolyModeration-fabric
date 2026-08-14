@@ -89,7 +89,6 @@ public class TwinksCheckModule implements CommandProvider {
                     case "мин." -> minutes = value;
                 }
             } catch (NumberFormatException ignored) {
-                // Intentionally skipped: malformed numeric part in time-ago string
             }
         }
 
@@ -253,7 +252,6 @@ public class TwinksCheckModule implements CommandProvider {
 
                 return nicknames;
             } catch (IOException e) {
-                // Fall through to try the next charset; if both fail, notify below.
             }
         }
 

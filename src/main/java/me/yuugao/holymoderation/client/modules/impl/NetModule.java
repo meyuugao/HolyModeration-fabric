@@ -177,11 +177,8 @@ public class NetModule implements CommandProvider {
     private void refresh() {
         ApiConfig apiConfig = configManagerService.getApiConfig();
 
-        // Fully async: no blocking .get() on the render/event thread.
-        // Step 1 — version check. If outdated, block and abort; otherwise proceed to sync.
         netService.getLastUpdates().thenAccept(lastUpdates -> {
             if (lastUpdates == null) {
-                // Network/parse failure in NetService already reported; just abort.
                 return;
             }
             String lastVersion = lastUpdates.getKey();
@@ -204,14 +201,11 @@ public class NetModule implements CommandProvider {
                         "https://github.com/meyuugao/HolyModeration-Releases/releases/tag/%s".formatted(lastVersion)
                 ));
 
-                // Restricted mode: only journal sync and checkout commands keep working,
-                // but the sync itself below still runs so the journal stays up to date.
                 modStateService.requireUpdate();
             } else {
                 modStateService.clearUpdateRequired();
             }
 
-            // Step 2 — sounds + journal sync.
             netService.downloadSounds().thenRun(() -> {
                 if (configManagerService.getApiConfig().getApiToken().isEmpty()) {
                     modStateService.setOnlineMode(false);

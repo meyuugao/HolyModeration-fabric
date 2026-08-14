@@ -55,15 +55,12 @@ public class NetService {
                 HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
                 String response = getResponse(connection).toString();
 
-                // Backend format: { "hwid": "nickname", ... } (key = fingerprint, value = owner).
                 Map<String, String> data = GSON.fromJson(response, STRING_MAP_TYPE);
 
                 if (data == null) {
                     return Collections.emptyList();
                 }
 
-                // Flatten into the internal contract: SimpleEntry(nickname, hwid).
-                // Note the key/value swap relative to the wire format.
                 List<AbstractMap.SimpleEntry<String, String>> result = new ArrayList<>();
                 for (Map.Entry<String, String> entry : data.entrySet()) {
                     String hwid = entry.getKey();

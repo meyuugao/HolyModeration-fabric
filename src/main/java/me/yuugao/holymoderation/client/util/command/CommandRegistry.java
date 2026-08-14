@@ -30,9 +30,6 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 
 public class CommandRegistry {
-    /**
-     * Commands that keep working while the mod requires an update (journal sync + checkout flow).
-     */
     private static final Set<String> UPDATE_REQUIRED_COMMANDS = Set.of("net", "sban", "frz", "unfrz");
 
     private final LoggerService loggerService;
@@ -44,9 +41,6 @@ public class CommandRegistry {
         loggerService.debug("Command registered: %s".formatted(spec.name()));
     }
 
-    /**
-     * All registered specs (insertion-ordered). Used by /hm help.
-     */
     public Collection<CommandSpec> getSpecs() {
         return specs.values();
     }
@@ -56,7 +50,6 @@ public class CommandRegistry {
         String eventCommand = event.getCommand();
         if (!isHmCommand(eventCommand)) return;
 
-        // Команды /hm обрабатываются только локально — на сервер не отправляются.
         event.setCancelled(true);
 
         if (!passesModStateGate(eventCommand)) return;
@@ -79,15 +72,8 @@ public class CommandRegistry {
         }
     }
 
-    /**
-     * Gate on the global mod state: when the mod is blocked (nickname mismatch with the
-     * journal profile, non-HW server) nothing responds at all; when it is merely disabled
-     * via /hm disable, only /hm enable stays available; when an update is required, only
-     * the journal sync and checkout commands keep working.
-     */
     private boolean passesModStateGate(String eventCommand) {
-        // Lazy lookup: constructor injection here would create a DI cycle
-        // (CommandRegistry -> ModStateService -> ModuleManagerService -> CommandRegistry).
+
         ModStateService modStateService = DIAccessor.getDI().get(ModStateService.class);
 
         if (modStateService.isBlocked() || modStateService.isForceBlocked()) {
@@ -112,10 +98,8 @@ private CommandContext buildContext(String eventCommand, int argumentCount) {
         if (argumentCount == 0) {
             return new CommandContext(new String[0]);
         }
-        // split exactly as the legacy handlers did: limit = argCount + 2 ("hm" + name + args)
         String[] split = eventCommand.split(" ", argumentCount + 2);
         int provided = Math.max(0, split.length - 2);
-        // Only include args that were actually provided, so hasArg(i) reflects presence.
         String[] args = new String[provided];
         System.arraycopy(split, 2, args, 0, provided);
         return new CommandContext(args);
@@ -130,8 +114,6 @@ private CommandContext buildContext(String eventCommand, int argumentCount) {
             hm.then(node);
         }
 
-        // Brigadier merges nodes by name via addChild, so registering "hm" again
-        // appends new children to the existing root node without conflict.
         dispatcher.register(hm);
     }
 
@@ -149,11 +131,7 @@ private CommandContext buildContext(String eventCommand, int argumentCount) {
         parent.then(ab);
     }
 
-    /**
-     * Build the help text grouped by spec.group(). Returns a colored, multi-line string.
-     */
     public String buildHelpText() {
-        // group -> list of specs, preserving group first-seen order and spec order within group
         java.util.Map<String, java.util.List<CommandSpec>> byGroup = new java.util.LinkedHashMap<>();
         for (CommandSpec s : specs.values()) {
             if (s.name().equals("help")) continue;
@@ -179,10 +157,6 @@ private CommandContext buildContext(String eventCommand, int argumentCount) {
         return sb.toString();
     }
 
-    /**
-     * Register the built-in /hm help command. Must be called AFTER all modules have registered
-     * their commands so help sees them at dispatch time (specs are read lazily in the handler).
-     */
     public void registerHelpCommand() {
         if (specs.containsKey("help")) return;
         register(CommandSpec.of("help")

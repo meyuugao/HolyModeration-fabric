@@ -52,7 +52,6 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
     public void updateRender(DrawContext ctx, float parentW, float parentH, int z, float screenScale) {
         this.screenScale = screenScale;
 
-        // Show/hide preview notification based on editor mode
         if (currentMode == RenderMode.CONFIG) {
             notificationsService.showPreview();
         } else {

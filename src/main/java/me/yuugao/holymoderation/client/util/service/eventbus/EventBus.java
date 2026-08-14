@@ -26,9 +26,6 @@ public class EventBus {
             Class<?> eventType = parameterTypes[0];
             List<Subscriber> list = subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>());
 
-            // Dedup: a @Subscribe method maps to exactly one event type, so it is enough to check
-            // that single list (the old code scanned every event type's list). Continue (not return)
-            // so the remaining methods of the same object still register.
             boolean alreadyRegistered = false;
             for (Subscriber existing : list) {
                 if (existing.method().equals(method)) {

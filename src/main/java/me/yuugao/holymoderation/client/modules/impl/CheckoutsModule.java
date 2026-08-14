@@ -75,7 +75,6 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         registry.register(CommandSpec.of("endcheckout", Argument.choice("результат", List.of("clean", "ban", "autobuy", "autosell")), Argument.player("игрок"), Argument.choice("снести_стеш", List.of("true", "false")), Argument.text("причина_бана")).group("Проверки").description("завершить проверку в журнале").handler(this::cmdEndCheckout));
     }
 
-    // ===== Server-namespace intercept: /freezing, /frz (cancel + replace) =====
     @Subscribe
     public void onCommandSend(CommandSendEvent event) {
         String checkoutPlayer = playerStateService.getCheckoutPlayer();

@@ -179,7 +179,6 @@ public class PunishmentsModule implements CommandProvider {
                 }
             }
         }
-        // "hm setvk" is handled by CommandRegistry (see registerCommands).
     }
 
     @Override

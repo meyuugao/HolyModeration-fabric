@@ -38,9 +38,6 @@ public class CheckoutsService {
 
         if (!checkoutPlayer.isEmpty()) {
             chatService.chatMessage("/prova");
-            // /freezing is a toggle on the server: send it again to release the player at the end of
-            // a clean check. Skipped when banning (sban / any ban on the checked player) and when the
-            // player was never found.
             if (sendUnfreeze) {
                 chatService.chatMessage("/freezing %s".formatted(checkoutPlayer));
             }

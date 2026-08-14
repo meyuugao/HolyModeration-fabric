@@ -106,7 +106,7 @@ public class GuiManagerModule {
 
     @Subscribe
     public void onMouseClick(MouseClickEvent event) {
-        // Clicks only drive buttons while the config GUI is open; in LIVE mode clicks go to the game.
+
         MinecraftClient mc = minecraftService.getClient();
         if (!(mc.currentScreen instanceof MainGuiScreen)) return;
 
@@ -115,7 +115,7 @@ public class GuiManagerModule {
             return;
         }
 
-        if (dragging != null) return; // an in-progress drag has priority
+        if (dragging != null) return;
 
         ScreenCtx screen = new ScreenCtx(
                 mc.getWindow().getScaledWidth(),
@@ -123,7 +123,7 @@ public class GuiManagerModule {
                 event.getX(),
                 event.getY()
         );
-        // Topmost (highest render priority) first.
+
         ArrayList<DrawableModule<?>> list = new ArrayList<>(guiManagerService.getDrawableModules());
         Collections.reverse(list);
         for (DrawableModule<?> d : list) {

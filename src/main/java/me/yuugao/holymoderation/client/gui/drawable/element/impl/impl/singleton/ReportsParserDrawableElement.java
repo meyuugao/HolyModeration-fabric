@@ -91,10 +91,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         scrollOffset = 0f;
     }
 
-    /**
-     * Reads the open "Жалобы на игроков" container, extracts player names from item lore,
-     * and populates the button list.
-     */
     private void parseReportsFromContainer() {
         PlayerEntity player = minecraftService.getPlayer();
         if (player == null) return;
@@ -119,11 +115,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         chatService.clientMessage(Text.literal("Спарсено жалоб: " + playerButtons.size()));
     }
 
-    /**
-     * Hit-test a click against the buttons rendered inside this panel. Buttons are laid out
-     * in the parent's local coordinate space (set via updateRenderForParent), so we convert
-     * the screen click to local first, then check each visible button topmost-first.
-     */
     @Override
     public boolean handleClick(me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx screen) {
         if (scale.get() < 0.01f) return false;
@@ -138,9 +129,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         float parentW = getWidth();
         float parentH = getHeight();
 
-        // player buttons (topmost, in reverse so the visually-top one wins).
-        // Button geometry (relativePos + width/height) is set during render() each frame;
-        // since clicks arrive right after a render, those values are current.
         float itemTotal = ITEM_HEIGHT + ITEM_SPACING;
         float listHeight = parentH * LIST_HEIGHT_FACTOR;
         int firstIdx = Math.max(0, (int) Math.floor(scrollOffset / itemTotal));
@@ -150,7 +138,6 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
             if (b.hitInParent(parentW, parentH, localX, localY)) return true;
         }
 
-        // clear / start buttons
         if (clearButton.hitInParent(parentW, parentH, localX, localY)) return true;
         return startButton.hitInParent(parentW, parentH, localX, localY);
     }

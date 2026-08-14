@@ -148,10 +148,6 @@ public class Render2DService {
         tr.draw(text, x, y, color, shadow, ms.peek().getPositionMatrix(), textBuffers,
                 TextRenderer.TextLayerType.NORMAL, 0, 15728880);
 
-        // Flush the queued text vertices immediately. Without this the text lingers in the
-        // shared entity-vertex-consumer buffer and only gets flushed later (e.g. by the chat
-        // screen while typing a command), at which point the matrix/GL state has changed and
-        // the HUD text disappears or renders with a stale matrix.
         textBuffers.draw();
 
         ms.pop();

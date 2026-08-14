@@ -84,10 +84,7 @@ public class ModStateService {
         registerEventListeners();
     }
 
-    /**
-     * Restricted mode for an outdated mod version: everything is disabled except journal
-     * sync (/hm net) and the checkout commands (/hm sban, /hm frz, /hm unfrz).
-     */
+
     public void requireUpdate() {
         updateRequired = true;
         moduleManagerService.unregisterAll();
@@ -98,9 +95,6 @@ public class ModStateService {
         moduleManagerService.register(CheckoutsModule.class);
     }
 
-    /**
-     * Leaves update-required mode and restores full functionality (all modules re-registered).
-     */
     public void clearUpdateRequired() {
         if (!updateRequired) return;
         updateRequired = false;

@@ -36,8 +36,6 @@ public class GameRendererMixin {
             )
     )
     private void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
-        // Render every frame (not only on tick frames) so HUD animations stay smooth even when
-        // no screen is open. The screen-open path goes through ScreenMixin, which also fires per frame.
         if (client.world != null && !isScreenRendering) {
             EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 

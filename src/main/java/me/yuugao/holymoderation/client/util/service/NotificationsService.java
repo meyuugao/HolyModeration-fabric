@@ -46,10 +46,6 @@ public class NotificationsService {
         notificationPool.clear();
     }
 
-    /**
-     * Adds a persistent preview notification (shown in CONFIG/edit mode so the user can see
-     * how notifications will look at the current scale). The preview never expires.
-     */
     public void showPreview() {
         if (notificationPool.stream().noneMatch(n -> n.isPreview)) {
             Notification n = new Notification(NotificationType.SUCCESS,
@@ -76,7 +72,6 @@ public class NotificationsService {
         return Math.max(0f, total - spacing);
     }
 
-    // ===== Convenience helpers (canonical titles used across all modules) =====
     public void error(String text) {
         addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(Colors.RED, Colors.BOLD), text, 5f);
     }
@@ -116,8 +111,6 @@ public class NotificationsService {
         float outline = 1.5f;
         float padding = 8f;
 
-        // Layout is cached per-notification: text wrapping is expensive, so we only re-wrap when
-        // the notification width actually changes (e.g. on window resize), not every frame.
         for (Notification n : notificationPool) {
             n.ensureLayout(tr, width, padding);
         }
@@ -230,11 +223,6 @@ public class NotificationsService {
             this.liveTime = liveTime;
         }
 
-        /**
-         * Wrap title/body text for the current notification width. Re-runs only when the wrap
-         * width changes (the text itself is immutable after construction), avoiding an expensive
-         * per-frame TextRenderer.wrapLines pass.
-         */
         void ensureLayout(TextRenderer tr, float notifWidth, float padding) {
             this.width = notifWidth;
             int wrap = Math.max(1, (int) (notifWidth - padding * 2));

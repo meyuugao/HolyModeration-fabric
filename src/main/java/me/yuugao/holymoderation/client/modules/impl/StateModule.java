@@ -94,7 +94,7 @@ public class StateModule implements CommandProvider {
         }
 
         if (event.isSwitch() && !userStateService.isInHub() && interactionManager != null) {
-            if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals(SPAWN_WORLD)) { //tip: при первом заходе на анку не работает, потому что не был проинициализирован мир ни разу
+            if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals(SPAWN_WORLD)) {
                 userStateService.setVanishEnabled(true);
             }
 
@@ -149,9 +149,6 @@ public class StateModule implements CommandProvider {
         registry.register(CommandSpec.of("setapitoken", Argument.text("токен")).group("Система").description("установить API-ключ журнала").handler(this::cmdSetApiToken));
     }
 
-    /**
-     * Common gate: returns true (and notifies) when the command must be ignored.
-     */
     private boolean blocked() {
         if (!userStateService.isOnHW()) return true;
         if (!userStateService.isGameInitCompleted()) {
@@ -222,7 +219,6 @@ public class StateModule implements CommandProvider {
         }
     }
 
-    // ===== Server-namespace pass-through: /v, /gamemode, /gm, /fly, /god, /hac (state sync only, no cancel) =====
     @Subscribe(priority = 99)
     public void onCommandSend(CommandSendEvent event) {
         ClientWorld clientWorld = minecraftService.getWorld();
