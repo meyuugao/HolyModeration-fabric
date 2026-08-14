@@ -5,24 +5,30 @@ import me.yuugao.holymoderation.client.gui.drawable.element.state.provider.Rende
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 
 import net.minecraft.client.gui.DrawContext;
 
 public abstract class StatefulDrawableElement<T extends RenderState> extends DrawableElement {
     protected final RenderStateProvider<T> stateProvider;
+    protected final ConfigManagerService configManagerService;
     protected boolean positioned = false;
 
     private T activeState;
 
-    protected StatefulDrawableElement(AnimationService animationService, PivotMode pivotMode, RenderStateProvider<T> stateProvider) {
+    protected StatefulDrawableElement(AnimationService animationService, PivotMode pivotMode,
+                                      ConfigManagerService configManagerService, RenderStateProvider<T> stateProvider) {
         super(animationService, pivotMode);
 
+        this.configManagerService = configManagerService;
         this.stateProvider = stateProvider;
     }
 
     protected abstract void initPosition(DrawContext ctx);
 
     protected abstract void render(DrawContext ctx, int z, T state);
+
+    public abstract String getHudElementId();
 
     @Override
     protected void render(DrawContext ctx, int z) {
@@ -36,6 +42,8 @@ public abstract class StatefulDrawableElement<T extends RenderState> extends Dra
         if (activeState == null) return;
 
         float screenScale = Math.min(ctx.getScaledWindowWidth() / 1280f, ctx.getScaledWindowHeight() / 720f);
+        screenScale *= configManagerService.getSettingsConfig().getHudScale()
+                * configManagerService.getGuiConfig().getHudScale(getHudElementId());
         super.updateRenderForScreen(ctx, z, screenScale);
 
         this.activeState = null;

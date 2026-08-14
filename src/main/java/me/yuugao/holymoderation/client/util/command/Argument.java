@@ -10,13 +10,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
-/**
- * Describes a single command argument: its name (shown in syntax/help), its Brigadier type,
- * and an optional suggestion provider for TAB-completion.
- * <p>
- * Concrete factories are provided for the argument kinds currently in use. More kinds
- * (player, enum, integer-range, ...) can be added without touching call sites.
- */
 public abstract class Argument {
     private final String name;
 
@@ -24,9 +17,6 @@ public abstract class Argument {
         this.name = name;
     }
 
-    /**
-     * Free-form text argument (greedy string), no suggestions.
-     */
     public static Argument text(String name) {
         return new Argument(name) {
             @Override
@@ -41,9 +31,7 @@ public abstract class Argument {
         };
     }
 
-    /**
-     * Single-word text argument (quoted only if it contains spaces).
-     */
+
     public static Argument word(String name) {
         return new Argument(name) {
             @Override
@@ -58,9 +46,6 @@ public abstract class Argument {
         };
     }
 
-    /**
-     * Integer argument with a fixed static suggestion list (e.g. preset indices).
-     */
     public static Argument integer(String name, int min, int max, Collection<String> presets) {
         return new Argument(name) {
             @Override
@@ -81,9 +66,6 @@ public abstract class Argument {
         };
     }
 
-    /**
-     * Convenience for an argument with a few fixed suggestions and string type.
-     */
     public static Argument choice(String name, List<String> options) {
         return new Argument(name) {
             @Override
@@ -104,10 +86,6 @@ public abstract class Argument {
         };
     }
 
-    /**
-     * Player-nickname argument with TAB-completion of online players.
-     * Uses greedyString so the rest of the line is consumed as the nickname (matches legacy behaviour).
-     */
     public static Argument player(String name) {
         return new Argument(name) {
             @Override

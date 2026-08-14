@@ -30,6 +30,7 @@ import net.minecraft.world.GameMode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import lombok.RequiredArgsConstructor;
 
@@ -37,6 +38,8 @@ import lombok.RequiredArgsConstructor;
 @Singleton
 
 public class StateModule implements CommandProvider {
+    private static final Pattern HOLYWORLD_ADDR = Pattern.compile("(?i).*hol(l)?yworld.*");
+    private static final String SPAWN_WORLD = "minecraft:spawn_world";
     private final MinecraftService minecraftService;
     private final ModStateService modStateService;
     private final PlayerStateService playerStateService;
@@ -91,7 +94,7 @@ public class StateModule implements CommandProvider {
         }
 
         if (event.isSwitch() && !userStateService.isInHub() && interactionManager != null) {
-            if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) { //tip: при первом заходе на анку не работает, потому что не был проинициализирован мир ни разу
+            if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals(SPAWN_WORLD)) {
                 userStateService.setVanishEnabled(true);
             }
 
@@ -100,33 +103,28 @@ public class StateModule implements CommandProvider {
             if (settingsConfig.isAutoVanishEnabled() && !userStateService.isVanishEnabled()
                     || !settingsConfig.isAutoVanishEnabled() && userStateService.isVanishEnabled()) {
                 chatService.chatMessage("/v");
-                userStateService.setVanishEnabled(userStateService.isVanishEnabled());
             }
 
             if (settingsConfig.isAutoGm3Enabled() && !userStateService.isGm3Enabled()
                     || !settingsConfig.isAutoGm3Enabled() && userStateService.isGm3Enabled()) {
                 chatService.chatMessage("/gm 3");
-                userStateService.setGm3Enabled(userStateService.isGm3Enabled());
             }
 
             if (settingsConfig.isAutoFlyEnabled() && !userStateService.isFlyEnabled()
                     || !settingsConfig.isAutoFlyEnabled() && userStateService.isFlyEnabled()) {
                 if (!userStateService.isGm3Enabled()) {
                     chatService.chatMessage("/fly");
-                    userStateService.setFlyEnabled(userStateService.isFlyEnabled());
                 }
             }
 
             if (settingsConfig.isAutoGodEnabled() && !userStateService.isGodEnabled()
                     || !settingsConfig.isAutoGodEnabled() && userStateService.isGodEnabled()) {
                 chatService.chatMessage("/god");
-                userStateService.setGodEnabled(userStateService.isGodEnabled());
             }
 
             if (settingsConfig.isAutoHacAlertsEnabled() && !userStateService.isHacAlertsEnabled()
                     || !settingsConfig.isAutoHacAlertsEnabled() && userStateService.isHacAlertsEnabled()) {
                 chatService.chatMessage("/hac alerts");
-                userStateService.setHacAlertsEnabled(userStateService.isHacAlertsEnabled());
             }
         }
 
@@ -151,9 +149,6 @@ public class StateModule implements CommandProvider {
         registry.register(CommandSpec.of("setapitoken", Argument.text("токен")).group("Система").description("установить API-ключ журнала").handler(this::cmdSetApiToken));
     }
 
-    /**
-     * Common gate: returns true (and notifies) when the command must be ignored.
-     */
     private boolean blocked() {
         if (!userStateService.isOnHW()) return true;
         if (!userStateService.isGameInitCompleted()) {
@@ -224,7 +219,6 @@ public class StateModule implements CommandProvider {
         }
     }
 
-    // ===== Server-namespace pass-through: /v, /gamemode, /gm, /fly, /god, /hac (state sync only, no cancel) =====
     @Subscribe(priority = 99)
     public void onCommandSend(CommandSendEvent event) {
         ClientWorld clientWorld = minecraftService.getWorld();
@@ -243,7 +237,7 @@ public class StateModule implements CommandProvider {
 
         switch (command) {
             case ("v") -> {
-                if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals("minecraft:spawn_world")) {
+                if (clientWorld != null && clientWorld.getRegistryKey().getValue().toString().equals(SPAWN_WORLD)) {
                     if (messageSplit.length > 1) {
                         if (messageSplit[1].equals("enable")) {
                             userStateService.setVanishEnabled(true);
@@ -333,6 +327,6 @@ public class StateModule implements CommandProvider {
     }
 
     private void checkServerAddress(ServerConnectEvent event) {
-        userStateService.setOnHW(event.getServerInfo().address.matches("(?i).*hol(l)?yworld.*"));
+        userStateService.setOnHW(HOLYWORLD_ADDR.matcher(event.getServerInfo().address).matches());
     }
 }

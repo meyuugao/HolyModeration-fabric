@@ -17,15 +17,17 @@ import net.minecraft.text.Text;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class ChatService {
-    public final Text HMTextComponent = Text.of("%s%s[%s%sHM%s%s]%s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
-    public final char[] Chars = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<',
+    public static final Text HM_TEXT_COMPONENT = Text.of("%s%s[%s%sHM%s%s]%s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
+    public static final char[] CHARS = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<',
             '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
+    private static final Pattern COLOR_CODE = Pattern.compile("§[0-9a-zA-Z]");
     private final MinecraftService minecraftService;
     private final ConfigManagerService configManagerService;
     private final NotificationsService notificationsService;
@@ -46,16 +48,20 @@ public class ChatService {
         ClientPlayerEntity player = minecraftService.getPlayer();
 
         if (player != null) {
-            player.sendMessage(generateComponent(HMTextComponent, text), false);
+            player.sendMessage(generateComponent(HM_TEXT_COMPONENT, text), false);
         }
     }
 
+    public static String stripColor(String text) {
+        return COLOR_CODE.matcher(text).replaceAll(StringUtils.EMPTY);
+    }
+
     public String formatReceivedText(String text) {
-        text = text.replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY);
+        text = stripColor(text);
         for (String ignoredString : HolyWorldPatterns.IGNORED_PREFIXES) {
             if (text.startsWith(ignoredString)) return null;
         }
-        text = text.replace(configManagerService.getSettingsConfig().getCopyButtonText().replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY), StringUtils.EMPTY);
+        text = text.replace(stripColor(configManagerService.getSettingsConfig().getCopyButtonText()), StringUtils.EMPTY);
         return text;
     }
 
@@ -117,7 +123,7 @@ public class ChatService {
         return suggestComponent.copy().setStyle(
                 suggestComponent.getStyle()
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of("Нажмите, чтобы подставить команду.")))
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, componentText.replaceAll("§[0-9a-zA-Z]", StringUtils.EMPTY))));
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, stripColor(componentText))));
     }
 
     public MutableText suggestTextComponent(String componentText, String hint, String toSuggestText) {

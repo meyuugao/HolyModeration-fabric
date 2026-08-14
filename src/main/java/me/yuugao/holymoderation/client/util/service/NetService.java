@@ -34,8 +34,12 @@ public class NetService {
     private final NotificationsService notificationsService;
     private final SoundService soundService;
     private final AsyncExecutor asyncExecutor;
-    private final String journalApiUrl = "https://journal.holyworld.me/srv/api/v1/";
-    private final Gson gson = new Gson();
+    private static final String JOURNAL_API_URL = "https://journal.holyworld.me/srv/api/v1/";
+    private static final Gson GSON = new Gson();
+    private static final Type STRING_MAP_TYPE = new TypeToken<Map<String, String>>() {}.getType();
+    private static final Type STRING_OBJECT_MAP_TYPE = new TypeToken<Map<String, Object>>() {}.getType();
+    private static final int CONNECT_TIMEOUT_MS = 10_000;
+    private static final int READ_TIMEOUT_MS = 15_000;
 
     public CompletableFuture<List<AbstractMap.SimpleEntry<String, String>>> getWhiteList() {
         return getListAsync("https://holymoderation.alwaysdata.net/whitelist");
@@ -51,18 +55,12 @@ public class NetService {
                 HttpsURLConnection connection = openHttpsConnection(url, "GET", null);
                 String response = getResponse(connection).toString();
 
-                // Backend format: { "hwid": "nickname", ... } (key = fingerprint, value = owner).
-                Gson gson = new Gson();
-                Type type = new TypeToken<Map<String, String>>() {
-                }.getType();
-                Map<String, String> data = gson.fromJson(response, type);
+                Map<String, String> data = GSON.fromJson(response, STRING_MAP_TYPE);
 
                 if (data == null) {
                     return Collections.emptyList();
                 }
 
-                // Flatten into the internal contract: SimpleEntry(nickname, hwid).
-                // Note the key/value swap relative to the wire format.
                 List<AbstractMap.SimpleEntry<String, String>> result = new ArrayList<>();
                 for (Map.Entry<String, String> entry : data.entrySet()) {
                     String hwid = entry.getKey();
@@ -180,7 +178,7 @@ public class NetService {
     private CompletableFuture<Map<String, Object>> executeGetRequestAsync(String endpoint) {
         return asyncExecutor.supplyAsync("NetService/executeGetRequest " + endpoint, () -> {
             try {
-                HttpsURLConnection connection = openHttpsConnection("%s%s".formatted(journalApiUrl, endpoint), "GET", null);
+                HttpsURLConnection connection = openHttpsConnection("%s%s".formatted(JOURNAL_API_URL, endpoint), "GET", null);
                 if (connection == null) throw new IOException("connection is null");
                 try {
                     setAuthHeaders(connection);
@@ -212,7 +210,7 @@ public class NetService {
             return asyncExecutor.runAsync("NetService/startCheckout", () -> {
                 try {
                     HttpsURLConnection connection =
-                            openHttpsConnection("%scheckout/start".formatted(journalApiUrl), "POST", null);
+                            openHttpsConnection("%scheckout/start".formatted(JOURNAL_API_URL), "POST", null);
 
                     if (connection == null) throw new IOException("connection is null");
 
@@ -270,7 +268,7 @@ public class NetService {
             return asyncExecutor.runAsync("NetService/endCheckout", () -> {
                 try {
                     HttpsURLConnection connection =
-                            openHttpsConnection("%scheckout/end".formatted(journalApiUrl), "POST", null);
+                            openHttpsConnection("%scheckout/end".formatted(JOURNAL_API_URL), "POST", null);
 
                     if (connection == null) throw new IOException("connection is null");
 
@@ -314,7 +312,7 @@ public class NetService {
     private CompletableFuture<Boolean> hasActiveCheckout() {
         return asyncExecutor.supplyAsync("NetService/hasActiveCheckout", () -> {
             try {
-                HttpsURLConnection connection = openHttpsConnection("%scheckout/status".formatted(journalApiUrl), "GET", null);
+                HttpsURLConnection connection = openHttpsConnection("%scheckout/status".formatted(JOURNAL_API_URL), "GET", null);
                 if (connection == null) throw new IOException("connection is null");
                 try {
                     setAuthHeaders(connection);
@@ -407,7 +405,7 @@ public class NetService {
         }
     }
 
-    public StringBuilder getResponse(@NotNull HttpsURLConnection connection) throws IOException {
+    private StringBuilder getResponse(@NotNull HttpsURLConnection connection) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
         StringBuilder response = new StringBuilder();
         String line;
@@ -418,17 +416,15 @@ public class NetService {
 
     private Map<String, Object> parseJsonResponse(@NotNull StringBuilder response) {
         if (response.isEmpty()) return Collections.emptyMap();
-        Type type = new TypeToken<Map<String, Object>>() {
-        }.getType();
-        return gson.fromJson(response.toString(), type);
+        return GSON.fromJson(response.toString(), STRING_OBJECT_MAP_TYPE);
     }
 
     public HttpsURLConnection openHttpsConnection(String url, String method, String cookie) throws IOException {
         HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
         connection.setRequestMethod(method);
         connection.setRequestProperty("User-Agent", "Mozilla/5.0");
-        connection.setConnectTimeout(10_000);
-        connection.setReadTimeout(15_000);
+        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(READ_TIMEOUT_MS);
         if (cookie != null) connection.setRequestProperty("Cookie", cookie);
         return connection;
     }

@@ -21,13 +21,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class SettingsModule implements CommandProvider {
+    private static final int MAX_TEXT_LENGTH = 200;
+    private static final float HUD_SCALE_MIN = 0.5f;
+    private static final float HUD_SCALE_MAX = 2.0f;
     private final ChatService chatService;
     private final ConfigManagerService configManagerService;
     private final NotificationsService notificationsService;
 
     @Override
     public void registerCommands(CommandRegistry registry) {
-        registry.register(CommandSpec.of("autoban").group("Настройки").description("автоматический бан при ливе с проверки").handler(this::cmdAutoban));
         registry.register(CommandSpec.of("autocopy").group("Настройки").description("автокопирование AnyDesk из чата").handler(this::cmdAutocopy));
         registry.register(CommandSpec.of("autodupeip").group("Настройки").description("автоматический /dupeip при проверке").handler(this::cmdAutodupeip));
         registry.register(CommandSpec.of("autofly").group("Настройки").description("автоматический /fly при заходе").handler(this::cmdAutofly));
@@ -44,6 +46,7 @@ public class SettingsModule implements CommandProvider {
         registry.register(CommandSpec.of("setcopy", Argument.text("текст")).group("Настройки").description("текст кнопки копирования").handler(this::cmdSetcopy));
         registry.register(CommandSpec.of("setmarker", Argument.text("текст")).group("Настройки").description("метка игрока на проверке").handler(this::cmdSetmarker));
         registry.register(CommandSpec.of("setspydelay", Argument.integer("секунды", 0, 60, java.util.List.of())).group("Настройки").description("задержка обновления слежки").handler(this::cmdSetspydelay));
+        registry.register(CommandSpec.of("hudscale", Argument.text("размер")).group("Настройки").description("размер худа (0.5 - 2.0)").handler(this::cmdHudscale));
         registry.register(CommandSpec.of("setsoundsvolume", Argument.integer("проценты", 0, 100, java.util.List.of())).group("Настройки").description("громкость звуков").handler(this::cmdSetsoundsvolume));
         registry.register(CommandSpec.of("textadd", Argument.text("текст")).group("Настройки").description("добавить текст в список").handler(this::cmdTextadd));
         registry.register(CommandSpec.of("textremove", Argument.integer("номер", 1, Integer.MAX_VALUE, java.util.List.of())).group("Настройки").description("удалить текст по номеру").handler(this::cmdTextremove));
@@ -53,13 +56,6 @@ public class SettingsModule implements CommandProvider {
 
     private SettingsConfig cfg() {
         return configManagerService.getSettingsConfig();
-    }
-
-    private void cmdAutoban(CommandContext ctx) {
-        SettingsConfig c = cfg();
-        c.setAutoBanEnabled(!c.isAutoBanEnabled());
-        notificationsService.success("Автоматический бан игрока при ливе с проверки %s.".formatted(c.isAutoBanEnabled() ? "включён" : "выключен"));
-        configManagerService.saveConfig(c);
     }
 
     private void cmdAutocopy(CommandContext ctx) {
@@ -162,8 +158,8 @@ public class SettingsModule implements CommandProvider {
             return;
         }
         String text = ctx.arg(0).replace("&", "§");
-        if (text.length() > 200) {
-            notificationsService.error("Текст слишком длинный! Длина текста: %s (максимум 200)".formatted(text.length()));
+        if (text.length() > MAX_TEXT_LENGTH) {
+            notificationsService.error("Текст слишком длинный! Длина текста: %s (максимум %s)".formatted(text.length(), MAX_TEXT_LENGTH));
             return;
         }
         c.getTextsList().add(text);
@@ -235,6 +231,29 @@ public class SettingsModule implements CommandProvider {
         }
         c.setSpyDelay(Integer.parseInt(valueText));
         notificationsService.success("Вы установили новую задержку в spy: %s.".formatted(c.getSpyDelay()));
+        configManagerService.saveConfig(c);
+    }
+
+    private void cmdHudscale(CommandContext ctx) {
+        SettingsConfig c = cfg();
+        if (!ctx.hasArg(0)) {
+            notificationsService.error("Вы не указали размер худа.");
+            return;
+        }
+        String valueText = ctx.arg(0).replace(",", ".");
+        float value;
+        try {
+            value = Float.parseFloat(valueText);
+        } catch (NumberFormatException e) {
+            notificationsService.error("Некорректное число.");
+            return;
+        }
+        if (value < HUD_SCALE_MIN || value > HUD_SCALE_MAX) {
+            notificationsService.error("Размер худа должен быть в диапазоне от %s до %s.".formatted(HUD_SCALE_MIN, HUD_SCALE_MAX));
+            return;
+        }
+        c.setHudScale(value);
+        notificationsService.success("Размер худа установлен: %s.".formatted(c.getHudScale()));
         configManagerService.saveConfig(c);
     }
 

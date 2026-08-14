@@ -29,7 +29,6 @@ public abstract class MouseMixin {
         InputService inputService = DIAccessor.getDI().get(InputService.class);
         inputService.updateMouseButton(button, action);
 
-        // Dispatch a click event (on press only) so drawable elements can react.
         if (action == GLFW.GLFW_PRESS) {
             MinecraftService minecraftService = DIAccessor.getDI().get(MinecraftService.class);
             double guiScale = minecraftService.getClient().getWindow().getScaleFactor();

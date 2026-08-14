@@ -76,7 +76,7 @@ public class PunishmentsModule implements CommandProvider {
             if (commandSplit.length > 1) {
                 String nickname = commandSplit[1];
                 char lastChar = nickname.charAt(nickname.length() - 1);
-                for (char ch : chatService.Chars) {
+                for (char ch : ChatService.CHARS) {
                     if (nickname.contains(String.valueOf(ch))) {
                         nicknameHasChar = true;
                         break;
@@ -169,7 +169,7 @@ public class PunishmentsModule implements CommandProvider {
             if (chatService.isArrayContains(BanCommands, command) || command.equals("/warn")) {
                 if (StrangeFrzPunishmentConfirm && StrangeFrzMessage.isEmpty()) {
                     StrangeFrzPunishmentConfirm = false;
-                    checkoutsService.endCheckOut(false);
+                    checkoutsService.endCheckOut(false, false);
                 }
             }
 
@@ -179,7 +179,6 @@ public class PunishmentsModule implements CommandProvider {
                 }
             }
         }
-        // "hm setvk" is handled by CommandRegistry (see registerCommands).
     }
 
     @Override
