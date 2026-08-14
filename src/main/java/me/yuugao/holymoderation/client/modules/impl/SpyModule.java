@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 @Singleton
 public class SpyModule extends DrawableModule<SpyDrawableElement> implements CommandProvider {
+    private static final long SPY_INSTANT_UPDATE_DELAY_MS = 500;
     private final PlayerStateService playerStateService;
     private final UserStateService userStateService;
     private final SpyService spyService;
@@ -166,7 +167,7 @@ public class SpyModule extends DrawableModule<SpyDrawableElement> implements Com
                 }
 
                 schedulerService.schedule("SpyModule/onMessageReceive", spyService::update,
-                        instantUpdate ? 500 : settingsConfig.getSpyDelay(),
+                        instantUpdate ? SPY_INSTANT_UPDATE_DELAY_MS : settingsConfig.getSpyDelay(),
                         instantUpdate ? TimeUnit.MILLISECONDS : TimeUnit.SECONDS);
                 shouldUpdate = instantUpdate = false;
             }

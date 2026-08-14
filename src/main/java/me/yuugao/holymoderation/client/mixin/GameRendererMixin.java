@@ -36,7 +36,7 @@ public class GameRendererMixin {
             )
     )
     private void onRender(float tickDelta, long startTime, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
-        if (tick && client.world != null && !isScreenRendering) {
+        if (client.world != null && !isScreenRendering) {
             EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
             eventBus.invokeEvent(new RenderEvent(drawContext, 0, 0, tickDelta));

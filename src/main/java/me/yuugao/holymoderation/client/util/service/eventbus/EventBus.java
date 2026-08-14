@@ -18,27 +18,28 @@ public class EventBus {
     private LoggerService loggerService;
 
     public void register(Object object) {
-        Method[] methods = object.getClass().getDeclaredMethods();
-        for (Method method : methods) {
-            if (method.isAnnotationPresent(Subscribe.class)) {
-                Class<?>[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length == 1 && Event.class.isAssignableFrom(parameterTypes[0])) {
-                    Class<?> eventType = parameterTypes[0];
-                    Subscribe annotation = method.getAnnotation(Subscribe.class);
-                    int priority = annotation.priority();
-                    Subscriber subscriber = new Subscriber(object, method, priority, loggerService);
+        for (Method method : object.getClass().getDeclaredMethods()) {
+            if (!method.isAnnotationPresent(Subscribe.class)) continue;
+            Class<?>[] parameterTypes = method.getParameterTypes();
+            if (parameterTypes.length != 1 || !Event.class.isAssignableFrom(parameterTypes[0])) continue;
 
-                    if (subscribers.values().stream().anyMatch(list ->
-                            list.stream().anyMatch(e -> e.method().equals(method))))
-                        return;
+            Class<?> eventType = parameterTypes[0];
+            List<Subscriber> list = subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>());
 
-                    subscribers.computeIfAbsent(eventType, k ->
-                            new CopyOnWriteArrayList<>()).add(subscriber);
-                    subscribers.get(eventType).sort((s1, s2) ->
-                            Integer.compare(s2.priority(), s1.priority()));
-                    loggerService.debug("Registered new subscriber: %s.".formatted(subscriber));
+            boolean alreadyRegistered = false;
+            for (Subscriber existing : list) {
+                if (existing.method().equals(method)) {
+                    alreadyRegistered = true;
+                    break;
                 }
             }
+            if (alreadyRegistered) continue;
+
+            int priority = method.getAnnotation(Subscribe.class).priority();
+            Subscriber subscriber = new Subscriber(object, method, priority, loggerService);
+            list.add(subscriber);
+            list.sort((s1, s2) -> Integer.compare(s2.priority(), s1.priority()));
+            loggerService.debug("Registered new subscriber: %s.".formatted(subscriber));
         }
     }
 
@@ -52,16 +53,6 @@ public class EventBus {
     public void clear() {
         subscribers.clear();
         loggerService.debug("All subscribers cleared.");
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T getModule(Class<T> moduleClass) {
-        return (T) subscribers.values().stream()
-                .flatMap(List::stream)
-                .map(Subscriber::target)
-                .filter(moduleClass::isInstance)
-                .findFirst()
-                .orElse(null);
     }
 
     public void invokeEvent(Event event) {

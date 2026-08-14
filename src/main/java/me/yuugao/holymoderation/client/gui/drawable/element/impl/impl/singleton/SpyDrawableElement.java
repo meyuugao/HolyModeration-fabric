@@ -29,7 +29,7 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
     @Inject
     public SpyDrawableElement(AnimationService animationService, MinecraftService minecraftService, Render2DService render2DService,
                               ConfigManagerService configManagerService, SpyRenderStateProvider spyRenderStateProvider) {
-        super(animationService, PivotMode.UP, spyRenderStateProvider);
+        super(animationService, PivotMode.UP, configManagerService, spyRenderStateProvider);
 
         this.currentWidth = animationService.createValue(1f);
         this.currentHeight = animationService.createValue(1f);
@@ -37,6 +37,11 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
         this.configManagerService = configManagerService;
+    }
+
+    @Override
+    public String getHudElementId() {
+        return "spy";
     }
 
     @Override

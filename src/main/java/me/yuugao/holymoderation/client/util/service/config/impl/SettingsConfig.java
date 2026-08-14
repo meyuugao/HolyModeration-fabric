@@ -42,11 +42,11 @@ public class SettingsConfig extends Config {
     @Expose
     private boolean autoCheckoutTpEnabled = true;
     @Expose
-    private boolean autoBanEnabled = true;
-    @Expose
     private int spyDelay = 2;
     @Expose
     private boolean autoSpyTpEnabled = false;
+    @Expose
+    private float hudScale = 1f;
 
     public SettingsConfig() {
         super("settings");

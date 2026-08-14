@@ -17,7 +17,7 @@ import lombok.Setter;
 public class ApiConfig extends Config {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss");
-    private final String currentVersion = "2.10alpha"; //tip: измени перед релизом если нужно
+    private final String currentVersion = "3.0";
     @Expose
     @Setter
     private String apiToken = StringUtils.EMPTY;

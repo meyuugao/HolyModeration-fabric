@@ -2,7 +2,9 @@ package me.yuugao.holymoderation.client.util.service.state;
 
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
+import me.yuugao.holymoderation.client.modules.impl.CheckoutsModule;
 import me.yuugao.holymoderation.client.modules.impl.GuiManagerModule;
+import me.yuugao.holymoderation.client.modules.impl.NetModule;
 import me.yuugao.holymoderation.client.modules.impl.NotificationsModule;
 import me.yuugao.holymoderation.client.modules.impl.StateModule;
 import me.yuugao.holymoderation.client.util.service.LoggerService;
@@ -32,6 +34,7 @@ public class ModStateService {
     private boolean blocked = false;
     private boolean forceBlocked = false;
     private boolean onlineMode = false;
+    private boolean updateRequired = false;
 
     public void enableDebug() {
         this.debugEnabled = true;
@@ -78,6 +81,23 @@ public class ModStateService {
 
     public void unblock() {
         blocked = false;
+        registerEventListeners();
+    }
+
+
+    public void requireUpdate() {
+        updateRequired = true;
+        moduleManagerService.unregisterAll();
+        moduleManagerService.register(StateModule.class);
+        moduleManagerService.register(GuiManagerModule.class);
+        moduleManagerService.register(NotificationsModule.class);
+        moduleManagerService.register(NetModule.class);
+        moduleManagerService.register(CheckoutsModule.class);
+    }
+
+    public void clearUpdateRequired() {
+        if (!updateRequired) return;
+        updateRequired = false;
         registerEventListeners();
     }
 
