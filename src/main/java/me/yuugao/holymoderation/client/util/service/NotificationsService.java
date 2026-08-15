@@ -53,8 +53,6 @@ public class NotificationsService {
                     "%s%sПример уведомления".formatted(Colors.GREEN, Colors.BOLD),
                     "Скролл меняет размер уведомлений", Float.MAX_VALUE);
             n.isPreview = true;
-            n.state = State.IDLE;
-            n.initialized = true;
             notificationPool.add(n);
         }
     }
@@ -186,12 +184,12 @@ public class NotificationsService {
             ms.translate(n.x, n.y);
             float ty = padding;
             for (OrderedText line : n.titleLines) {
-                render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
+                render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
             ty += 4f;
             for (OrderedText line : n.bodyLines) {
-                render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFF, false, ctx);
+                render2DService.renderText(tr, line, (int) padding, (int) ty, z, 0xFFFFFFFF, false, ctx);
                 ty += tr.fontHeight;
             }
             ms.popMatrix();

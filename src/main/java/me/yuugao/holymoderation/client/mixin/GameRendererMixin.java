@@ -24,7 +24,7 @@ import com.llamalad7.mixinextras.sugar.Local;
 public class GameRendererMixin {
     @Shadow
     @Final
-    MinecraftClient client;
+    private MinecraftClient client;
     @Unique
     boolean isScreenRendering = false;
 

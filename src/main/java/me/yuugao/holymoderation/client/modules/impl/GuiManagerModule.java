@@ -5,6 +5,8 @@ import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.StatefulDrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.singleton.NotificationsDrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
@@ -77,18 +79,23 @@ public class GuiManagerModule {
                     }
                 }
             }
-            if (dragging != null) {
+            if (dragging != null && !(dragging.getDrawableElement() instanceof NotificationsDrawableElement)) {
                 DrawableElement elem = dragging.getDrawableElement();
                 float sw = ctx.getScaledWindowWidth();
                 float sh = ctx.getScaledWindowHeight();
                 float targetAnchorX = event.getMouseX() - dragOffsetX;
                 float targetAnchorY = event.getMouseY() - dragOffsetY;
-                float newRelX = targetAnchorX / sw;
-                float newRelY = targetAnchorY / sh;
-                elem.setRelativePos(newRelX, newRelY);
+                elem.setRelativePos(targetAnchorX / sw, targetAnchorY / sh);
             }
         } else {
+            if (dragging != null && dragging.getDrawableElement() instanceof NotificationsDrawableElement notif) {
+                snapNotificationToCorner(notif, event.getMouseX(), event.getMouseY(),
+                        ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
+            }
             dragging = null;
+        }
+        if (dragging != null && dragging.getDrawableElement() instanceof NotificationsDrawableElement) {
+            renderNotificationAnchors(ctx, event.getMouseX(), event.getMouseY());
         }
     }
 
@@ -151,6 +158,47 @@ public class GuiManagerModule {
             guiConfig.setHudScale(id, next);
             configManagerService.saveConfig(guiConfig);
         }
+    }
+
+    private void snapNotificationToCorner(NotificationsDrawableElement notif, double mouseX, double mouseY, float screenW, float screenH) {
+        PivotMode corner = nearestCorner(mouseX, mouseY, screenW, screenH);
+        notif.setPivotMode(corner);
+        notif.setRelativePos(corner.getXFactor(), corner.getYFactor());
+
+        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        guiConfig.setPivotMode(notif.getHudElementId(), corner);
+        configManagerService.saveConfig(guiConfig);
+    }
+
+    private PivotMode nearestCorner(double mouseX, double mouseY, float screenW, float screenH) {
+        double dLU = mouseX * mouseX + mouseY * mouseY;
+        double dRU = (screenW - mouseX) * (screenW - mouseX) + mouseY * mouseY;
+        double dLD = mouseX * mouseX + (screenH - mouseY) * (screenH - mouseY);
+        double dRD = (screenW - mouseX) * (screenW - mouseX) + (screenH - mouseY) * (screenH - mouseY);
+        double min = Math.min(Math.min(dLU, dRU), Math.min(dLD, dRD));
+        if (min == dLU) return PivotMode.LEFT_UP;
+        if (min == dRU) return PivotMode.RIGHT_UP;
+        if (min == dLD) return PivotMode.LEFT_DOWN;
+        return PivotMode.RIGHT_DOWN;
+    }
+
+    private void renderNotificationAnchors(DrawContext ctx, double mouseX, double mouseY) {
+        float sw = ctx.getScaledWindowWidth();
+        float sh = ctx.getScaledWindowHeight();
+        float size = 20f;
+        float margin = 8f;
+        PivotMode nearest = nearestCorner(mouseX, mouseY, sw, sh);
+        int highlight = 0xFFFFFFFF;
+        int normal = 0x80FFFFFF;
+
+        drawAnchor(ctx, margin, margin, size, nearest == PivotMode.LEFT_UP ? highlight : normal);
+        drawAnchor(ctx, sw - margin - size, margin, size, nearest == PivotMode.RIGHT_UP ? highlight : normal);
+        drawAnchor(ctx, margin, sh - margin - size, size, nearest == PivotMode.LEFT_DOWN ? highlight : normal);
+        drawAnchor(ctx, sw - margin - size, sh - margin - size, size, nearest == PivotMode.RIGHT_DOWN ? highlight : normal);
+    }
+
+    private void drawAnchor(DrawContext ctx, float x, float y, float size, int color) {
+        ctx.fill((int) x, (int) y, (int) (x + size), (int) (y + size), color);
     }
 
     private void resetHoveredElementScale(int mouseX, int mouseY) {

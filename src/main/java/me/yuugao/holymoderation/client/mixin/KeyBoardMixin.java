@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Keyboard.class)
 public class KeyBoardMixin {
-    @Inject(method = "onKey", at = @At("TAIL"))
+    @Inject(method = "onKey", at = @At("HEAD"))
     public void onKey(long window, int action, KeyInput keyInput, CallbackInfo ci) {
         EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 

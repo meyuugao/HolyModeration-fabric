@@ -6,17 +6,20 @@ import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.client.gui.screen.Screen;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ScreenEvents.class)
 public class ScreenEventsMixin {
+    @Unique
     private static final Event<ScreenEvents.AfterRender> EMPTY_AFTER_RENDER =
             EventFactory.createArrayBacked(ScreenEvents.AfterRender.class,
                     callbacks -> (screen, context, mouseX, mouseY, delta) -> {
                     });
 
+    @Unique
     private static final Event<ScreenEvents.BeforeRender> EMPTY_BEFORE_RENDER =
             EventFactory.createArrayBacked(ScreenEvents.BeforeRender.class,
                     callbacks -> (screen, context, mouseX, mouseY, delta) -> {
