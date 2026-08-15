@@ -14,7 +14,8 @@ public class Drawable implements MouseHoverable, MouseScrollable {
     protected final AnimationService animationService;
     protected final AnimationService.Value scale;
     @Getter
-    protected final PivotMode pivotMode;
+    @Setter
+    protected PivotMode pivotMode;
     @Getter
     @Setter
     protected float width, height;

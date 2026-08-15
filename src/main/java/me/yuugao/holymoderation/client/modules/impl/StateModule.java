@@ -319,7 +319,7 @@ public class StateModule implements CommandProvider {
 
     private void tryFindUser() {
         schedulerService.schedule("", () -> {
-            if (userStateService.getUserLocation().isEmpty() && !userStateService.isInHub()) {
+            if (userStateService.getUserLocation().isEmpty() && !userStateService.isInHub() && modStateService.isEnabled()) {
                 chatService.chatMessage("/find %s".formatted(userStateService.getUserNickname()));
                 tryFindUser();
             }

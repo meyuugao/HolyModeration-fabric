@@ -1,5 +1,6 @@
 package me.yuugao.holymoderation.client.util.service.config.impl;
 
+import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.service.config.Config;
 
 import java.awt.Color;
@@ -21,6 +22,8 @@ public class GuiConfig extends Config {
     private Color secondColor = new Color(60, 120, 220, 255);
     @Expose
     private final Map<String, Float> hudScales = new HashMap<>();
+    @Expose
+    private final Map<String, PivotMode> hudPivotModes = new HashMap<>();
 
     public GuiConfig() {
         super("gui");
@@ -32,5 +35,13 @@ public class GuiConfig extends Config {
 
     public void setHudScale(String elementId, float scale) {
         hudScales.put(elementId, scale);
+    }
+
+    public PivotMode getPivotMode(String elementId) {
+        return hudPivotModes.getOrDefault(elementId, PivotMode.RIGHT_DOWN);
+    }
+
+    public void setPivotMode(String elementId, PivotMode pivotMode) {
+        hudPivotModes.put(elementId, pivotMode);
     }
 }

@@ -35,6 +35,10 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
 
     @Override
     protected void initPosition(DrawContext ctx) {
+        PivotMode configured = configManagerService.getGuiConfig().getPivotMode(getHudElementId());
+        if (configured != PivotMode.CENTER) {
+            setPivotMode(configured);
+        }
         setRelativePos(pivotMode.getXFactor(), pivotMode.getYFactor());
     }
 
@@ -81,18 +85,41 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
         if (getHeight() <= 0f) return false;
 
         float margin = 8f * screenScale;
-        float x1 = parentW - getWidth() - margin;
-        float y1 = parentH - getHeight() - margin;
+        float[] cfg = getConfig();
+        float stackDirY = cfg[0];
+        float hideDirX = cfg[1];
 
-        return mouseX >= x1 && mouseX <= parentW && mouseY >= y1 && mouseY <= parentH;
+        float x1, x2, y1, y2;
+        if (hideDirX > 0) {
+            x1 = parentW - getWidth() - margin;
+            x2 = parentW + margin;
+        } else if (hideDirX < 0) {
+            x1 = -margin;
+            x2 = getWidth() + margin;
+        } else {
+            x1 = (parentW - getWidth()) / 2f - margin;
+            x2 = (parentW + getWidth()) / 2f + margin;
+        }
+
+        if (stackDirY < 0) {
+            y1 = parentH - getHeight() - margin;
+            y2 = parentH + margin;
+        } else if (stackDirY > 0) {
+            y1 = -margin;
+            y2 = getHeight() + margin;
+        } else {
+            y1 = (parentH - getHeight()) / 2f - margin;
+            y2 = (parentH + getHeight()) / 2f + margin;
+        }
+
+        return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;
     }
 
     private float[] getConfig() {
-        return switch (getPivotMode()) {
-            case RIGHT_DOWN, RIGHT, DOWN, UP, CENTER -> new float[]{-1f, 1f, 0f};
-            case RIGHT_UP -> new float[]{1f, 1f, 0f};
-            case LEFT_DOWN, LEFT -> new float[]{-1f, -1f, 0f};
-            case LEFT_UP -> new float[]{1f, -1f, 0f};
-        };
+        float xFactor = pivotMode.getXFactor();
+        float yFactor = pivotMode.getYFactor();
+        float hideDirX = xFactor > 0.5f ? 1f : (xFactor < 0.5f ? -1f : 0f);
+        float stackDirY = yFactor > 0.5f ? -1f : (yFactor < 0.5f ? 1f : 0f);
+        return new float[]{stackDirY, hideDirX, 0f};
     }
 }

@@ -3,9 +3,7 @@ package me.yuugao.holymoderation.client.util.command;
 import me.yuugao.holymoderation.client.di.DIAccessor;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
-import me.yuugao.holymoderation.client.util.Colors;
 import me.yuugao.holymoderation.client.util.service.LoggerService;
-import me.yuugao.holymoderation.client.util.service.NotificationType;
 import me.yuugao.holymoderation.client.util.service.NotificationsService;
 import me.yuugao.holymoderation.client.util.service.eventbus.Subscribe;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
@@ -33,7 +31,6 @@ public class CommandRegistry {
     private static final Set<String> UPDATE_REQUIRED_COMMANDS = Set.of("net", "sban", "frz", "unfrz");
 
     private final LoggerService loggerService;
-    private final NotificationsService notificationsService;
     private final Map<String, CommandSpec> specs = new LinkedHashMap<>();
 
     public void register(CommandSpec spec) {
@@ -94,7 +91,7 @@ public class CommandRegistry {
         return eventCommand.equals("hm") || eventCommand.startsWith("hm ");
     }
 
-private CommandContext buildContext(String eventCommand, int argumentCount) {
+    private CommandContext buildContext(String eventCommand, int argumentCount) {
         if (argumentCount == 0) {
             return new CommandContext(new String[0]);
         }
@@ -129,43 +126,5 @@ private CommandContext buildContext(String eventCommand, int argumentCount) {
         }
         buildArgumentChain(ab, arguments, index + 1);
         parent.then(ab);
-    }
-
-    public String buildHelpText() {
-        java.util.Map<String, java.util.List<CommandSpec>> byGroup = new java.util.LinkedHashMap<>();
-        for (CommandSpec s : specs.values()) {
-            if (s.name().equals("help")) continue;
-            String g = s.group() == null || s.group().isEmpty() ? "Прочее" : s.group();
-            byGroup.computeIfAbsent(g, k -> new java.util.ArrayList<>()).add(s);
-        }
-
-        StringBuilder sb = new StringBuilder();
-        boolean firstGroup = true;
-        for (java.util.Map.Entry<String, java.util.List<CommandSpec>> e : byGroup.entrySet()) {
-            if (!firstGroup) sb.append("\n");
-            firstGroup = false;
-            sb.append(Colors.AQUA).append(Colors.BOLD).append("▼ ").append(e.getKey()).append(Colors.WHITE).append("\n");
-            for (CommandSpec s : e.getValue()) {
-                sb.append(Colors.GOLD).append(s.syntax()).append(Colors.WHITE);
-                if (s.description() != null && !s.description().isEmpty()) {
-                    sb.append(" — ").append(Colors.GRAY).append(s.description()).append(Colors.WHITE);
-                }
-                sb.append("\n");
-            }
-        }
-        sb.append(Colors.GRAY).append("Подсказка: аргументы в <угловых скобках> обязательны; TAB дополняет ввод.");
-        return sb.toString();
-    }
-
-    public void registerHelpCommand() {
-        if (specs.containsKey("help")) return;
-        register(CommandSpec.of("help")
-                .group("Система")
-                .description("показать список всех команд")
-                .handler(ctx -> notificationsService.addNotification(
-                        NotificationType.SUCCESS,
-                        Colors.GREEN + Colors.BOLD + "Справка по командам HolyModeration",
-                        buildHelpText(),
-                        30f)));
     }
 }

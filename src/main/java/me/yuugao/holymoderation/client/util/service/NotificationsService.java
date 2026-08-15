@@ -26,6 +26,8 @@ public class NotificationsService {
 
     private final List<Notification> notificationPool = new ArrayList<>();
     private long lastNano = System.nanoTime();
+    private float lastScreenWidth = -1f;
+    private float lastScreenHeight = -1f;
 
     public void addNotification(NotificationType type, String title, String text, float liveTime) {
         notificationPool.add(new Notification(type, title, text, liveTime));
@@ -52,8 +54,6 @@ public class NotificationsService {
                     "%s%sПример уведомления".formatted(Colors.GREEN, Colors.BOLD),
                     "Скролл меняет размер уведомлений", Float.MAX_VALUE);
             n.isPreview = true;
-            n.state = State.IDLE;
-            n.initialized = true;
             notificationPool.add(n);
         }
     }
@@ -157,6 +157,17 @@ public class NotificationsService {
                 if (hideDirY < 0) n.targetY = -n.height - margin;
                 else if (hideDirY > 0) n.targetY = screenHeight + n.height + margin;
             }
+        }
+
+        if (lastScreenWidth != screenWidth || lastScreenHeight != screenHeight) {
+            for (Notification n : notificationPool) {
+                if (n.initialized) {
+                    n.x = n.targetX;
+                    n.y = n.targetY;
+                }
+            }
+            lastScreenWidth = screenWidth;
+            lastScreenHeight = screenHeight;
         }
 
         for (Notification n : notificationPool) {
