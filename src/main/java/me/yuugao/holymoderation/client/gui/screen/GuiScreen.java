@@ -21,6 +21,10 @@ public abstract class GuiScreen extends Screen {
         super(title);
     }
 
+    @Override
+    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
+    }
+
     protected void renderTabs(DrawContext ctx, int relMouseX, int relMouseY, float tickDelta) {
         tabs.forEach((key, tab) -> tab.onRender(ctx, relMouseX, relMouseY, tickDelta));
     }

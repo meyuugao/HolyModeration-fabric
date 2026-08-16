@@ -1,13 +1,30 @@
-#version 150
+#version 330
+
+layout(std140) uniform Radius {
+    float Radius;
+};
+
+layout(std140) uniform Size {
+    vec2 Size;
+};
+
+layout(std140) uniform Color {
+    vec4 Color;
+};
+
+layout(std140) uniform OutlineColor {
+    vec4 OutlineColor;
+};
+
+layout(std140) uniform OutlineWidth {
+    float OutlineWidth;
+};
+
+layout(std140) uniform BlurWidth {
+    float BlurWidth;
+};
 
 in vec2 uv;
-
-uniform float Radius;
-uniform vec2 Size;
-uniform vec4 Color;
-uniform vec4 OutlineColor;
-uniform float OutlineWidth;
-uniform float BlurWidth;
 
 out vec4 fragColor;
 

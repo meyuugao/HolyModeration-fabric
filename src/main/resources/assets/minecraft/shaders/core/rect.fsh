@@ -1,8 +1,10 @@
-#version 150
+#version 330
+
+layout(std140) uniform Color {
+    vec4 Color;
+};
 
 in vec4 vertexColor;
-
-uniform vec4 Color;
 
 out vec4 fragColor;
 
