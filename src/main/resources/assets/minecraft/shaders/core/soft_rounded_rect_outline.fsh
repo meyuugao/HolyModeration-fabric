@@ -1,27 +1,27 @@
 #version 330
 
 layout(std140) uniform Radius {
-    float Radius;
+    float radius;
 };
 
 layout(std140) uniform Size {
-    vec2 Size;
+    vec2 size;
 };
 
 layout(std140) uniform Color {
-    vec4 Color;
+    vec4 color;
 };
 
 layout(std140) uniform OutlineColor {
-    vec4 OutlineColor;
+    vec4 outlineColor;
 };
 
 layout(std140) uniform OutlineWidth {
-    float OutlineWidth;
+    float outlineWidth;
 };
 
 layout(std140) uniform BlurWidth {
-    float BlurWidth;
+    float blurWidth;
 };
 
 in vec2 uv;
@@ -34,18 +34,18 @@ float sdRoundRect(vec2 p, vec2 b, float r) {
 }
 
 void main() {
-    vec2 p = uv - (Size * 0.5 + vec2(BlurWidth));
-    float d = sdRoundRect(p, Size * 0.5, Radius);
+    vec2 p = uv - (size * 0.5 + vec2(blurWidth));
+    float d = sdRoundRect(p, size * 0.5, radius);
 
-    if (d > BlurWidth) {
+    if (d > blurWidth) {
         discard;
     } else if (d > 0.0) {
-        float alpha = OutlineColor.a * (1.0 - d / BlurWidth);
-        fragColor = vec4(OutlineColor.rgb, alpha);
-    } else if (d > -OutlineWidth) {
-        float t = smoothstep(-OutlineWidth, 0.0, d);
-        fragColor = mix(Color, OutlineColor, t);
+        float alpha = outlineColor.a * (1.0 - d / blurWidth);
+        fragColor = vec4(outlineColor.rgb, alpha);
+    } else if (d > -outlineWidth) {
+        float t = smoothstep(-outlineWidth, 0.0, d);
+        fragColor = mix(color, outlineColor, t);
     } else {
-        fragColor = Color;
+        fragColor = color;
     }
 }

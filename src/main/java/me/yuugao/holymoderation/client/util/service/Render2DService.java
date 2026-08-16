@@ -263,26 +263,26 @@ public class Render2DService {
     private GpuBuffer uniformBuffer(String name) {
         return uniformBuffers.computeIfAbsent(name, n -> {
             GpuDevice device = RenderSystem.getDevice();
-            ByteBuffer data = ByteBuffer.allocate(UBO_SIZE).order(ByteOrder.nativeOrder());
+            ByteBuffer data = ByteBuffer.allocateDirect(UBO_SIZE).order(ByteOrder.nativeOrder());
             return device.createBuffer(() -> "hm_uniform_" + n,
                     GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, data);
         });
     }
 
     private void writeFloat(CommandEncoder encoder, String name, float value) {
-        ByteBuffer data = ByteBuffer.allocate(UBO_SIZE).order(ByteOrder.nativeOrder());
+        ByteBuffer data = ByteBuffer.allocateDirect(UBO_SIZE).order(ByteOrder.nativeOrder());
         Std140Builder.intoBuffer(data).putFloat(value);
         encoder.writeToBuffer(uniformBuffer(name).slice(), data.rewind());
     }
 
     private void writeVec2(CommandEncoder encoder, String name, float x, float y) {
-        ByteBuffer data = ByteBuffer.allocate(UBO_SIZE).order(ByteOrder.nativeOrder());
+        ByteBuffer data = ByteBuffer.allocateDirect(UBO_SIZE).order(ByteOrder.nativeOrder());
         Std140Builder.intoBuffer(data).putVec2(x, y);
         encoder.writeToBuffer(uniformBuffer(name).slice(), data.rewind());
     }
 
     private void writeVec4(CommandEncoder encoder, String name, Color color) {
-        ByteBuffer data = ByteBuffer.allocate(UBO_SIZE).order(ByteOrder.nativeOrder());
+        ByteBuffer data = ByteBuffer.allocateDirect(UBO_SIZE).order(ByteOrder.nativeOrder());
         Std140Builder.intoBuffer(data).putVec4(
                 color.getRed() / 255f, color.getGreen() / 255f, color.getBlue() / 255f, color.getAlpha() / 255f);
         encoder.writeToBuffer(uniformBuffer(name).slice(), data.rewind());

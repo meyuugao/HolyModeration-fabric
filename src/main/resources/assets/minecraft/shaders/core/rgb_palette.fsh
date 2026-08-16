@@ -1,19 +1,19 @@
 #version 330
 
 layout(std140) uniform Radius {
-    float Radius;
+    float radius;
 };
 
 layout(std140) uniform OutlineColor {
-    vec4 OutlineColor;
+    vec4 outlineColor;
 };
 
 layout(std140) uniform OutlineWidth {
-    float OutlineWidth;
+    float outlineWidth;
 };
 
 layout(std140) uniform Size {
-    vec2 Size;
+    vec2 size;
 };
 
 in vec2 uv;
@@ -29,24 +29,24 @@ vec3 hsv2rgb(vec3 c) {
 }
 
 void main() {
-    vec2 center = Size * 0.5;
+    vec2 center = size * 0.5;
     vec2 pos = uv - center;
     float dist = length(pos);
 
-    if (dist > Radius + OutlineWidth) {
+    if (dist > radius + outlineWidth) {
         discard;
     }
 
-    if (dist > Radius) {
-        float t = (dist - Radius) / OutlineWidth;
+    if (dist > radius) {
+        float t = (dist - radius) / outlineWidth;
         float alpha = 1.0 - smoothstep(0.0, 1.0, t);
-        fragColor = vec4(OutlineColor.rgb, OutlineColor.a * alpha);
+        fragColor = vec4(outlineColor.rgb, outlineColor.a * alpha);
         return;
     }
 
     float angle = atan(pos.y, pos.x);
     float hue = (angle + PI) / (2.0 * PI);
-    float saturation = dist / Radius;
+    float saturation = dist / radius;
     float value = 1.0;
 
     vec3 color = hsv2rgb(vec3(hue, saturation, value));

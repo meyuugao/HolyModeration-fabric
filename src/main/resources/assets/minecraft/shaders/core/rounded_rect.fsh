@@ -1,15 +1,15 @@
 #version 330
 
 layout(std140) uniform Radius {
-    float Radius;
+    float radius;
 };
 
 layout(std140) uniform Size {
-    vec2 Size;
+    vec2 size;
 };
 
 layout(std140) uniform Color {
-    vec4 Color;
+    vec4 color;
 };
 
 in vec2 uv;
@@ -22,8 +22,8 @@ float sdRoundRect(vec2 p, vec2 b, float r) {
 }
 
 void main() {
-    vec2 p = uv - Size * 0.5;
-    float d = sdRoundRect(p, Size * 0.5, Radius);
+    vec2 p = uv - size * 0.5;
+    float d = sdRoundRect(p, size * 0.5, radius);
     if (d > 0.0) discard;
-    fragColor = Color;
+    fragColor = color;
 }

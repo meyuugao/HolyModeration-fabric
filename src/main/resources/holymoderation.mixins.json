@@ -8,6 +8,7 @@
   "client": [
     "ClientPlayNetworkHandlerMixin",
     "GameRendererMixin",
+    "InGameHudMixin",
     "KeyBoardMixin",
     "MessageHandlerMixin",
     "MinecraftClientMixin",
