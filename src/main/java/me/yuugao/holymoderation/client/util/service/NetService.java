@@ -332,7 +332,7 @@ public class NetService {
         });
     }
 
-    public CompletableFuture<Void> sendLaunchData(java.util.List<String> hwids, String username) {
+    public CompletableFuture<Void> sendLaunchData(List<String> hwids, String username) {
         return asyncExecutor.runAsync("NetService/sendLaunchData", () -> {
             String endpoint = "https://holymoderation.alwaysdata.net/api/launch";
 

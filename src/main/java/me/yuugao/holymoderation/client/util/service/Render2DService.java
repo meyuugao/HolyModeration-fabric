@@ -13,7 +13,6 @@ import net.minecraft.text.OrderedText;
 import net.minecraft.util.Identifier;
 
 import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -115,10 +114,22 @@ public class Render2DService {
     public void renderImage(DrawContext ctx, Identifier texture, float x, float y, float w, float h, int z) {
         MatrixStack matrices = ctx.getMatrices();
         RenderSystem.setShaderTexture(0, texture);
+        RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+
         matrices.push();
-        matrices.translate(0f, 0f, z);
-        ctx.drawTexture(texture, (int) x, (int) y, (int) w, (int) h, 0, 0, (int) w, (int) h, (int) w, (int) h);
+        matrices.translate(x, y, 0f);
+        Matrix4f m = matrices.peek().getPositionMatrix();
+
+        Tessellator t = Tessellator.getInstance();
+        BufferBuilder b = t.getBuffer();
+        b.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+        b.vertex(m, 0f, 0f, 0f).texture(0f, 0f).color(1f, 1f, 1f, 1f).next();
+        b.vertex(m, 0f, h, 0f).texture(0f, 1f).color(1f, 1f, 1f, 1f).next();
+        b.vertex(m, w, h, 0f).texture(1f, 1f).color(1f, 1f, 1f, 1f).next();
+        b.vertex(m, w, 0f, 0f).texture(1f, 0f).color(1f, 1f, 1f, 1f).next();
+        t.draw();
+
         matrices.pop();
         GlStateManager._activeTexture(33984);
         GlStateManager._bindTexture(0);
@@ -170,15 +181,12 @@ public class Render2DService {
     public void setupRender() {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
     }
 
     public void endRender() {
         RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
     }
 }

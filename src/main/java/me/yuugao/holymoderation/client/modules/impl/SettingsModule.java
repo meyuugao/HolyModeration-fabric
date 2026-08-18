@@ -45,13 +45,13 @@ public class SettingsModule implements CommandProvider {
 
         registry.register(CommandSpec.of("setcopy", Argument.text("текст")).group("Настройки").description("текст кнопки копирования").handler(this::cmdSetcopy));
         registry.register(CommandSpec.of("setmarker", Argument.text("текст")).group("Настройки").description("метка игрока на проверке").handler(this::cmdSetmarker));
-        registry.register(CommandSpec.of("setspydelay", Argument.integer("секунды", 0, 60, java.util.List.of())).group("Настройки").description("задержка обновления слежки").handler(this::cmdSetspydelay));
+        registry.register(CommandSpec.of("setspydelay", Argument.integer("секунды", 0, 60, List.of())).group("Настройки").description("задержка обновления слежки").handler(this::cmdSetspydelay));
         registry.register(CommandSpec.of("hudscale", Argument.text("размер")).group("Настройки").description("размер худа (0.5 - 2.0)").handler(this::cmdHudscale));
-        registry.register(CommandSpec.of("setsoundsvolume", Argument.integer("проценты", 0, 100, java.util.List.of())).group("Настройки").description("громкость звуков").handler(this::cmdSetsoundsvolume));
+        registry.register(CommandSpec.of("setsoundsvolume", Argument.integer("проценты", 0, 100, List.of())).group("Настройки").description("громкость звуков").handler(this::cmdSetsoundsvolume));
         registry.register(CommandSpec.of("textadd", Argument.text("текст")).group("Настройки").description("добавить текст в список").handler(this::cmdTextadd));
-        registry.register(CommandSpec.of("textremove", Argument.integer("номер", 1, Integer.MAX_VALUE, java.util.List.of())).group("Настройки").description("удалить текст по номеру").handler(this::cmdTextremove));
+        registry.register(CommandSpec.of("textremove", Argument.integer("номер", 1, Integer.MAX_VALUE, List.of())).group("Настройки").description("удалить текст по номеру").handler(this::cmdTextremove));
 
-        registry.register(CommandSpec.of("textedit", Argument.integer("номер", 1, Integer.MAX_VALUE, java.util.List.of()), Argument.text("новый_текст")).group("Настройки").description("изменить текст по номеру").handler(this::cmdTextedit));
+        registry.register(CommandSpec.of("textedit", Argument.integer("номер", 1, Integer.MAX_VALUE, List.of()), Argument.text("новый_текст")).group("Настройки").description("изменить текст по номеру").handler(this::cmdTextedit));
     }
 
     private SettingsConfig cfg() {
