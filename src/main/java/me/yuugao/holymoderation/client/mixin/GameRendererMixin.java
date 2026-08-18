@@ -13,7 +13,6 @@ import net.minecraft.client.render.RenderTickCounter;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -25,34 +24,22 @@ public class GameRendererMixin {
     @Shadow
     @Final
     private MinecraftClient client;
-    @Unique
-    boolean isScreenRendering = false;
 
     @Inject(
             method = "render",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/hud/InGameHud;render(Lnet/minecraft/client/gui/DrawContext;Lnet/minecraft/client/render/RenderTickCounter;)V"
+                    target = "Lnet/minecraft/client/gui/render/GuiRenderer;render(Lcom/mojang/blaze3d/buffers/GpuBufferSlice;)V",
+                    shift = At.Shift.AFTER
             )
     )
     private void onRender(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci, @Local DrawContext drawContext) {
-        if (client.world != null && !isScreenRendering) {
+        if (client.world != null) {
+            int mouseX = (int) client.mouse.getScaledX(client.getWindow());
+            int mouseY = (int) client.mouse.getScaledY(client.getWindow());
             EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
-            eventBus.invokeEvent(new RenderEvent(drawContext, 0, 0, tickCounter.getTickProgress(false)));
+            eventBus.invokeEvent(new RenderEvent(drawContext, mouseX, mouseY, tickCounter.getTickProgress(false)));
         }
-
-        isScreenRendering = false;
-    }
-
-    @Inject(
-            method = "render",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/screen/Screen;renderWithTooltip(Lnet/minecraft/client/gui/DrawContext;IIF)V"
-            )
-    )
-    private void beforeScreen(RenderTickCounter tickCounter, boolean tick, CallbackInfo ci) {
-        isScreenRendering = true;
     }
 }

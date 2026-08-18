@@ -42,6 +42,7 @@ public class GuiManagerModule {
     private static final float MIN_HUD_SCALE = 0.5f;
     private static final float MAX_HUD_SCALE = 2.0f;
     private static final float HUD_SCALE_STEP = 0.1f;
+    private static final float DRAG_MARGIN = 4f;
     private final MinecraftService minecraftService;
     private final InputService inputService;
     private final GuiManagerService guiManagerService;
@@ -85,6 +86,8 @@ public class GuiManagerModule {
                 float sh = ctx.getScaledWindowHeight();
                 float targetAnchorX = event.getMouseX() - dragOffsetX;
                 float targetAnchorY = event.getMouseY() - dragOffsetY;
+                targetAnchorX = clampAnchor(targetAnchorX, sw, elem.getScaledWidth(), elem.getPivotMode().getXFactor());
+                targetAnchorY = clampAnchor(targetAnchorY, sh, elem.getScaledHeight(), elem.getPivotMode().getYFactor());
                 elem.setRelativePos(targetAnchorX / sw, targetAnchorY / sh);
             }
         } else {
@@ -158,6 +161,16 @@ public class GuiManagerModule {
             guiConfig.setHudScale(id, next);
             configManagerService.saveConfig(guiConfig);
         }
+    }
+
+    private float clampAnchor(float anchor, float screenSize, float scaledSize, float pivotFactor) {
+        float pivotOffset = scaledSize * pivotFactor;
+        float minAnchor = DRAG_MARGIN + pivotOffset;
+        float maxAnchor = screenSize - DRAG_MARGIN - scaledSize + pivotOffset;
+        if (maxAnchor < minAnchor) {
+            return screenSize / 2f;
+        }
+        return Math.max(minAnchor, Math.min(maxAnchor, anchor));
     }
 
     private void snapNotificationToCorner(NotificationsDrawableElement notif, double mouseX, double mouseY, float screenW, float screenH) {

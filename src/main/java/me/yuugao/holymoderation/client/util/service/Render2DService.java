@@ -8,13 +8,18 @@ import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.buffers.Std140Builder;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import net.minecraft.client.font.TextDrawable;
 import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gl.GpuSampler;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gl.UniformType;
 import net.minecraft.client.gui.DrawContext;
@@ -23,6 +28,7 @@ import net.minecraft.client.render.BuiltBuffer;
 import net.minecraft.client.render.ProjectionMatrix2;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.texture.AbstractTexture;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.text.OrderedText;
 import net.minecraft.util.Identifier;
@@ -38,6 +44,7 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.OptionalInt;
+import java.util.function.Consumer;
 
 import lombok.RequiredArgsConstructor;
 
@@ -103,6 +110,8 @@ public class Render2DService {
                 .withUniform("DynamicTransforms", UniformType.UNIFORM_BUFFER)
                 .withUniform("Projection", UniformType.UNIFORM_BUFFER)
                 .withBlend(BlendFunction.TRANSLUCENT)
+                .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
+                .withDepthWrite(false)
                 .withVertexFormat(VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS);
         for (String uniform : uniforms) {
             builder.withUniform(uniform, UniformType.UNIFORM_BUFFER);
@@ -171,18 +180,95 @@ public class Render2DService {
     }
 
     public void renderImage(DrawContext ctx, Identifier texture, float x, float y, float w, float h, int z) {
-        ctx.drawTexture(RenderPipelines.GUI_TEXTURED, texture, (int) x, (int) y, 0, 0, (int) w, (int) h, (int) w, (int) h);
+        try {
+            AbstractTexture abstractTexture = minecraftService.getClient().getTextureManager().getTexture(texture);
+
+            Matrix3x2fStack matrices = ctx.getMatrices();
+            float[] p0 = transform(matrices, x, y + h);
+            float[] p1 = transform(matrices, x + w, y + h);
+            float[] p2 = transform(matrices, x + w, y);
+            float[] p3 = transform(matrices, x, y);
+
+            BufferBuilder bb = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
+            bb.vertex(p0[0], p0[1], 0f).texture(0f, 1f).color(1f, 1f, 1f, 1f);
+            bb.vertex(p1[0], p1[1], 0f).texture(1f, 1f).color(1f, 1f, 1f, 1f);
+            bb.vertex(p2[0], p2[1], 0f).texture(1f, 0f).color(1f, 1f, 1f, 1f);
+            bb.vertex(p3[0], p3[1], 0f).texture(0f, 0f).color(1f, 1f, 1f, 1f);
+            BuiltBuffer built = bb.end();
+
+            GpuTextureView textureView = abstractTexture.getGlTextureView();
+            GpuSampler sampler = abstractTexture.getSampler();
+
+            submitPass(ctx, RenderPipelines.GUI_TEXTURED, built, null,
+                    pass -> pass.bindTexture("Sampler0", textureView, sampler));
+        } catch (Exception e) {
+            loggerService.exception("Exception in Render2DService/renderImage: %s".formatted(e));
+        }
     }
 
     public void renderText(TextRenderer tr, String text, int x, int y, int z, int color, boolean shadow, DrawContext ctx) {
-        ctx.drawText(tr, text, x, y, color, shadow);
+        if (text == null) return;
+        renderText(tr, tr.prepare(text, x, y, color, shadow, 0), ctx);
     }
 
     public void renderText(TextRenderer tr, OrderedText text, int x, int y, int z, int color, boolean shadow, DrawContext ctx) {
-        ctx.drawText(tr, text, x, y, color, shadow);
+        if (text == null) return;
+        renderText(tr, tr.prepare(text, x, y, color, shadow, false, 0), ctx);
+    }
+
+    private void renderText(TextRenderer tr, TextRenderer.GlyphDrawable glyphDrawable, DrawContext ctx) {
+        try {
+            Matrix4f matrix = new Matrix4f().mul(ctx.getMatrices());
+            BufferBuilder bb = Tessellator.getInstance().begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT);
+
+            RenderPipeline[] pipeline = new RenderPipeline[1];
+            GpuTextureView[] fontTexture = new GpuTextureView[1];
+
+            glyphDrawable.draw(new TextRenderer.GlyphDrawer() {
+                @Override
+                public void drawGlyph(TextDrawable.DrawnGlyphRect glyph) {
+                    collect(glyph);
+                }
+
+                @Override
+                public void drawRectangle(TextDrawable rect) {
+                    collect(rect);
+                }
+
+                private void collect(TextDrawable drawable) {
+                    if (pipeline[0] == null) {
+                        pipeline[0] = drawable.getPipeline();
+                        fontTexture[0] = drawable.textureView();
+                    }
+                    drawable.render(matrix, bb, 15728880, true);
+                }
+            });
+
+            BuiltBuffer built = bb.endNullable();
+            if (built == null) {
+                return;
+            }
+
+            RenderPipeline textPipeline = pipeline[0];
+            GpuTextureView texture = fontTexture[0];
+
+            submitPass(ctx, textPipeline, built, null, pass -> {
+                pass.bindTexture("Sampler0", texture, RenderSystem.getSamplerCache().get(FilterMode.NEAREST));
+                pass.bindTexture("Sampler2",
+                        minecraftService.getClient().gameRenderer.getLightmapTextureManager().getGlTextureView(),
+                        RenderSystem.getSamplerCache().get(FilterMode.LINEAR));
+                GpuBufferSlice fog = RenderSystem.getShaderFog();
+                if (fog != null) {
+                    pass.setUniform("Fog", fog);
+                }
+            });
+        } catch (Exception e) {
+            loggerService.exception("Exception in Render2DService/renderText: %s".formatted(e));
+        }
     }
 
     public void setupRender() {
+        guiColorModulator.set(1f, 1f, 1f, 1f);
     }
 
     public void endRender() {
@@ -213,43 +299,57 @@ public class Render2DService {
             bb.vertex(p3[0], p3[1], 0f).color(1f, 1f, 1f, 1f).texture(0f, 0f);
             BuiltBuffer built = bb.end();
 
-            GpuDevice device = RenderSystem.getDevice();
-            CommandEncoder encoder = device.createCommandEncoder();
-            try {
-                uniforms.write(encoder);
-
-                GpuBuffer vbo = device.createBuffer(() -> "hm_quad_vbo",
-                        GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, built.getBuffer());
-                try {
-                    GpuBufferSlice projection = guiProjection()
-                            .set(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
-                    GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().write(
-                            guiModelView.setTranslation(0f, 0f, GUI_Z), guiColorModulator, guiModelOffset, guiTextureMat);
-
-                    try (RenderPass pass = encoder.createRenderPass(
-                            () -> "hm_render_pass",
-                            minecraftService.getClient().getFramebuffer().getColorAttachmentView(),
-                            OptionalInt.empty())) {
-                        pass.setPipeline(pipeline.pipeline());
-                        pass.setUniform("Projection", projection);
-                        pass.setUniform("DynamicTransforms", transforms);
+            submitPass(ctx, pipeline.pipeline(), built,
+                    encoder -> uniforms.write(encoder),
+                    pass -> {
                         for (String uniform : pipeline.uniforms()) {
                             pass.setUniform(uniform, uniformBuffer(uniform).slice());
                         }
-
-                        RenderSystem.ShapeIndexBuffer shapeIndexBuffer = RenderSystem.getSequentialBuffer(VertexFormat.DrawMode.QUADS);
-                        pass.setVertexBuffer(0, vbo);
-                        pass.setIndexBuffer(shapeIndexBuffer.getIndexBuffer(4), shapeIndexBuffer.getIndexType());
-                        pass.drawIndexed(0, 0, 6, 1);
-                    }
-                } finally {
-                    vbo.close();
-                }
-            } finally {
-                built.close();
-            }
+                    });
         } catch (Exception e) {
             loggerService.exception("Exception in Render2DService/renderQuad: %s".formatted(e));
+        }
+    }
+
+    private void submitPass(DrawContext ctx, RenderPipeline pipeline, BuiltBuffer built,
+                            Consumer<CommandEncoder> beforePass, Consumer<RenderPass> bindExtras) {
+        GpuDevice device = RenderSystem.getDevice();
+        CommandEncoder encoder = device.createCommandEncoder();
+        try {
+            if (beforePass != null) {
+                beforePass.accept(encoder);
+            }
+
+            GpuBuffer vbo = device.createBuffer(() -> "hm_quad_vbo",
+                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, built.getBuffer());
+            try {
+                GpuBufferSlice projection = guiProjection()
+                        .set(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
+                GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().write(
+                        guiModelView.setTranslation(0f, 0f, GUI_Z), guiColorModulator, guiModelOffset, guiTextureMat);
+
+                try (RenderPass pass = encoder.createRenderPass(
+                        () -> "hm_render_pass",
+                        minecraftService.getClient().getFramebuffer().getColorAttachmentView(),
+                        OptionalInt.empty())) {
+                    pass.setPipeline(pipeline);
+                    pass.setUniform("Projection", projection);
+                    pass.setUniform("DynamicTransforms", transforms);
+                    if (bindExtras != null) {
+                        bindExtras.accept(pass);
+                    }
+
+                    RenderSystem.ShapeIndexBuffer shapeIndexBuffer = RenderSystem.getSequentialBuffer(VertexFormat.DrawMode.QUADS);
+                    int indexCount = built.getDrawParameters().indexCount();
+                    pass.setVertexBuffer(0, vbo);
+                    pass.setIndexBuffer(shapeIndexBuffer.getIndexBuffer(indexCount), shapeIndexBuffer.getIndexType());
+                    pass.drawIndexed(0, 0, indexCount, 1);
+                }
+            } finally {
+                vbo.close();
+            }
+        } finally {
+            built.close();
         }
     }
 
