@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.gui.drawable.element.impl.impl;
 
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx;
 import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
@@ -10,19 +11,27 @@ import net.minecraft.client.gui.DrawContext;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;
+import java.util.function.Consumer;
 
 public class ColorPickerDrawableElement extends DrawableElement {
     private final Render2DService render2DService;
+    private final Consumer<Color> onChange;
 
     private Color outlineColor;
+    private Color selectedColor;
 
     private float radius;
     private float outlineWidth;
 
     public ColorPickerDrawableElement(AnimationService animationService, Render2DService render2DService) {
+        this(animationService, render2DService, null);
+    }
+
+    public ColorPickerDrawableElement(AnimationService animationService, Render2DService render2DService, Consumer<Color> onChange) {
         super(animationService, PivotMode.CENTER);
 
         this.render2DService = render2DService;
+        this.onChange = onChange;
     }
 
     @Override
@@ -30,6 +39,14 @@ public class ColorPickerDrawableElement extends DrawableElement {
         render2DService.setupRender();
 
         render2DService.renderRGBPalette(ctx, 0f, 0f, z, radius, outlineColor, outlineWidth);
+
+        if (selectedColor != null) {
+            float cx = getWidth() / 2f;
+            float cy = getHeight() / 2f;
+            float dotR = radius * 0.22f;
+            render2DService.renderSoftRoundedRectOutline(ctx, cx - dotR, cy - dotR, dotR * 2f, dotR * 2f, z,
+                    dotR, selectedColor, outlineColor, outlineWidth, 0f);
+        }
 
         render2DService.endRender();
     }
@@ -87,5 +104,24 @@ public class ColorPickerDrawableElement extends DrawableElement {
         float saturation = dist / effectiveRadius;
 
         return Color.getHSBColor(hue, saturation, 1.0f);
+    }
+
+    public void setSelectedColor(Color selectedColor) {
+        this.selectedColor = selectedColor;
+    }
+
+    @Nullable
+    public Color getSelectedColor() {
+        return selectedColor;
+    }
+
+    @Override
+    public boolean handleClick(ScreenCtx screen) {
+        Color color = getColorFromMouse(screen.screenWidth(), screen.screenHeight(), screen.mouseX(), screen.mouseY());
+        if (color == null) return false;
+
+        this.selectedColor = color;
+        if (onChange != null) onChange.accept(color);
+        return true;
     }
 }
