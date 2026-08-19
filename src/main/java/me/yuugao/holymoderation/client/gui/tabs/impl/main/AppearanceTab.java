@@ -1,14 +1,13 @@
 package me.yuugao.holymoderation.client.gui.tabs.impl.main;
 
 import me.yuugao.holymoderation.client.di.DIAccessor;
-import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SearchDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ToggleDrawableElement;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.gui.tabs.SettingsTab;
 import me.yuugao.holymoderation.client.gui.tabs.widgets.ColorFieldSet;
+import me.yuugao.holymoderation.client.gui.tabs.widgets.PopupColorEditor;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.GuiManagerService;
-import me.yuugao.holymoderation.client.util.service.HudOverrideService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.ThemePalette;
@@ -26,21 +25,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class AppearanceTab extends SettingsTab {
+    private static final float SWATCH_SIZE = 16f;
+
     private final ColorFieldSet mainSet;
     private final ColorFieldSet secondSet;
     private final List<ElementColorRow> elementRows = new ArrayList<>();
-    private final HudOverrideService hudOverrideService;
+    private final PopupColorEditor popup;
 
     private static class ElementColorRow {
         final String id;
         final ToggleDrawableElement toggle;
-        final SearchDrawableElement hex;
         float y;
+        float swatchX, swatchY;
 
-        ElementColorRow(String id, ToggleDrawableElement toggle, SearchDrawableElement hex) {
+        ElementColorRow(String id, ToggleDrawableElement toggle) {
             this.id = id;
             this.toggle = toggle;
-            this.hex = hex;
         }
     }
 
@@ -70,7 +70,8 @@ public class AppearanceTab extends SettingsTab {
                 color -> g.setSecondColor(color),
                 () -> configManagerService.saveConfig(g));
 
-        this.hudOverrideService = DIAccessor.getDI().get(HudOverrideService.class);
+        this.popup = new PopupColorEditor(factory, minecraftService, render2DService, g,
+                () -> configManagerService.saveConfig(g));
 
         for (String id : hudElementIds()) {
             ToggleDrawableElement toggle = factory.createToggle(v -> {
@@ -79,17 +80,7 @@ public class AppearanceTab extends SettingsTab {
             });
             toggle.setEnabled(g.isHudColorEnabled(id));
 
-            SearchDrawableElement hex = factory.createSearch(s -> {
-                Color color = parseHex(s);
-                if (color == null) return;
-                g.setHudColor(id, color);
-                configManagerService.saveConfig(g);
-            });
-            hex.setCentered(true);
-            hex.setPlaceholder("RRGGBB");
-            hex.setQuerySilent(hexText(g.getHudColor(id)));
-
-            elementRows.add(new ElementColorRow(id, toggle, hex));
+            elementRows.add(new ElementColorRow(id, toggle));
         }
     }
 
@@ -114,45 +105,59 @@ public class AppearanceTab extends SettingsTab {
         return ids;
     }
 
+    private float setsHeight() {
+        float square = Math.min(parent.getWidth(), parent.getHeight()) * 0.17f;
+        return square + 96f;
+    }
+
     @Override
-    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
+    protected float extraHeight() {
+        float setsY = rowsEndY() + 8f;
+        float listY = setsY + setsHeight() + 24f;
+        TextRenderer tr = minecraftService.getClient().textRenderer;
+        return (listY - rowsEndY()) + tr.fontHeight + 8f + elementRows.size() * 26f + 16f;
+    }
+
+    @Override
+    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
-        float setsY = rowsEndY() + 8f;
+        float setsY = rowsEndY() - scroll + 8f;
         float square = Math.min(pW, pH) * 0.17f;
         float fieldW = 150f;
 
         mainSet.render(ctx, z, pW * 0.29f, setsY, pW, pH, square, fieldW, palette);
         secondSet.render(ctx, z, pW * 0.71f, setsY, pW, pH, square, fieldW, palette);
 
-        float listY = setsY + square + 66f;
-        renderText(ctx, z, "Уникальные цвета HUD (ПКМ по виджету)", PAD, listY, tr, palette.textSecondary);
-        listY += tr.fontHeight + 8f;
+        float listY = setsY + square + 96f;
+        renderText(ctx, z, "Уникальные цвета HUD", PAD, listY, tr, palette.textSecondary);
+        listY += tr.fontHeight + 10f;
 
         float fieldX = PAD + 150f;
-        float hexW = 70f;
-        float hexX = pW - PAD - hexW;
 
         for (ElementColorRow row : elementRows) {
             row.y = listY;
 
-            boolean selected = hudOverrideService.getSelectedId() != null
-                    && hudOverrideService.getSelectedId().equals(row.id);
-
-            renderText(ctx, z, row.id, PAD, listY + 7f, tr, selected ? palette.primaryBright : palette.textPrimary);
+            renderText(ctx, z, row.id, PAD, listY + 7f, tr, palette.textPrimary);
 
             row.toggle.updateRenderForParent(ctx, (fieldX - 50f) / pW, (listY + 1f) / pH, 42f, 20f, pW, pH, z,
                     palette.primary, palette.surface, palette.textPrimary, palette.outline, 1.5f, 2f);
 
             Color color = configManagerService.getGuiConfig().getHudColor(row.id);
-            render2DService.renderSoftRoundedRectOutline(ctx, fieldX + 6f, listY + 4f, 14f, 14f, z,
-                    4f, color, palette.outline, 1f, 1f);
-
-            row.hex.updateRenderForParent(ctx, hexX / pW, (listY + 1f) / pH, hexW, 18f, pW, pH, z,
-                    6f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1f, 2f);
+            row.swatchX = fieldX + 6f;
+            row.swatchY = listY + 3f;
+            render2DService.renderSoftRoundedRect(ctx, row.swatchX, row.swatchY, SWATCH_SIZE, SWATCH_SIZE, z,
+                    5f, color, 0);
+            render2DService.renderSoftRoundedRectOutline(ctx, row.swatchX, row.swatchY, SWATCH_SIZE, SWATCH_SIZE, z,
+                    5f, color, palette.outline, 1.2f, 1f);
 
             listY += 26f;
         }
+    }
+
+    @Override
+    protected void renderOverlay(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
+        popup.render(ctx, z, palette, pW, pH);
     }
 
     private void renderText(DrawContext ctx, int z, String text, float x, float y, TextRenderer tr, Color color) {
@@ -165,6 +170,8 @@ public class AppearanceTab extends SettingsTab {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
 
+        if (popup.handleClick(pW, pH, mouseX, mouseY)) return true;
+
         if (super.onMouseClick(mouseX, mouseY)) return true;
 
         if (mainSet.handleClick(pW, pH, mouseX, mouseY)) return true;
@@ -172,9 +179,12 @@ public class AppearanceTab extends SettingsTab {
 
         for (ElementColorRow row : elementRows) {
             if (row.toggle.handleClick(pW, pH, mouseX, mouseY)) return true;
-            boolean over = row.hex.isMouseOver(pW, pH, mouseX, mouseY);
-            row.hex.setFocused(over);
-            if (over) return true;
+            if (mouseX >= row.swatchX && mouseX <= row.swatchX + SWATCH_SIZE
+                    && mouseY >= row.swatchY && mouseY <= row.swatchY + SWATCH_SIZE) {
+                GuiConfig g = configManagerService.getGuiConfig();
+                popup.open(row.id, "Цвет: " + row.id, g.getHudColor(row.id));
+                return true;
+            }
         }
         return false;
     }
@@ -183,6 +193,10 @@ public class AppearanceTab extends SettingsTab {
     public void onMouseDrag(float mouseX, float mouseY) {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
+        if (popup.isVisible()) {
+            popup.handleDrag(pW, pH, mouseX, mouseY);
+            return;
+        }
         super.onMouseDrag(mouseX, mouseY);
         mainSet.handleDrag(pW, pH, mouseX, mouseY);
         secondSet.handleDrag(pW, pH, mouseX, mouseY);
@@ -190,6 +204,10 @@ public class AppearanceTab extends SettingsTab {
 
     @Override
     public void onMouseRelease() {
+        if (popup.isVisible()) {
+            popup.handleRelease();
+            return;
+        }
         super.onMouseRelease();
         mainSet.handleRelease();
         secondSet.handleRelease();
@@ -197,6 +215,7 @@ public class AppearanceTab extends SettingsTab {
 
     @Override
     public boolean onCharTyped(char chr) {
+        if (popup.onCharTyped(chr)) return true;
         if (super.onCharTyped(chr)) return true;
         if (mainSet.onCharTyped(chr)) return true;
         return secondSet.onCharTyped(chr);
@@ -204,24 +223,9 @@ public class AppearanceTab extends SettingsTab {
 
     @Override
     public boolean onKeyPress(int key, int scancode, int action, int modifiers) {
+        if (popup.onKeyPress(key, scancode, action, modifiers)) return true;
         if (super.onKeyPress(key, scancode, action, modifiers)) return true;
         if (mainSet.onKeyPress(key, scancode, action, modifiers)) return true;
         return secondSet.onKeyPress(key, scancode, action, modifiers);
-    }
-
-    private static String hexText(Color c) {
-        return String.format("#%02X%02X%02X", c.getRed(), c.getGreen(), c.getBlue());
-    }
-
-    private static Color parseHex(String value) {
-        String t = value.trim().replace("#", "");
-        try {
-            if (t.length() == 6) {
-                int rgb = Integer.parseInt(t, 16);
-                return new Color((rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF);
-            }
-        } catch (NumberFormatException ignored) {
-        }
-        return null;
     }
 }

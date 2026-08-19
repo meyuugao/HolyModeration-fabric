@@ -41,11 +41,22 @@ public class JournalTab extends SettingsTab {
     }
 
     @Override
-    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
+    protected float extraHeight() {
+        ApiConfig apiConfig = configManagerService.getApiConfig();
+        TextRenderer tr = minecraftService.getClient().textRenderer;
+        if (apiConfig.getApiToken().isBlank() || apiConfig.getJournalProfile().isEmpty()) {
+            return tr.fontHeight + 8f;
+        }
+        int lines = 9 + (apiConfig.getJournalStats().isEmpty() ? 0 : 6);
+        return lines * (tr.fontHeight + 2f) + 8f;
+    }
+
+    @Override
+    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
         ApiConfig apiConfig = configManagerService.getApiConfig();
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
-        float y = rowsEndY() + 8f;
+        float y = rowsEndY() - scroll + 8f;
 
         if (apiConfig.getApiToken().isBlank()) {
             renderText(ctx, z, "Установите API-ключ из журнала, чтобы разблокировать вкладку.", PAD, y, tr, palette.textMuted);

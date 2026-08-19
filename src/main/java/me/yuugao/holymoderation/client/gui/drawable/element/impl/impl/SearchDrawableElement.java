@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 public class SearchDrawableElement extends DrawableElement {
     private static final float H_PADDING = 8f;
     private static final float CARET_WIDTH = 1.5f;
+    private static final Color SELECTION_COLOR = new Color(255, 255, 255, 60);
 
     private final Render2DService render2DService;
     private final MinecraftService minecraftService;
@@ -37,6 +38,8 @@ public class SearchDrawableElement extends DrawableElement {
     private boolean centered = false;
     private int selStart = -1;
     private int selEnd = -1;
+    private int selAnchor = -1;
+    private int maxLength = -1;
 
     private float radius;
     private float outlineWidth;
@@ -64,12 +67,14 @@ public class SearchDrawableElement extends DrawableElement {
     public void setQuery(String query) {
         this.query = query == null ? "" : query;
         this.caretIndex = this.query.length();
+        clearSelection();
         if (onChange != null) onChange.accept(this.query);
     }
 
     public void setQuerySilent(String query) {
         this.query = query == null ? "" : query;
         this.caretIndex = this.query.length();
+        clearSelection();
     }
 
     public void setPlaceholder(String placeholder) {
@@ -78,6 +83,10 @@ public class SearchDrawableElement extends DrawableElement {
 
     public void setCentered(boolean centered) {
         this.centered = centered;
+    }
+
+    public void setMaxLength(int maxLength) {
+        this.maxLength = maxLength;
     }
 
     public void clear() {
@@ -90,16 +99,23 @@ public class SearchDrawableElement extends DrawableElement {
 
     public void setFocused(boolean focused) {
         this.focused = focused;
-        if (focused) caretIndex = query.length();
+        if (focused) {
+            caretIndex = query.length();
+            clearSelection();
+            selAnchor = caretIndex;
+        }
     }
 
     public boolean onCharTyped(char c) {
         if (!focused) return false;
+        if (maxLength >= 0 && query.length() >= maxLength && !hasSelection()) return true;
         if (hasSelection()) {
             deleteSelection();
         }
         query = query.substring(0, caretIndex) + c + query.substring(caretIndex);
         caretIndex++;
+        clearSelection();
+        selAnchor = caretIndex;
         if (onChange != null) onChange.accept(query);
         return true;
     }
@@ -109,10 +125,17 @@ public class SearchDrawableElement extends DrawableElement {
         if (action == GLFW.GLFW_RELEASE) return true;
 
         boolean ctrl = (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+        boolean shift = (modifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+
         if (ctrl) {
             switch (key) {
                 case GLFW.GLFW_KEY_C -> {
                     copySelection();
+                    return true;
+                }
+                case GLFW.GLFW_KEY_X -> {
+                    copySelection();
+                    if (hasSelection()) deleteSelection();
                     return true;
                 }
                 case GLFW.GLFW_KEY_V -> {
@@ -122,6 +145,7 @@ public class SearchDrawableElement extends DrawableElement {
                 case GLFW.GLFW_KEY_A -> {
                     selStart = 0;
                     selEnd = query.length();
+                    selAnchor = 0;
                     caretIndex = query.length();
                     return true;
                 }
@@ -137,6 +161,7 @@ public class SearchDrawableElement extends DrawableElement {
                 } else if (caretIndex > 0) {
                     query = query.substring(0, caretIndex - 1) + query.substring(caretIndex);
                     caretIndex--;
+                    selAnchor = caretIndex;
                     if (onChange != null) onChange.accept(query);
                 }
             }
@@ -145,24 +170,51 @@ public class SearchDrawableElement extends DrawableElement {
                     deleteSelection();
                 } else if (caretIndex < query.length()) {
                     query = query.substring(0, caretIndex) + query.substring(caretIndex + 1);
+                    selAnchor = caretIndex;
                     if (onChange != null) onChange.accept(query);
                 }
             }
             case GLFW.GLFW_KEY_LEFT -> {
-                clearSelection();
-                caretIndex = Math.max(0, caretIndex - 1);
+                int next = Math.max(0, caretIndex - 1);
+                if (shift) {
+                    caretIndex = next;
+                    updateShiftSelection();
+                } else {
+                    clearSelection();
+                    caretIndex = next;
+                    selAnchor = caretIndex;
+                }
             }
             case GLFW.GLFW_KEY_RIGHT -> {
-                clearSelection();
-                caretIndex = Math.min(query.length(), caretIndex + 1);
+                int next = Math.min(query.length(), caretIndex + 1);
+                if (shift) {
+                    caretIndex = next;
+                    updateShiftSelection();
+                } else {
+                    clearSelection();
+                    caretIndex = next;
+                    selAnchor = caretIndex;
+                }
             }
             case GLFW.GLFW_KEY_HOME -> {
-                clearSelection();
-                caretIndex = 0;
+                if (shift) {
+                    caretIndex = 0;
+                    updateShiftSelection();
+                } else {
+                    clearSelection();
+                    caretIndex = 0;
+                    selAnchor = 0;
+                }
             }
             case GLFW.GLFW_KEY_END -> {
-                clearSelection();
-                caretIndex = query.length();
+                if (shift) {
+                    caretIndex = query.length();
+                    updateShiftSelection();
+                } else {
+                    clearSelection();
+                    caretIndex = query.length();
+                    selAnchor = caretIndex;
+                }
             }
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER, GLFW.GLFW_KEY_ESCAPE -> focused = false;
             default -> {
@@ -170,6 +222,21 @@ public class SearchDrawableElement extends DrawableElement {
             }
         }
         return true;
+    }
+
+    private void updateShiftSelection() {
+        if (selAnchor < 0) {
+            selAnchor = caretIndex;
+            return;
+        }
+        int a = Math.min(selAnchor, caretIndex);
+        int b = Math.max(selAnchor, caretIndex);
+        if (a == b) {
+            clearSelection();
+        } else {
+            selStart = a;
+            selEnd = b;
+        }
     }
 
     private boolean hasSelection() {
@@ -186,6 +253,7 @@ public class SearchDrawableElement extends DrawableElement {
         query = query.substring(0, selStart) + query.substring(selEnd);
         caretIndex = selStart;
         clearSelection();
+        selAnchor = caretIndex;
         if (onChange != null) onChange.accept(query);
     }
 
@@ -205,9 +273,15 @@ public class SearchDrawableElement extends DrawableElement {
             if (hasSelection()) {
                 deleteSelection();
             }
+            int remaining = maxLength >= 0 ? maxLength - query.length() : Integer.MAX_VALUE;
+            if (remaining <= 0) return;
+            if (text.length() > remaining) {
+                text = text.substring(0, remaining);
+            }
             query = query.substring(0, caretIndex) + text + query.substring(caretIndex);
             caretIndex += text.length();
             clearSelection();
+            selAnchor = caretIndex;
             if (onChange != null) onChange.accept(query);
         } catch (Exception ignored) {
         }
@@ -224,32 +298,56 @@ public class SearchDrawableElement extends DrawableElement {
         ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
 
         float textY = (getHeight() - tr.fontHeight) / 2f + 1f;
-        float availW = getWidth() - H_PADDING * 2f;
+        float caretY = (getHeight() - tr.fontHeight) / 2f;
 
         if (query.isEmpty()) {
-            float px = H_PADDING;
-            if (centered) {
-                int tw = tr.getWidth(placeholder);
-                px = Math.max(H_PADDING, H_PADDING + (availW - tw) / 2f);
-            }
+            float px = textStartX(placeholder);
             render2DService.renderText(tr, Text.literal(placeholder).asOrderedText(),
                     (int) px, (int) textY, z, placeholderColor.getRGB(), false, ctx);
         } else {
-            int qw = tr.getWidth(query);
-            float qx = H_PADDING;
-            if (centered) {
-                qx = Math.max(H_PADDING, H_PADDING + (availW - qw) / 2f);
-            }
+            float qx = textStartX(query);
             render2DService.renderText(tr, Text.literal(query).asOrderedText(),
                     (int) qx, (int) textY, z, textColor.getRGB(), false, ctx);
+        }
 
-            if (focused && (System.currentTimeMillis() / 500) % 2 == 0) {
-                int caretX = (int) (qx + tr.getWidth(query.substring(0, caretIndex)));
-                render2DService.renderRect(ctx, caretX, textY, CARET_WIDTH, tr.fontHeight, z, caretColor);
-            }
+        if (focused && hasSelection()) {
+            float startX = textStartX(query);
+            float sx = startX + tr.getWidth(query.substring(0, selStart));
+            float ex = startX + tr.getWidth(query.substring(0, selEnd));
+            render2DService.renderRect(ctx, sx, caretY, ex - sx, tr.fontHeight, z, SELECTION_COLOR);
+        }
+
+        if (focused && (System.currentTimeMillis() / 500) % 2 == 0) {
+            float startX = textStartX(query);
+            float cx = startX + tr.getWidth(query.substring(0, caretIndex));
+            render2DService.renderRect(ctx, cx, caretY, CARET_WIDTH, tr.fontHeight, z, caretColor);
         }
 
         ctx.disableScissor();
+    }
+
+    private float textStartX(String renderedText) {
+        float availW = getWidth() - H_PADDING * 2f;
+        if (centered) {
+            int tw = tr.getWidth(renderedText);
+            return Math.max(H_PADDING, H_PADDING + (availW - tw) / 2f);
+        }
+        return H_PADDING;
+    }
+
+    private int caretFromX(float localX) {
+        float rel = localX - textStartX(query);
+        int best = 0;
+        float bestD = Math.abs(rel);
+        for (int i = 0; i <= query.length(); i++) {
+            float w = tr.getWidth(query.substring(0, i));
+            float d = Math.abs(w - rel);
+            if (d < bestD) {
+                bestD = d;
+                best = i;
+            }
+        }
+        return best;
     }
 
     public void updateRenderForParent(DrawContext ctx, float relX, float relY, float width, float height,
@@ -281,7 +379,33 @@ public class SearchDrawableElement extends DrawableElement {
     public boolean handleClick(float parentW, float parentH, double mouseX, double mouseY) {
         boolean over = isMouseOver(parentW, parentH, mouseX, mouseY);
         setFocused(over);
+        if (over) {
+            float[] local = screenToLocal(parentW, parentH, (float) mouseX, (float) mouseY);
+            caretIndex = caretFromX(local[0]);
+            clearSelection();
+            selAnchor = caretIndex;
+        }
         return over;
+    }
+
+    public boolean handleDrag(float parentW, float parentH, double mouseX, double mouseY) {
+        if (!focused) return false;
+        float[] local = screenToLocal(parentW, parentH, (float) mouseX, (float) mouseY);
+        caretIndex = caretFromX(local[0]);
+        if (selAnchor >= 0) {
+            int a = Math.min(selAnchor, caretIndex);
+            int b = Math.max(selAnchor, caretIndex);
+            if (a == b) {
+                clearSelection();
+            } else {
+                selStart = a;
+                selEnd = b;
+            }
+        }
+        return true;
+    }
+
+    public void handleRelease() {
     }
 
     private static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {

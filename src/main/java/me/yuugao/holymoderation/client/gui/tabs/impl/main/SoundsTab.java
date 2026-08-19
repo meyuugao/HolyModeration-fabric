@@ -65,7 +65,7 @@ public class SoundsTab extends SettingsTab {
     }
 
     @Override
-    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
+    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
         playButtons.clear();
         if (!searchFieldIsEmpty()) return;
 
@@ -78,7 +78,7 @@ public class SoundsTab extends SettingsTab {
             if (row.element instanceof SearchDrawableElement && i >= 2) {
                 int soundIndex = i - 2;
                 if (soundIndex >= SOUNDS.length) continue;
-                float rowTop = contentStartY() + i * ROW_HEIGHT;
+                float rowTop = contentStartY() + i * ROW_HEIGHT - scroll;
                 float btnY = rowTop + (ROW_HEIGHT - 20f) / 2f;
 
                 render2DService.renderSoftRoundedRectOutline(ctx, btnX, btnY, btnW, 20f, z,

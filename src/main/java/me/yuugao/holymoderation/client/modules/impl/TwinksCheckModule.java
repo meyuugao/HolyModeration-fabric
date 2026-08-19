@@ -107,6 +107,16 @@ public class TwinksCheckModule implements CommandProvider {
         return s.replace("\\|", "|");
     }
 
+    private static String sanitizeReason(String reason) {
+        if (reason == null) return StringUtils.EMPTY;
+        String r = reason;
+        int q = r.indexOf("Вопросы?");
+        if (q >= 0) r = r.substring(0, q);
+        r = r.replace("\\|", "|").replace('|', ' ');
+        r = r.replaceAll("\\s+", " ").trim();
+        return r;
+    }
+
     @PostConstruct
     private void init() {
         try {
@@ -367,6 +377,10 @@ public class TwinksCheckModule implements CommandProvider {
         entry.isBanned = checkBanStatus(nickname, lines);
         entry.fullHistory = parsePunishments(lines, false);
         entry.recentHistory = parsePunishments(lines, true);
+        entry.isMuted = entry.fullHistory.stream().anyMatch(p -> p.type() == PunishmentType.MUTE && p.isActive());
+        if (!entry.isBanned) {
+            entry.isBanned = entry.fullHistory.stream().anyMatch(p -> p.type() == PunishmentType.BAN && p.isActive());
+        }
 
         return entry;
     }
@@ -444,7 +458,7 @@ public class TwinksCheckModule implements CommandProvider {
                 };
             }
             if (line.startsWith(HolyWorldPatterns.HISTORY_REASON_PREFIX)) {
-                reason = HolyWorldPatterns.extractHistoryReason(line);
+                reason = sanitizeReason(HolyWorldPatterns.extractHistoryReason(line));
             }
         }
 
@@ -517,6 +531,7 @@ public class TwinksCheckModule implements CommandProvider {
         public boolean isInBLOP;
         public boolean historyFound;
         public boolean isBanned;
+        public boolean isMuted;
         public List<PunishmentEntry> recentHistory = new ArrayList<>();
         public List<PunishmentEntry> fullHistory = new ArrayList<>();
 
@@ -573,6 +588,10 @@ public class TwinksCheckModule implements CommandProvider {
             entry.historyFound = historyFound;
             entry.recentHistory = new ArrayList<>(recentHistory);
             entry.fullHistory = new ArrayList<>(fullHistory);
+            entry.isMuted = entry.fullHistory.stream().anyMatch(p -> p.type() == PunishmentType.MUTE && p.isActive());
+            if (!entry.isBanned) {
+                entry.isBanned = entry.fullHistory.stream().anyMatch(p -> p.type() == PunishmentType.BAN && p.isActive());
+            }
             return entry;
         }
 
@@ -593,7 +612,7 @@ public class TwinksCheckModule implements CommandProvider {
             if (parts.length != 5) return null;
             return new PunishmentEntry(
                     PunishmentType.valueOf(parts[0]),
-                    unescapePipe(parts[1]),
+                    sanitizeReason(unescapePipe(parts[1])),
                     unescapePipe(parts[2]),
                     unescapePipe(parts[3]),
                     Boolean.parseBoolean(parts[4])
