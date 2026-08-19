@@ -29,6 +29,10 @@ public class ChatTab extends SettingsTab {
     private final TextButtonDrawableElement saveButton;
     private final List<float[]> rowHitboxes = new ArrayList<>();
     private int editIndex = -1;
+    private float textScroll = 0f;
+    private float textMax = 0f;
+    private float listTop = 0f;
+    private float listBottom = 0f;
 
     public ChatTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
                    MinecraftService minecraftService, Render2DService render2DService, DrawableElementFactory factory) {
@@ -87,7 +91,7 @@ public class ChatTab extends SettingsTab {
 
     @Override
     protected float extraHeight() {
-        return 30f + settingsConfig.getTextsList().size() * 24f + 12f;
+        return 0f;
     }
 
     @Override
@@ -95,7 +99,7 @@ public class ChatTab extends SettingsTab {
         rowHitboxes.clear();
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
-        float y = rowsEndY() - scroll + 8f;
+        float y = rowsEndY() + 8f;
         renderText(ctx, z, "Тексты для проверки", PAD, y, tr, palette.textSecondary);
         y += tr.fontHeight + 6f;
 
@@ -116,29 +120,38 @@ public class ChatTab extends SettingsTab {
         float gap = 4f;
         float bodyW = pW - PAD * 2f - editW - delW - gap * 2f;
 
+        listTop = y;
+        listBottom = pH - 6f;
+        float listH = listBottom - listTop;
+        float totalH = texts.size() * 24f;
+        textMax = Math.max(0f, totalH - listH);
+        textScroll = Math.max(0f, Math.min(textScroll, textMax));
+
         for (int i = 0; i < texts.size(); i++) {
+            float rowY = listTop + i * 24f - textScroll;
+            if (rowY + rowH < listTop || rowY > listBottom) continue;
+
             String full = texts.get(i);
             String shown = full.length() > 60 ? full.substring(0, 60) + "…" : full;
 
             boolean editing = editIndex == i;
 
-            render2DService.renderSoftRoundedRect(ctx.getMatrices(), PAD, y, bodyW, rowH, z,
+            render2DService.renderSoftRoundedRect(ctx.getMatrices(), PAD, rowY, bodyW, rowH, z,
                     6f, editing ? palette.primaryDark : palette.surface, 0);
-            renderText(ctx, z, (i + 1) + ". " + shown, PAD + 8f, y + 4f, tr, palette.textPrimary);
+            renderText(ctx, z, (i + 1) + ". " + shown, PAD + 8f, rowY + 4f, tr, palette.textPrimary);
 
             float editX = PAD + bodyW + gap;
             float delX = editX + editW + gap;
 
-            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), editX, y, editW, rowH, z,
+            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), editX, rowY, editW, rowH, z,
                     6f, palette.surface, palette.outline, 1f, 1f);
-            renderCenteredGlyph(ctx, z, "✎", editX, y, editW, rowH, tr, palette.textSecondary);
+            renderCenteredGlyph(ctx, z, "✎", editX, rowY, editW, rowH, tr, palette.textSecondary);
 
-            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), delX, y, delW, rowH, z,
+            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), delX, rowY, delW, rowH, z,
                     6f, palette.surface, palette.outline, 1f, 1f);
-            renderCenteredGlyph(ctx, z, "✕", delX, y, delW, rowH, tr, palette.textMuted);
+            renderCenteredGlyph(ctx, z, "✕", delX, rowY, delW, rowH, tr, palette.textMuted);
 
-            rowHitboxes.add(new float[]{PAD, y, bodyW, rowH, i, editX, y, editW, rowH, delX, y, delW, rowH});
-            y += 24f;
+            rowHitboxes.add(new float[]{PAD, rowY, bodyW, rowH, i, editX, rowY, editW, rowH, delX, rowY, delW, rowH});
         }
     }
 
@@ -167,8 +180,9 @@ public class ChatTab extends SettingsTab {
             addField.handleClick(pW, pH, mouseX, mouseY);
             return true;
         }
-        if (addButton.hitInParent(pW, pH, mouseX, mouseY)) return true;
-        if (editIndex >= 0 && saveButton.hitInParent(pW, pH, mouseX, mouseY)) return true;
+
+        TextButtonDrawableElement activeButton = editIndex >= 0 ? saveButton : addButton;
+        if (activeButton.hitInParent(pW, pH, mouseX, mouseY)) return true;
 
         for (float[] b : rowHitboxes) {
             int index = (int) b[4];
@@ -198,6 +212,15 @@ public class ChatTab extends SettingsTab {
             }
         }
         return false;
+    }
+
+    @Override
+    public void onMouseScroll(double dx, double dy, float mouseX, float mouseY) {
+        super.onMouseScroll(dx, dy, mouseX, mouseY);
+        if (mouseY >= listTop && mouseY <= listBottom && textMax > 0f) {
+            textScroll -= (float) (dy * 22f);
+            textScroll = Math.max(0f, Math.min(textScroll, textMax));
+        }
     }
 
     @Override
