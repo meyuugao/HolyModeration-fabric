@@ -1,6 +1,5 @@
 package me.yuugao.holymoderation.client.gui.tabs.widgets;
 
-import me.yuugao.holymoderation.client.gui.drawable.element.impl.ScreenCtx;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ColorPickerDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SearchDrawableElement;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
@@ -17,6 +16,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ColorFieldSet {
+    private static final float BAR_WIDTH = 12f;
+
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
     private final String title;
@@ -30,8 +31,6 @@ public class ColorFieldSet {
     private final SearchDrawableElement g;
     private final SearchDrawableElement b;
     private final SearchDrawableElement a;
-
-    private boolean syncing = false;
 
     public ColorFieldSet(DrawableElementFactory factory, MinecraftService minecraftService, Render2DService render2DService,
                          String title, Supplier<Color> getter, Consumer<Color> setter, Runnable commit) {
@@ -55,18 +54,23 @@ public class ColorFieldSet {
         b.setPlaceholder("B");
         a.setPlaceholder("A");
 
-        refresh();
+        refreshAll();
     }
 
-    public void render(DrawContext ctx, int z, float centerX, float topY, float pW, float pH, float radius, float fieldW, ThemePalette palette) {
+    public void render(DrawContext ctx, int z, float centerX, float topY, float pW, float pH,
+                       float squareSize, float fieldW, ThemePalette palette) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
-        renderTitle(ctx, z, centerX, topY, tr, palette);
+        float titleY = topY;
+        renderTextCentered(ctx, z, title, centerX, titleY, tr, palette.textPrimary);
 
-        float pickerCenterY = topY + tr.fontHeight + 6f + radius;
-        picker.updateRenderForParent(ctx, centerX / pW, pickerCenterY / pH, pW, pH, z, radius, palette.outline, 1.5f);
+        float blockW = squareSize + 8f + BAR_WIDTH;
+        float pickerX = centerX - blockW / 2f;
+        float pickerY = titleY + tr.fontHeight + 6f;
+        picker.updateRenderForParent(ctx, pickerX / pW, pickerY / pH, pW, pH, z,
+                squareSize, BAR_WIDTH, 8f, palette.outline, 1.5f);
 
-        float hexY = pickerCenterY + radius + 10f;
+        float hexY = pickerY + squareSize + 10f;
         float hexX = centerX - fieldW / 2f;
         hex.updateRenderForParent(ctx, hexX / pW, hexY / pH, fieldW, 18f, pW, pH, z,
                 8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
@@ -81,18 +85,26 @@ public class ColorFieldSet {
                     6f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
         }
 
-        renderStatus(ctx, z, centerX, chanY + 26f, tr, palette);
+        float statusY = chanY + 27f;
+        Color c = getter.get();
+        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        String status = "%s  RGB(%d,%d,%d)  HSB(%d°,%d%%,%d%%)".formatted(
+                hexText(c), c.getRed(), c.getGreen(), c.getBlue(),
+                Math.round(hsb[0] * 360f), Math.round(hsb[1] * 100f), Math.round(hsb[2] * 100f));
+        renderTextCentered(ctx, z, status, centerX, statusY, tr, palette.textMuted);
     }
 
     public boolean handleClick(float pW, float pH, double mouseX, double mouseY) {
-        if (picker.handleClick(new ScreenCtx(pW, pH, mouseX, mouseY))) {
+        if (picker.handleClick(pW, pH, mouseX, mouseY)) {
             unfocusFields();
             return true;
         }
 
         boolean over = false;
         for (SearchDrawableElement field : fields()) {
+            boolean was = field.isFocused();
             boolean o = field.isMouseOver(pW, pH, mouseX, mouseY);
+            if (o && !was) canonicalize(field);
             field.setFocused(o);
             if (o) over = true;
         }
@@ -134,14 +146,14 @@ public class ColorFieldSet {
 
     private void onPicker(Color color) {
         setter.accept(color);
-        refresh();
+        refreshAll();
     }
 
     private void onHex(String value) {
         Color color = parseHex(value);
         if (color == null) return;
         setter.accept(color);
-        refresh();
+        refreshExcept(hex);
         commit.run();
     }
 
@@ -158,43 +170,40 @@ public class ColorFieldSet {
                     channel == 2 ? v : cur.getBlue(),
                     channel == 3 ? v : cur.getAlpha());
             setter.accept(next);
-            refresh();
+            refreshExcept(channel == 0 ? r : channel == 1 ? g : channel == 2 ? b : a);
             commit.run();
         } catch (NumberFormatException ignored) {
         }
     }
 
-    private void refresh() {
-        if (syncing) return;
-        syncing = true;
-        try {
-            Color c = getter.get();
-            picker.setSelectedColor(c);
-            hex.setQuerySilent(hexText(c));
-            r.setQuerySilent(String.valueOf(c.getRed()));
-            g.setQuerySilent(String.valueOf(c.getGreen()));
-            b.setQuerySilent(String.valueOf(c.getBlue()));
-            a.setQuerySilent(String.valueOf(c.getAlpha()));
-        } finally {
-            syncing = false;
-        }
+    private void refreshAll() {
+        refreshExcept(null);
     }
 
-    private void renderTitle(DrawContext ctx, int z, float centerX, float topY, TextRenderer tr, ThemePalette palette) {
-        int w = tr.getWidth(title);
-        render2DService.renderText(tr, Text.literal(title).asOrderedText(),
-                (int) (centerX - w / 2f), (int) topY, z, palette.textPrimary.getRGB(), false, ctx);
-    }
-
-    private void renderStatus(DrawContext ctx, int z, float centerX, float y, TextRenderer tr, ThemePalette palette) {
+    private void refreshExcept(SearchDrawableElement skip) {
         Color c = getter.get();
-        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
-        String status = "%s  RGB(%d,%d,%d)  HSB(%d°,%d%%,%d%%)".formatted(
-                hexText(c), c.getRed(), c.getGreen(), c.getBlue(),
-                Math.round(hsb[0] * 360f), Math.round(hsb[1] * 100f), Math.round(hsb[2] * 100f));
-        int w = tr.getWidth(status);
-        render2DService.renderText(tr, Text.literal(status).asOrderedText(),
-                (int) (centerX - w / 2f), (int) y, z, palette.textMuted.getRGB(), false, ctx);
+        picker.setSelectedColor(c);
+        if (hex != skip) hex.setQuerySilent(hexText(c));
+        if (r != skip) r.setQuerySilent(String.valueOf(c.getRed()));
+        if (g != skip) g.setQuerySilent(String.valueOf(c.getGreen()));
+        if (b != skip) b.setQuerySilent(String.valueOf(c.getBlue()));
+        if (a != skip) a.setQuerySilent(String.valueOf(c.getAlpha()));
+    }
+
+    private void canonicalize(SearchDrawableElement field) {
+        Color c = getter.get();
+        if (field == hex) hex.setQuerySilent(hexText(c));
+        else if (field == r) r.setQuerySilent(String.valueOf(c.getRed()));
+        else if (field == g) g.setQuerySilent(String.valueOf(c.getGreen()));
+        else if (field == b) b.setQuerySilent(String.valueOf(c.getBlue()));
+        else if (field == a) a.setQuerySilent(String.valueOf(c.getAlpha()));
+    }
+
+    private void renderTextCentered(DrawContext ctx, int z, String text, float centerX, float y,
+                                    TextRenderer tr, Color color) {
+        int w = tr.getWidth(text);
+        render2DService.renderText(tr, Text.literal(text).asOrderedText(),
+                (int) (centerX - w / 2f), (int) y, z, color.getRGB(), false, ctx);
     }
 
     private static String hexText(Color c) {

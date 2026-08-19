@@ -65,6 +65,8 @@ public class Render2DService {
     private QuadPipeline roundedRectOutlinePipeline;
     private QuadPipeline softRoundedRectOutlinePipeline;
     private QuadPipeline rgbPalettePipeline;
+    private QuadPipeline svSquarePipeline;
+    private QuadPipeline hueBarPipeline;
 
     private ProjectionMatrix2 guiProjection;
     private final Map<String, GpuBuffer> uniformBuffers = new HashMap<>();
@@ -89,6 +91,8 @@ public class Render2DService {
             roundedRectOutlinePipeline = buildPipeline("pipeline/hm_rounded_rect_outline", "core/rounded_rect_outline", "core/rounded_rect_outline", "Radius", "Size", "Color", "OutlineColor", "OutlineWidth");
             softRoundedRectOutlinePipeline = buildPipeline("pipeline/hm_soft_rounded_rect_outline", "core/soft_rounded_rect_outline", "core/soft_rounded_rect_outline", "Radius", "Size", "Color", "OutlineColor", "OutlineWidth", "BlurWidth");
             rgbPalettePipeline = buildPipeline("pipeline/hm_rgb_palette", "core/rgb_palette", "core/rgb_palette", "Radius", "OutlineColor", "OutlineWidth", "Size");
+            svSquarePipeline = buildPipeline("pipeline/hm_sv_square", "core/sv_square", "core/sv_square", "Radius", "Size", "Hue", "OutlineColor", "OutlineWidth");
+            hueBarPipeline = buildPipeline("pipeline/hm_hue_bar", "core/hue_bar", "core/hue_bar", "Radius", "Size", "OutlineColor", "OutlineWidth");
 
             loggerService.info("Shaders has been initialized.");
         } catch (Exception e) {
@@ -99,6 +103,8 @@ public class Render2DService {
             roundedRectOutlinePipeline = null;
             softRoundedRectOutlinePipeline = null;
             rgbPalettePipeline = null;
+            svSquarePipeline = null;
+            hueBarPipeline = null;
         }
     }
 
@@ -177,6 +183,27 @@ public class Render2DService {
             writeFloat(encoder, "OutlineWidth", outlineWidth);
             writeVec2(encoder, "Size", size, size);
         }, x, y, size, size);
+    }
+
+    public void renderSVSquare(DrawContext ctx, float x, float y, float w, float h, int z, float radius, float hue, Color outlineColor, float outlineWidth) {
+        ensureShaders();
+        renderQuad(ctx, svSquarePipeline, encoder -> {
+            writeFloat(encoder, "Radius", radius);
+            writeVec2(encoder, "Size", w, h);
+            writeFloat(encoder, "Hue", hue);
+            writeVec4(encoder, "OutlineColor", outlineColor);
+            writeFloat(encoder, "OutlineWidth", outlineWidth);
+        }, x, y, w, h);
+    }
+
+    public void renderHueBar(DrawContext ctx, float x, float y, float w, float h, int z, float radius, Color outlineColor, float outlineWidth) {
+        ensureShaders();
+        renderQuad(ctx, hueBarPipeline, encoder -> {
+            writeFloat(encoder, "Radius", radius);
+            writeVec2(encoder, "Size", w, h);
+            writeVec4(encoder, "OutlineColor", outlineColor);
+            writeFloat(encoder, "OutlineWidth", outlineWidth);
+        }, x, y, w, h);
     }
 
     public void renderImage(DrawContext ctx, Identifier texture, float x, float y, float w, float h, int z) {

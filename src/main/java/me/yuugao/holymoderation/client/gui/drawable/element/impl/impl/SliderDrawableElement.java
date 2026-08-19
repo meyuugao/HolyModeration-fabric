@@ -62,7 +62,11 @@ public class SliderDrawableElement extends DrawableElement {
             return;
         }
         this.value = next;
-        knobAnim.setTarget(fraction());
+        if (dragging) {
+            knobAnim.reset(fraction());
+        } else {
+            knobAnim.setTarget(fraction());
+        }
         if (onChange != null) onChange.accept(this.value);
     }
 

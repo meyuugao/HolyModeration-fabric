@@ -95,8 +95,8 @@ public class ElementsTab extends Tab<MainGuiScreen> {
                 8f, palette.surface, palette.outline, palette.surfaceElevated,
                 palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
 
-        colorPicker.updateRenderForParent(ctx, 0.80f, 0.72f, pW, pH, z,
-                Math.min(pW, pH) * 0.09f, palette.outline, 1.5f);
+        colorPicker.updateRenderForParent(ctx, 0.76f, 0.60f, pW, pH, z,
+                Math.min(pW, pH) * 0.14f, 10f, 6f, palette.outline, 1.5f);
     }
 
     @Override
@@ -127,11 +127,13 @@ public class ElementsTab extends Tab<MainGuiScreen> {
     @Override
     public void onMouseDrag(float mouseX, float mouseY) {
         slider.handleDrag(parent.getWidth(), parent.getHeight(), mouseX, mouseY);
+        colorPicker.handleDrag(parent.getWidth(), parent.getHeight(), mouseX, mouseY);
     }
 
     @Override
     public void onMouseRelease() {
         slider.handleRelease();
+        colorPicker.handleRelease();
     }
 
     @Override

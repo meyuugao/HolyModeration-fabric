@@ -10,6 +10,9 @@ import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
+import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.ThemePalette;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 import me.yuugao.holymoderation.client.util.service.GuiManagerService;
 import me.yuugao.holymoderation.client.util.service.InputService;
@@ -21,10 +24,12 @@ import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.input.Mo
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.render.RenderEvent;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +52,8 @@ public class GuiManagerModule {
     private final InputService inputService;
     private final GuiManagerService guiManagerService;
     private final ConfigManagerService configManagerService;
+    private final Render2DService render2DService;
+    private final ThemeService themeService;
     private DrawableModule<?> dragging;
     private float dragOffsetX;
     private float dragOffsetY;
@@ -58,7 +65,11 @@ public class GuiManagerModule {
         DrawContext ctx = event.getDrawContext();
         if (currentScreen != null && !shouldGuiRender(currentScreen)) return;
         for (DrawableModule<?> drawableModule : guiManagerService.getDrawableModules()) {
+            DrawableElement elem = drawableModule.getDrawableElement();
             drawableModule.render(event.getDrawContext(), currentScreen instanceof MainGuiScreen ? RenderMode.CONFIG : RenderMode.LIVE);
+            if (currentScreen instanceof MainGuiScreen && elem instanceof StatefulDrawableElement<?> stateful) {
+                renderScaleBadge(event.getDrawContext(), stateful);
+            }
         }
         if (inputService.isMouseButtonHeld(0)) {
             if (dragging == null && inputService.wasMouseButtonPressed(0)) {
@@ -212,6 +223,33 @@ public class GuiManagerModule {
 
     private void drawAnchor(DrawContext ctx, float x, float y, float size, int color) {
         ctx.fill((int) x, (int) y, (int) (x + size), (int) (y + size), color);
+    }
+
+    private void renderScaleBadge(DrawContext ctx, StatefulDrawableElement<?> elem) {
+        String id = elem.getHudElementId();
+        float scale = configManagerService.getGuiConfig().getHudScale(id);
+        String text = "%.2f\u00d7".formatted(scale);
+
+        TextRenderer tr = minecraftService.getClient().textRenderer;
+        ThemePalette palette = themeService.getPalette();
+
+        float sw = ctx.getScaledWindowWidth();
+        float sh = ctx.getScaledWindowHeight();
+        float w = tr.getWidth(text) + 12f;
+        float h = tr.fontHeight + 6f;
+
+        float x = elem.getAbsoluteX(sw) + elem.getScaledWidth() + 6f;
+        float y = elem.getAbsoluteY(sh);
+        if (x + w > sw) x = elem.getAbsoluteX(sw) - w - 6f;
+        y = Math.max(4f, Math.min(y, sh - h - 4f));
+
+        render2DService.setupRender();
+        render2DService.renderSoftRoundedRectOutline(ctx, x, y, w, h, 3000,
+                h / 2f, palette.surfaceElevated, palette.outline, 1f, 2f);
+        render2DService.renderText(tr, Text.literal(text).asOrderedText(),
+                (int) (x + 6f), (int) (y + (h - tr.fontHeight) / 2f), 3000,
+                palette.textPrimary.getRGB(), false, ctx);
+        render2DService.endRender();
     }
 
     private void resetHoveredElementScale(int mouseX, int mouseY) {
