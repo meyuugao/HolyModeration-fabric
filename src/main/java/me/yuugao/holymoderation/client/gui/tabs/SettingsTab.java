@@ -59,13 +59,19 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         public final SearchDrawableElement valueField;
         public final Supplier<String> valueText;
         public final Runnable commit;
+        public final boolean centeredButton;
 
         public Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit) {
+            this(label, element, valueField, valueText, commit, false);
+        }
+
+        public Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit, boolean centeredButton) {
             this.label = label;
             this.element = element;
             this.valueField = valueField;
             this.valueText = valueText;
             this.commit = commit;
+            this.centeredButton = centeredButton;
         }
 
         List<SearchDrawableElement> fields() {
@@ -134,6 +140,14 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 me.yuugao.holymoderation.client.gui.drawable.render.PivotMode.LEFT_UP,
                 action, true, Text.literal(label));
         rows.add(new Row(label, button, null, null, null));
+        return button;
+    }
+
+    protected TextButtonDrawableElement addCenteredButton(String label, ButtonAction action) {
+        TextButtonDrawableElement button = factory.createTextButton(
+                me.yuugao.holymoderation.client.gui.drawable.render.PivotMode.LEFT_UP,
+                action, true, Text.literal(label));
+        rows.add(new Row(label, button, null, null, null, true));
         return button;
     }
 
@@ -220,9 +234,17 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         scissor(ctx, 0f, contentStartY() - 8f, pW, bottom);
 
         List<Row> visible = visibleRows();
+        List<Row> dropdownRows = new ArrayList<>();
         for (int i = 0; i < visible.size(); i++) {
             Row row = visible.get(i);
             float rowTop = contentStartY() + i * ROW_HEIGHT - scroll;
+
+            if (row.element instanceof DropdownDrawableElement) {
+                dropdownRows.add(row);
+                continue;
+            }
+
+            if (rowTop + ROW_HEIGHT < contentStartY() - 8f || rowTop > bottom) continue;
 
             renderLabel(ctx, z, row.label, PAD, rowTop + (ROW_HEIGHT - minecraftService.getClient().textRenderer.fontHeight) / 2f + 1f, palette);
 
@@ -244,13 +266,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 field.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
                         fieldW, FIELD_H, pW, pH, z,
                         8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
-            } else if (element instanceof DropdownDrawableElement dropdown) {
-                dropdown.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
-                        fieldW, FIELD_H, pW, pH, z,
-                        8f, palette.surface, palette.outline, palette.surfaceElevated,
-                        palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
             } else if (element instanceof TextButtonDrawableElement button) {
-                button.updateRenderForParent(ctx, (pW - PAD - 180f) / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                float bx = row.centeredButton ? (pW - 180f) / 2f : (pW - PAD - 180f);
+                button.updateRenderForParent(ctx, bx / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
                         180f, pW, pH, z, 9f, palette.primary, palette.primaryBright, 1.5f, 2f);
             }
         }
@@ -260,6 +278,18 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         }
 
         ctx.disableScissor();
+
+        for (int i = 0; i < dropdownRows.size(); i++) {
+            Row row = dropdownRows.get(i);
+            int rowIndex = visible.indexOf(row);
+            float rowTop = contentStartY() + rowIndex * ROW_HEIGHT - scroll;
+            if (rowTop + ROW_HEIGHT < contentStartY() - 8f || rowTop > bottom) continue;
+            DropdownDrawableElement dropdown = (DropdownDrawableElement) row.element;
+            dropdown.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                    fieldW, FIELD_H, pW, pH, z,
+                    8f, palette.surface, palette.outline, palette.surfaceElevated,
+                    palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
+        }
 
         if (searchQuery().isBlank()) {
             renderOverlay(ctx, palette, pW, pH, z);
@@ -315,6 +345,13 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 return true;
             }
             if (element instanceof DropdownDrawableElement dropdown && dropdown.handleClick(pW, pH, mouseX, mouseY)) {
+                if (dropdown.isExpanded()) {
+                    for (Row other : rows) {
+                        if (other.element instanceof DropdownDrawableElement d && d != dropdown) {
+                            d.setExpanded(false);
+                        }
+                    }
+                }
                 unfocusAllRows();
                 return true;
             }

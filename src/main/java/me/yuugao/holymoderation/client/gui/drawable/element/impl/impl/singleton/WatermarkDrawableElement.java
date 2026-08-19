@@ -17,6 +17,7 @@ import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 
+import java.awt.Color;
 import java.util.Random;
 
 @Singleton
@@ -93,11 +94,12 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
 
         render2DService.setupRender();
 
+        Color fill = themeService.fillColor(getHudElementId(), palette.background);
         render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(),
-                getHeight(), z, 8f, themeService.fillColor(getHudElementId(), palette.background), themeService.accentColor(getHudElementId(), palette.primary), 1.2f, 3);
+                getHeight(), z, 8f, fill, themeService.accentColor(getHudElementId(), palette.primary), 1.2f, 3);
 
         render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),
-                (int) (getHeight() / 2f - tr.fontHeight / 2f + 1f), z, 0xffffffff, false, ctx);
+                (int) (getHeight() / 2f - tr.fontHeight / 2f + 1f), z, themeService.readableOn(fill), false, ctx);
 
         render2DService.endRender();
     }

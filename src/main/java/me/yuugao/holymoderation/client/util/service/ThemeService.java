@@ -54,4 +54,9 @@ public class ThemeService {
         }
         return base;
     }
+
+    public int readableOn(Color background) {
+        double luminance = (0.299 * background.getRed() + 0.587 * background.getGreen() + 0.114 * background.getBlue()) / 255.0;
+        return luminance > 0.6 ? 0xFF181A20 : 0xFFFFFFFF;
+    }
 }

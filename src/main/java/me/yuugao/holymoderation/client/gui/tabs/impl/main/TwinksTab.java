@@ -18,8 +18,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 
-import org.joml.Matrix3x2fStack;
-
 import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -148,10 +146,10 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
         scanFiles();
 
-        runButton.updateRenderForParent(ctx, PAD / pW, 30f / pH, LEFT_W, pW, pH, z,
+        runButton.updateRenderForParent(ctx, PAD / pW, 38f / pH, LEFT_W, pW, pH, z,
                 8f, palette.primary, palette.primaryBright, 1.5f, 2f);
 
-        filter.updateRenderForParent(ctx, PAD / pW, 62f / pH, LEFT_W, 20f, pW, pH, z,
+        filter.updateRenderForParent(ctx, PAD / pW, 76f / pH, LEFT_W, 20f, pW, pH, z,
                 9f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
 
         renderFileList(ctx, z, palette, pW, pH);
@@ -164,15 +162,13 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         List<FileEntry> visible = visibleFiles();
 
         float rowH = 34f;
-        float listTop = 90f;
+        float listTop = 104f;
         float listBottom = pH - 10f;
         float listH = listBottom - listTop;
 
         float totalH = visible.size() * rowH;
         fileMax = Math.max(0f, totalH - listH);
         fileScroll = Math.max(0f, Math.min(fileScroll, fileMax));
-
-        scissor(ctx, PAD, listTop, PAD + LEFT_W, listBottom);
 
         for (int i = 0; i < visible.size(); i++) {
             FileEntry f = visible.get(i);
@@ -195,56 +191,53 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
             fileHitboxes.add(new float[]{PAD, y, LEFT_W, rowH - 4f, i});
         }
-
-        ctx.disableScissor();
     }
 
     private void renderContent(DrawContext ctx, int z, ThemePalette palette, float pW, float pH) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         float x = PAD + LEFT_W + 14f;
         float w = pW - x - PAD;
-        float top = 30f;
+        float top = 38f;
         float bottom = pH - 10f;
-
-        scissor(ctx, x, top, x + w, bottom);
 
         if (entries.isEmpty()) {
             render2DService.renderText(tr, Text.literal(selectedName.isBlank() ? "Выберите файл слева." : "Нет данных.").asOrderedText(),
                     (int) x, (int) (top + 6f), z, palette.textMuted.getRGB(), false, ctx);
-            ctx.disableScissor();
             contentMax = 0f;
             return;
         }
 
         float y = top + 4f - contentScroll;
         for (TwinksCheckModule.PlayerEntry e : entries) {
-            y = renderPlayerCard(ctx, z, palette, tr, x, w, y, e);
+            if (y > bottom) break;
+            y = renderPlayerCard(ctx, z, palette, tr, x, w, y, e, top, bottom);
             y += 10f;
         }
 
         contentMax = Math.max(0f, (y + contentScroll) - bottom);
         contentScroll = Math.max(0f, Math.min(contentScroll, contentMax));
-
-        ctx.disableScissor();
     }
 
     private float renderPlayerCard(DrawContext ctx, int z, ThemePalette palette, TextRenderer tr,
-                                   float x, float w, float y, TwinksCheckModule.PlayerEntry e) {
-        render2DService.renderSoftRoundedRect(ctx, x, y, w, 26f, z, 8f, palette.surface, 0);
+                                   float x, float w, float y, TwinksCheckModule.PlayerEntry e,
+                                   float clipTop, float clipBottom) {
+        if (y + 26f >= clipTop && y <= clipBottom) {
+            render2DService.renderSoftRoundedRect(ctx, x, y, w, 26f, z, 8f, palette.surface, 0);
+            render2DService.renderText(tr, Text.literal(e.nickname).asOrderedText(),
+                    (int) (x + 10f), (int) (y + 8f), z, palette.textPrimary.getRGB(), false, ctx);
 
-        render2DService.renderText(tr, Text.literal(e.nickname).asOrderedText(),
-                (int) (x + 10f), (int) (y + 8f), z, palette.textPrimary.getRGB(), false, ctx);
-
-        float chipX = x + w - 8f;
-        chipX = renderChip(ctx, z, tr, chipX, y, "ЧСП", e.isInBLOP, BLOP_COLOR, palette);
-        chipX = renderChip(ctx, z, tr, chipX, y, "Мут", e.isMuted, MUTE_COLOR, palette);
-        chipX = renderChip(ctx, z, tr, chipX, y, "Бан", e.isBanned, BAN_COLOR, palette);
+            float chipX = x + w - 8f;
+            chipX = renderChip(ctx, z, tr, chipX, y, "ЧСП", e.isInBLOP, BLOP_COLOR, palette);
+            chipX = renderChip(ctx, z, tr, chipX, y, "Мут", e.isMuted, MUTE_COLOR, palette);
+            chipX = renderChip(ctx, z, tr, chipX, y, "Бан", e.isBanned, BAN_COLOR, palette);
+        }
 
         y += 30f;
 
         List<TwinksCheckModule.PunishmentEntry> list = e.fullHistory.isEmpty() ? e.recentHistory : e.fullHistory;
         for (TwinksCheckModule.PunishmentEntry p : list) {
-            y = renderPunishment(ctx, z, palette, tr, x, w, y, p);
+            if (y > clipBottom) break;
+            y = renderPunishment(ctx, z, palette, tr, x, w, y, p, clipTop, clipBottom);
         }
 
         return y;
@@ -267,7 +260,8 @@ public class TwinksTab extends Tab<MainGuiScreen> {
     }
 
     private float renderPunishment(DrawContext ctx, int z, ThemePalette palette, TextRenderer tr,
-                                   float x, float w, float y, TwinksCheckModule.PunishmentEntry p) {
+                                   float x, float w, float y, TwinksCheckModule.PunishmentEntry p,
+                                   float clipTop, float clipBottom) {
         Color typeColor = switch (p.type()) {
             case BAN -> BAN_COLOR;
             case MUTE -> MUTE_COLOR;
@@ -280,55 +274,45 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         };
 
         float indX = x + 10f;
-        render2DService.renderSoftRoundedRect(ctx, indX, y + 6f, 7f, 7f, z, 3.5f, typeColor, 0);
+        if (y + 7f >= clipTop && y <= clipBottom) {
+            render2DService.renderSoftRoundedRect(ctx, indX, y + 7f, 7f, 7f, z, 3.5f, typeColor, 0);
 
-        float timeX = indX + 13f;
-        render2DService.renderText(tr, Text.literal(typeLabel).asOrderedText(),
-                (int) timeX, (int) (y + 4f), z, typeColor.getRGB(), false, ctx);
+            float timeX = indX + 14f;
+            render2DService.renderText(tr, Text.literal(typeLabel).asOrderedText(),
+                    (int) timeX, (int) (y + 5f), z, typeColor.getRGB(), false, ctx);
 
-        float metaX = timeX + tr.getWidth(typeLabel) + 8f;
-        render2DService.renderText(tr, Text.literal(p.timeAgo()).asOrderedText(),
-                (int) metaX, (int) (y + 4f), z, palette.textMuted.getRGB(), false, ctx);
+            float metaX = timeX + tr.getWidth(typeLabel) + 10f;
+            render2DService.renderText(tr, Text.literal(p.timeAgo()).asOrderedText(),
+                    (int) metaX, (int) (y + 5f), z, palette.textMuted.getRGB(), false, ctx);
 
-        String by = "выдал: " + p.by();
-        int byW = tr.getWidth(by);
-        float byX = x + w - byW - 10f;
-        render2DService.renderText(tr, Text.literal(by).asOrderedText(),
-                (int) byX, (int) (y + 4f), z, palette.textMuted.getRGB(), false, ctx);
+            String by = "выдал: " + p.by();
+            int byW = tr.getWidth(by);
+            float byX = x + w - byW - 10f;
+            render2DService.renderText(tr, Text.literal(by).asOrderedText(),
+                    (int) byX, (int) (y + 5f), z, palette.textMuted.getRGB(), false, ctx);
 
-        if (p.isActive()) {
-            String active = "активен";
-            int aw = tr.getWidth(active);
-            float ax = byX - aw - 10f;
-            render2DService.renderText(tr, Text.literal(active).asOrderedText(),
-                    (int) ax, (int) (y + 4f), z, typeColor.getRGB(), false, ctx);
+            if (p.isActive()) {
+                String active = "активен";
+                int aw = tr.getWidth(active);
+                float ax = byX - aw - 12f;
+                render2DService.renderText(tr, Text.literal(active).asOrderedText(),
+                        (int) ax, (int) (y + 5f), z, typeColor.getRGB(), false, ctx);
+            }
         }
 
-        y += tr.fontHeight + 3f;
+        y += tr.fontHeight + 5f;
 
         String reason = p.reason().isBlank() ? "—" : p.reason();
         int wrapWidth = Math.max(20, (int) (w - 26f));
         List<OrderedText> lines = tr.wrapLines(Text.literal(reason), wrapWidth);
         for (OrderedText line : lines) {
-            render2DService.renderText(tr, line, (int) timeX, (int) y, z, palette.textSecondary.getRGB(), false, ctx);
-            y += tr.fontHeight + 1f;
+            if (y >= clipTop - tr.fontHeight && y <= clipBottom) {
+                render2DService.renderText(tr, line, (int) (indX + 14f), (int) y, z, palette.textSecondary.getRGB(), false, ctx);
+            }
+            y += tr.fontHeight + 2f;
         }
 
-        return y + 4f;
-    }
-
-    private void scissor(DrawContext ctx, float x, float y, float x2, float y2) {
-        Matrix3x2fStack ms = ctx.getMatrices();
-        float[] a = transformPoint(ms, x, y);
-        float[] b = transformPoint(ms, x2, y2);
-        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
-    }
-
-    private static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {
-        return new float[]{
-                ms.m00 * x + ms.m10 * y + ms.m20,
-                ms.m01 * x + ms.m11 * y + ms.m21
-        };
+        return y + 6f;
     }
 
     @Override

@@ -108,9 +108,10 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
 
         render2DService.setupRender();
 
+        java.awt.Color fill = themeService.fillColor(getHudElementId(), palette.background);
         render2DService.renderSoftRoundedRectOutline(
                 ctx, 0f, 0f, getWidth(), getHeight(), z,
-                10f, themeService.fillColor(getHudElementId(), palette.background), themeService.accentColor(getHudElementId(), palette.primary), 1.5f, 3);
+                10f, fill, themeService.accentColor(getHudElementId(), palette.primary), 1.5f, 3);
 
         render2DService.renderText(
                 tr,
@@ -118,7 +119,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
                 (int) (getWidth() / 2f - tr.getWidth(display) / 2f),
                 (int) (getHeight() / 2f - tr.fontHeight / 2f + 1f),
                 z,
-                0xffffffff,
+                themeService.readableOn(fill),
                 false,
                 ctx
         );

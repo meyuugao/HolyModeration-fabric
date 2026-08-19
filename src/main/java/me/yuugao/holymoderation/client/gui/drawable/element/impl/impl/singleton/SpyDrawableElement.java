@@ -90,15 +90,17 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
 
         render2DService.setupRender();
 
+        java.awt.Color fill = themeService.fillColor(getHudElementId(), palette.background);
+        int textColor = themeService.readableOn(fill);
         float baseY = (getHeight() - textBlockHeight) / 2f + 0.5f;
         render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(), getHeight(), z,
-                10f, themeService.fillColor(getHudElementId(), palette.background), themeService.accentColor(getHudElementId(), palette.primary), 1.5f, 3);
+                10f, fill, themeService.accentColor(getHudElementId(), palette.primary), 1.5f, 3);
 
         render2DService.renderText(tr, display0, (int) (getWidth() / 2f - tr.getWidth(display0) / 2f),
-                (int) baseY, z, 0xffffffff, false, ctx);
+                (int) baseY, z, textColor, false, ctx);
         if (!display1.isEmpty()) {
             render2DService.renderText(tr, display1, (int) (getWidth() / 2f - tr.getWidth(display1) / 2f),
-                    (int) (baseY + tr.fontHeight + 4), z, 0xffffffff, false, ctx);
+                    (int) (baseY + tr.fontHeight + 4), z, textColor, false, ctx);
         }
 
         render2DService.endRender();

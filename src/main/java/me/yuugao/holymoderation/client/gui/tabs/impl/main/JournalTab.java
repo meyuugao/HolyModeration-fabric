@@ -55,10 +55,10 @@ public class JournalTab extends SettingsTab {
             configManagerService.saveConfig(apiConfig);
         });
 
-        addButton("Обновить данные", netModule::refresh);
+        addCenteredButton("Обновить данные", netModule::refresh);
 
         this.playerField = addTextField("Ник игрока", "Ник игрока", playerStateService.getCheckoutPlayer(), s -> {});
-        addButton("Подставить активную", this::fillPlayer);
+        addCenteredButton("Подставить активную", this::fillPlayer);
 
         this.reasonDropdown = addDropdown("Причина", REASONS, 0, s -> {});
         this.modeDropdown = addDropdown("Режим", MODES, defaultModeIndex(userStateService), s -> {});
@@ -66,7 +66,7 @@ public class JournalTab extends SettingsTab {
         this.numberField = addTextField("Номер режима", "", String.valueOf(defaultNumber(userStateService)), s -> {});
         this.numberField.setCentered(true);
 
-        addButton("Внести проверку", this::startCheckout);
+        addCenteredButton("Внести проверку", this::startCheckout);
     }
 
     private void fillPlayer() {
@@ -133,8 +133,12 @@ public class JournalTab extends SettingsTab {
         if (apiConfig.getApiToken().isBlank()) {
             return tr.fontHeight + 8f;
         }
-        int lines = 9 + (apiConfig.getJournalStats().isEmpty() ? 0 : 7);
-        return lines * (tr.fontHeight + 2f) + 40f;
+        float fh = tr.fontHeight;
+        float profileH = 7 * (fh + 3f) + 20f + fh + (fh + 6f);
+        float statsH = apiConfig.getJournalStats().isEmpty()
+                ? 0f
+                : 8 * (fh + 3f) + 20f + fh + (fh + 6f);
+        return profileH + statsH + 40f;
     }
 
     @Override
@@ -161,6 +165,10 @@ public class JournalTab extends SettingsTab {
         float cardW = pW - PAD * 2f;
         float pad = 10f;
 
+        String profDate = apiConfig.getLastJournalProfileUpdate() == null ? "—" : apiConfig.getLastJournalProfileUpdate();
+        renderText(ctx, z, "Профиль обновлён: " + profDate, cardX, y, tr, palette.textMuted);
+        y += tr.fontHeight + 6f;
+
         float profileH = 7 * (tr.fontHeight + 2f) + pad * 2f + tr.fontHeight;
         renderCard(ctx, z, palette, cardX, y, cardW, profileH);
         float ty = y + pad;
@@ -176,13 +184,13 @@ public class JournalTab extends SettingsTab {
         ty = renderKv(ctx, z, tr, cardX + pad, ty, palette, "Предупреждения", num(profile.get("warns")));
         renderKv(ctx, z, tr, cardX + pad, ty, palette, "Режим", str(profile.get("anarchyMode")));
 
-        y += profileH + 10f;
-
-        String profDate = apiConfig.getLastJournalProfileUpdate() == null ? "—" : apiConfig.getLastJournalProfileUpdate();
-        renderText(ctx, z, "Профиль обновлён: " + profDate, cardX + pad, y, tr, palette.textMuted);
-        y += tr.fontHeight + 4f;
+        y += profileH + 12f;
 
         if (!stats.isEmpty()) {
+            String statDate = apiConfig.getLastJournalStatsUpdate() == null ? "—" : apiConfig.getLastJournalStatsUpdate();
+            renderText(ctx, z, "Статистика обновлена: " + statDate, cardX, y, tr, palette.textMuted);
+            y += tr.fontHeight + 6f;
+
             float statsH = 8 * (tr.fontHeight + 2f) + pad * 2f + tr.fontHeight;
             renderCard(ctx, z, palette, cardX, y, cardW, statsH);
             float sy = y + pad;
@@ -196,20 +204,16 @@ public class JournalTab extends SettingsTab {
             sy = renderKv(ctx, z, tr, cardX + pad, sy, palette, "Гарантов всего", num(stats.get("gaurantsAll")));
             sy = renderKv(ctx, z, tr, cardX + pad, sy, palette, "Гарантов за месяц", num(stats.get("gaurantsMonth")));
             renderKv(ctx, z, tr, cardX + pad, sy, palette, "Гарантов за сегодня", num(stats.get("gaurantsToday")));
-
-            y += statsH + 10f;
-
-            String statDate = apiConfig.getLastJournalStatsUpdate() == null ? "—" : apiConfig.getLastJournalStatsUpdate();
-            renderText(ctx, z, "Статистика обновлена: " + statDate, cardX + pad, y, tr, palette.textMuted);
         }
     }
 
     private float renderKv(DrawContext ctx, int z, TextRenderer tr, float x, float y, ThemePalette palette,
                            String key, String value) {
-        renderText(ctx, z, key, x, y, tr, palette.textSecondary);
         int kw = tr.getWidth(key);
-        renderText(ctx, z, value, x + 110f, y, tr, palette.textPrimary);
-        return y + tr.fontHeight + 2f;
+        float valueX = x + Math.max(110f, kw + 24f);
+        renderText(ctx, z, key, x, y, tr, palette.textSecondary);
+        renderText(ctx, z, value, valueX, y, tr, palette.textPrimary);
+        return y + tr.fontHeight + 3f;
     }
 
     private void renderCard(DrawContext ctx, int z, ThemePalette palette, float x, float y, float w, float h) {
