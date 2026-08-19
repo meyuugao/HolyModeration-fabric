@@ -3,10 +3,12 @@ package me.yuugao.holymoderation.client.gui.screen.impl;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.AppearanceTab;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.AutomationTab;
-import me.yuugao.holymoderation.client.gui.tabs.impl.main.ElementsTab;
-import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
-import me.yuugao.holymoderation.client.gui.tabs.impl.main.ThemeTab;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.ChatTab;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.JournalTab;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.SoundsTab;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.TwinksTab;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
@@ -26,12 +28,12 @@ import lombok.Getter;
 
 @Singleton
 public class MainGuiScreen extends AnimatedGuiScreen {
-    private static final float TARGET_WIDTH = 470f;
-    private static final float TARGET_HEIGHT = 370f;
+    private static final float TARGET_WIDTH = 560f;
+    private static final float TARGET_HEIGHT = 470f;
     private static final float TAB_BAR_HEIGHT = 24f;
     private static final float TAB_PILL_HEIGHT = 16f;
-    private static final float TAB_PAD_X = 12f;
-    private static final float TAB_GAP = 6f;
+    private static final float TAB_PAD_X = 9f;
+    private static final float TAB_GAP = 4f;
 
     @Getter
     private final int renderPriority = 2000;
@@ -54,10 +56,12 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         this.themeService = themeService;
         this.minecraftService = minecraftService;
 
-        addTab("Основные", new GeneralTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
         addTab("Автоматика", new AutomationTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Тема", new ThemeTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Элементы", new ElementsTab(this, drawableElementFactory, themeService));
+        addTab("Оформление", new AppearanceTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Звуки", new SoundsTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Чат", new ChatTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Твинки", new TwinksTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Журнал", new JournalTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
     }
 
     @Override
@@ -191,5 +195,11 @@ public class MainGuiScreen extends AnimatedGuiScreen {
             cursorX += pillW + TAB_GAP;
         }
         return Math.max(0, tabOrder.size() - 1);
+    }
+
+    public void selectTab(String key) {
+        if (tabs.containsKey(key)) {
+            activeTabKey = key;
+        }
     }
 }

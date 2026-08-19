@@ -110,7 +110,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
 
         render2DService.renderSoftRoundedRectOutline(
                 ctx, 0f, 0f, getWidth(), getHeight(), z,
-                10f, palette.background, palette.primary, 1.5f, 3);
+                10f, themeService.fillColor(getHudElementId(), palette.background), palette.primary, 1.5f, 3);
 
         render2DService.renderText(
                 tr,

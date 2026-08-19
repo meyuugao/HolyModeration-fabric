@@ -24,6 +24,10 @@ public class GuiConfig extends Config {
     private final Map<String, Float> hudScales = new HashMap<>();
     @Expose
     private final Map<String, PivotMode> hudPivotModes = new HashMap<>();
+    @Expose
+    private final Map<String, Color> hudColors = new HashMap<>();
+    @Expose
+    private final Map<String, Boolean> hudColorEnabled = new HashMap<>();
 
     public GuiConfig() {
         super("gui");
@@ -43,5 +47,21 @@ public class GuiConfig extends Config {
 
     public void setPivotMode(String elementId, PivotMode pivotMode) {
         hudPivotModes.put(elementId, pivotMode);
+    }
+
+    public Color getHudColor(String elementId) {
+        return hudColors.getOrDefault(elementId, secondColor);
+    }
+
+    public void setHudColor(String elementId, Color color) {
+        hudColors.put(elementId, color);
+    }
+
+    public boolean isHudColorEnabled(String elementId) {
+        return hudColorEnabled.getOrDefault(elementId, false);
+    }
+
+    public void setHudColorEnabled(String elementId, boolean enabled) {
+        hudColorEnabled.put(elementId, enabled);
     }
 }

@@ -96,6 +96,10 @@ public class InputService {
         return pressedMouseButtons.contains(button);
     }
 
+    public boolean isKeyHeld(int keyCode) {
+        return pressedKeys.contains(keyCode);
+    }
+
     public boolean wasMouseButtonPressed(int button) {
         boolean wasPressed = mouseButtonStates.getOrDefault(button, false);
         if (wasPressed) mouseButtonStates.put(button, false);

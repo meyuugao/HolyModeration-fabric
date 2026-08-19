@@ -47,6 +47,10 @@ public class SettingsConfig extends Config {
     private boolean autoSpyTpEnabled = false;
     @Expose
     private float hudScale = 1f;
+    @Expose
+    private String customVk = "";
+    @Expose
+    private final java.util.Map<String, String> customSounds = new java.util.HashMap<>();
 
     public SettingsConfig() {
         super("settings");

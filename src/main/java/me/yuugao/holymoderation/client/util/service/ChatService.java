@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class ChatService {
-    public static final Text HM_TEXT_COMPONENT = Text.of("%s%s[%s%sHM%s%s]%s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
+    public static final Text HM_TEXT_COMPONENT = Text.of("%s%s[%s%sHM%s%s] %s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
     public static final char[] CHARS = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<',
             '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
     private static final Pattern COLOR_CODE = Pattern.compile("§[0-9a-zA-Z]");

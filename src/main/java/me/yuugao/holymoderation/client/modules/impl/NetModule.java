@@ -174,8 +174,14 @@ public class NetModule implements CommandProvider {
                         .formatted(RED, BOLD, apiConfig.getLastJournalStatsUpdate(), GREEN, BOLD)), texts.toString(), 10f);
     }
 
-    private void refresh() {
+    public void refresh() {
         ApiConfig apiConfig = configManagerService.getApiConfig();
+
+        if (apiConfig.getApiToken().isBlank()) {
+            modStateService.setOnlineMode(false);
+            notificationsService.warning("API-ключ журнала не установлен. Работа с журналом недоступна — установите ключ во вкладке «Журнал».", 10f);
+            return;
+        }
 
         netService.getLastUpdates().thenAccept(lastUpdates -> {
             if (lastUpdates == null) {
@@ -241,5 +247,14 @@ public class NetModule implements CommandProvider {
                         }));
             });
         });
+    }
+
+    public void applyApiToken(String token) {
+        ApiConfig apiConfig = configManagerService.getApiConfig();
+        apiConfig.setApiToken(token);
+        apiConfig.setJournalProfile(new java.util.HashMap<>());
+        apiConfig.setJournalStats(new java.util.HashMap<>());
+        configManagerService.saveConfig(apiConfig);
+        refresh();
     }
 }

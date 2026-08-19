@@ -4,6 +4,8 @@ import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SearchDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SliderDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ToggleDrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.ButtonAction;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.button.impl.TextButtonDrawableElement;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
@@ -18,15 +20,18 @@ import net.minecraft.text.Text;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class SettingsTab extends Tab<MainGuiScreen> {
-    protected static final float ROW_START_Y = 36f;
+    protected static final float SEARCH_Y = 29f;
+    protected static final float SEARCH_H = 20f;
+    protected static final float ROW_OFFSET = 32f;
     protected static final float ROW_HEIGHT = 28f;
     protected static final float PAD = 16f;
-    protected static final float LABEL_W = 132f;
-    protected static final float VAL_W = 58f;
+    protected static final float LABEL_W = 140f;
+    protected static final float VAL_W = 62f;
     protected static final float GAP = 10f;
     protected static final float FIELD_H = 20f;
     protected static final float TOGGLE_W = 42f;
@@ -40,13 +45,14 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     protected final DrawableElementFactory factory;
 
     protected final List<Row> rows = new ArrayList<>();
+    private final SearchDrawableElement searchField;
 
     protected static final class Row {
-        final String label;
-        final DrawableElement element;
-        final SearchDrawableElement valueField;
-        final Supplier<String> valueText;
-        final Runnable commit;
+        public final String label;
+        public final DrawableElement element;
+        public final SearchDrawableElement valueField;
+        public final Supplier<String> valueText;
+        public final Runnable commit;
 
         Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit) {
             this.label = label;
@@ -72,6 +78,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
         this.factory = factory;
+
+        this.searchField = factory.createSearch(null);
+        this.searchField.setPlaceholder("Поиск по настройкам...");
     }
 
     protected ToggleDrawableElement addToggle(String label, boolean initial, Consumer<Boolean> onChange) {
@@ -105,6 +114,22 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         return slider;
     }
 
+    protected SearchDrawableElement addTextField(String label, String placeholder, String initial, Consumer<String> onChange) {
+        SearchDrawableElement field = factory.createSearch(onChange);
+        field.setQuerySilent(initial);
+        if (placeholder != null) field.setPlaceholder(placeholder);
+        rows.add(new Row(label, field, null, null, null));
+        return field;
+    }
+
+    protected TextButtonDrawableElement addButton(String label, ButtonAction action) {
+        TextButtonDrawableElement button = factory.createTextButton(
+                me.yuugao.holymoderation.client.gui.drawable.render.PivotMode.LEFT_UP,
+                action, true, Text.literal(label));
+        rows.add(new Row(label, button, null, null, null));
+        return button;
+    }
+
     private void parseSliderValue(SliderDrawableElement slider, String s, Runnable commit) {
         String t = s.trim().replace(',', '.');
         if (t.isEmpty()) return;
@@ -116,12 +141,32 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         }
     }
 
-    protected SearchDrawableElement addTextField(String label, String placeholder, String initial, Consumer<String> onChange) {
-        SearchDrawableElement field = factory.createSearch(onChange);
-        field.setQuerySilent(initial);
-        if (placeholder != null) field.setPlaceholder(placeholder);
-        rows.add(new Row(label, field, null, null, null));
-        return field;
+    protected List<Row> visibleRows() {
+        String q = searchField.getQuery().trim().toLowerCase(Locale.ROOT);
+        if (q.isEmpty()) return rows;
+
+        List<Row> visible = new ArrayList<>();
+        for (Row row : rows) {
+            if (row.label.toLowerCase(Locale.ROOT).contains(q)) {
+                visible.add(row);
+            }
+        }
+        return visible;
+    }
+
+    protected float contentStartY() {
+        return SEARCH_Y + SEARCH_H + 14f;
+    }
+
+    protected String searchQuery() {
+        return searchField.getQuery();
+    }
+
+    protected float rowsEndY() {
+        return contentStartY() + visibleRows().size() * ROW_HEIGHT;
+    }
+
+    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
     }
 
     @Override
@@ -131,14 +176,18 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         float pH = parent.getHeight();
         int z = parent.getRenderPriority();
 
+        searchField.updateRenderForParent(ctx, PAD / pW, SEARCH_Y / pH, pW - PAD * 2f, SEARCH_H, pW, pH, z,
+                9f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
+
         float fieldX = PAD + LABEL_W + GAP;
         float fieldW = pW - PAD * 2f - LABEL_W - GAP;
         float valX = pW - PAD - VAL_W;
         float sliderW = valX - fieldX - GAP;
 
-        for (int i = 0; i < rows.size(); i++) {
-            Row row = rows.get(i);
-            float rowTop = ROW_START_Y + i * ROW_HEIGHT;
+        List<Row> visible = visibleRows();
+        for (int i = 0; i < visible.size(); i++) {
+            Row row = visible.get(i);
+            float rowTop = contentStartY() + i * ROW_HEIGHT;
 
             renderLabel(ctx, z, row.label, PAD, rowTop + (ROW_HEIGHT - minecraftService.getClient().textRenderer.fontHeight) / 2f + 1f, palette);
 
@@ -160,8 +209,13 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 field.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
                         fieldW, FIELD_H, pW, pH, z,
                         8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
+            } else if (element instanceof TextButtonDrawableElement button) {
+                button.updateRenderForParent(ctx, (pW - PAD - 180f) / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                        180f, pW, pH, z, 9f, palette.primary, palette.primaryBright, 1.5f, 2f);
             }
         }
+
+        renderExtra(ctx, palette, pW, pH, z);
     }
 
     protected void renderLabel(DrawContext ctx, int z, String text, float x, float y, ThemePalette palette) {
@@ -175,20 +229,33 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
 
-        for (int i = rows.size() - 1; i >= 0; i--) {
-            DrawableElement element = rows.get(i).element;
+        boolean overSearch = searchField.isMouseOver(pW, pH, mouseX, mouseY);
+        searchField.setFocused(overSearch);
+        if (overSearch) {
+            unfocusAllRows();
+            return true;
+        }
+
+        List<Row> visible = visibleRows();
+
+        for (int i = visible.size() - 1; i >= 0; i--) {
+            DrawableElement element = visible.get(i).element;
             if (element instanceof ToggleDrawableElement toggle && toggle.handleClick(pW, pH, mouseX, mouseY)) {
-                unfocusAll();
+                unfocusAllRows();
                 return true;
             }
             if (element instanceof SliderDrawableElement slider && slider.handleClick(pW, pH, mouseX, mouseY)) {
-                unfocusAll();
+                unfocusAllRows();
+                return true;
+            }
+            if (element instanceof TextButtonDrawableElement button && button.hitInParent(pW, pH, mouseX, mouseY)) {
+                unfocusAllRows();
                 return true;
             }
         }
 
         boolean overField = false;
-        for (Row row : rows) {
+        for (Row row : visible) {
             for (SearchDrawableElement field : row.fields()) {
                 boolean was = field.isFocused();
                 boolean over = field.isMouseOver(pW, pH, mouseX, mouseY);
@@ -206,7 +273,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     public void onMouseScroll(double dx, double dy, float mouseX, float mouseY) {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
-        for (Row row : rows) {
+        for (Row row : visibleRows()) {
             if (row.element instanceof SliderDrawableElement slider) {
                 slider.handleScroll(pW, pH, dy, mouseX, mouseY);
             }
@@ -217,7 +284,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     public void onMouseDrag(float mouseX, float mouseY) {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
-        for (Row row : rows) {
+        for (Row row : visibleRows()) {
             if (row.element instanceof SliderDrawableElement slider) {
                 slider.handleDrag(pW, pH, mouseX, mouseY);
             }
@@ -228,7 +295,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     public void onMouseMoved(float mouseX, float mouseY) {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
-        for (Row row : rows) {
+        for (Row row : visibleRows()) {
             if (row.element instanceof SliderDrawableElement slider) {
                 slider.handleDrag(pW, pH, mouseX, mouseY);
             }
@@ -247,7 +314,8 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
     @Override
     public boolean onCharTyped(char chr) {
-        for (Row row : rows) {
+        if (searchField.onCharTyped(chr)) return true;
+        for (Row row : visibleRows()) {
             for (SearchDrawableElement field : row.fields()) {
                 if (field.onCharTyped(chr)) return true;
             }
@@ -257,7 +325,8 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
     @Override
     public boolean onKeyPress(int key, int scancode, int action, int modifiers) {
-        for (Row row : rows) {
+        if (searchField.onKeyPress(key, scancode, action, modifiers)) return true;
+        for (Row row : visibleRows()) {
             for (SearchDrawableElement field : row.fields()) {
                 if (field.onKeyPress(key, scancode, action, modifiers)) return true;
             }
@@ -265,7 +334,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         return false;
     }
 
-    private void unfocusAll() {
+    private void unfocusAllRows() {
         for (Row row : rows) {
             for (SearchDrawableElement field : row.fields()) {
                 if (field.isFocused() && row.valueField == field && row.valueText != null) {
