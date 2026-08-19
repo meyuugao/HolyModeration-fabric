@@ -36,7 +36,7 @@ public class AppearanceTab extends SettingsTab {
         final String id;
         final ToggleDrawableElement toggle;
         float y;
-        float swatchX, swatchY;
+        float swatchX, swatchY, swatch2X, swatch2Y;
 
         ElementColorRow(String id, ToggleDrawableElement toggle) {
             this.id = id;
@@ -70,7 +70,7 @@ public class AppearanceTab extends SettingsTab {
                 color -> g.setSecondColor(color),
                 () -> configManagerService.saveConfig(g));
 
-        this.popup = new PopupColorEditor(factory, minecraftService, render2DService, g,
+        this.popup = new PopupColorEditor(factory, minecraftService, render2DService,
                 () -> configManagerService.saveConfig(g));
 
         for (String id : hudElementIds()) {
@@ -144,12 +144,19 @@ public class AppearanceTab extends SettingsTab {
                     palette.primary, palette.surface, palette.textPrimary, palette.outline, 1.5f, 2f);
 
             Color color = configManagerService.getGuiConfig().getHudColor(row.id);
+            Color color2 = configManagerService.getGuiConfig().getHudColor2(row.id);
             row.swatchX = fieldX + 6f;
             row.swatchY = listY + 3f;
+            row.swatch2X = fieldX + 6f + SWATCH_SIZE + 6f;
+            row.swatch2Y = listY + 3f;
             render2DService.renderSoftRoundedRect(ctx, row.swatchX, row.swatchY, SWATCH_SIZE, SWATCH_SIZE, z,
                     5f, color, 0);
             render2DService.renderSoftRoundedRectOutline(ctx, row.swatchX, row.swatchY, SWATCH_SIZE, SWATCH_SIZE, z,
                     5f, color, palette.outline, 1.2f, 1f);
+            render2DService.renderSoftRoundedRect(ctx, row.swatch2X, row.swatch2Y, SWATCH_SIZE, SWATCH_SIZE, z,
+                    5f, color2, 0);
+            render2DService.renderSoftRoundedRectOutline(ctx, row.swatch2X, row.swatch2Y, SWATCH_SIZE, SWATCH_SIZE, z,
+                    5f, color2, palette.outline, 1.2f, 1f);
 
             listY += 26f;
         }
@@ -179,10 +186,15 @@ public class AppearanceTab extends SettingsTab {
 
         for (ElementColorRow row : elementRows) {
             if (row.toggle.handleClick(pW, pH, mouseX, mouseY)) return true;
+            GuiConfig g = configManagerService.getGuiConfig();
             if (mouseX >= row.swatchX && mouseX <= row.swatchX + SWATCH_SIZE
                     && mouseY >= row.swatchY && mouseY <= row.swatchY + SWATCH_SIZE) {
-                GuiConfig g = configManagerService.getGuiConfig();
-                popup.open(row.id, "Цвет: " + row.id, g.getHudColor(row.id));
+                popup.open(row.id, "Цвет: " + row.id, g.getHudColor(row.id), c -> g.setHudColor(row.id, c));
+                return true;
+            }
+            if (mouseX >= row.swatch2X && mouseX <= row.swatch2X + SWATCH_SIZE
+                    && mouseY >= row.swatch2Y && mouseY <= row.swatch2Y + SWATCH_SIZE) {
+                popup.open(row.id, "Акцент: " + row.id, g.getHudColor2(row.id), c -> g.setHudColor2(row.id, c));
                 return true;
             }
         }

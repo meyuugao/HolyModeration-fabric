@@ -1,6 +1,7 @@
 package me.yuugao.holymoderation.client.gui.tabs;
 
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.DrawableElement;
+import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.DropdownDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SearchDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.SliderDrawableElement;
 import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ToggleDrawableElement;
@@ -59,7 +60,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         public final Supplier<String> valueText;
         public final Runnable commit;
 
-        Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit) {
+        public Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit) {
             this.label = label;
             this.element = element;
             this.valueField = valueField;
@@ -136,6 +137,16 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         return button;
     }
 
+    protected DropdownDrawableElement addDropdown(String label, List<String> options, int initialIndex, Consumer<String> onChange) {
+        DropdownDrawableElement dropdown = factory.createDropdown(onChange);
+        dropdown.setOptions(options);
+        if (initialIndex >= 0 && initialIndex < options.size()) {
+            dropdown.select(initialIndex);
+        }
+        rows.add(new Row(label, dropdown, null, null, null));
+        return dropdown;
+    }
+
     private void parseSliderValue(SliderDrawableElement slider, String s, Runnable commit) {
         String t = s.trim().replace(',', '.');
         if (t.isEmpty()) return;
@@ -177,7 +188,8 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     }
 
     protected float contentHeight() {
-        return rowsEndY() + extraHeight() + BOTTOM_PAD;
+        float extra = searchQuery().isBlank() ? extraHeight() : 0f;
+        return rowsEndY() + extra + BOTTOM_PAD;
     }
 
     protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
@@ -232,17 +244,26 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 field.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
                         fieldW, FIELD_H, pW, pH, z,
                         8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
+            } else if (element instanceof DropdownDrawableElement dropdown) {
+                dropdown.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                        fieldW, FIELD_H, pW, pH, z,
+                        8f, palette.surface, palette.outline, palette.surfaceElevated,
+                        palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
             } else if (element instanceof TextButtonDrawableElement button) {
                 button.updateRenderForParent(ctx, (pW - PAD - 180f) / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
                         180f, pW, pH, z, 9f, palette.primary, palette.primaryBright, 1.5f, 2f);
             }
         }
 
-        renderExtra(ctx, palette, pW, pH, z, scroll);
+        if (searchQuery().isBlank()) {
+            renderExtra(ctx, palette, pW, pH, z, scroll);
+        }
 
         ctx.disableScissor();
 
-        renderOverlay(ctx, palette, pW, pH, z);
+        if (searchQuery().isBlank()) {
+            renderOverlay(ctx, palette, pW, pH, z);
+        }
     }
 
     protected void scissor(DrawContext ctx, float x, float y, float x2, float y2) {
@@ -293,6 +314,10 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 unfocusAllRows();
                 return true;
             }
+            if (element instanceof DropdownDrawableElement dropdown && dropdown.handleClick(pW, pH, mouseX, mouseY)) {
+                unfocusAllRows();
+                return true;
+            }
         }
 
         boolean overField = false;
@@ -325,6 +350,11 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                     handled = true;
                 }
             }
+            if (row.element instanceof DropdownDrawableElement dropdown) {
+                if (dropdown.handleScroll(pW, pH, dy, mouseX, mouseY)) {
+                    handled = true;
+                }
+            }
         }
         if (!handled && maxScroll > 0f) {
             scroll -= (float) (dy * 22f);
@@ -353,6 +383,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         for (Row row : visibleRows()) {
             if (row.element instanceof SliderDrawableElement slider) {
                 slider.handleDrag(pW, pH, mouseX, mouseY);
+            }
+            if (row.element instanceof DropdownDrawableElement dropdown) {
+                dropdown.updateHovered(pW, pH, mouseX, mouseY);
             }
         }
     }

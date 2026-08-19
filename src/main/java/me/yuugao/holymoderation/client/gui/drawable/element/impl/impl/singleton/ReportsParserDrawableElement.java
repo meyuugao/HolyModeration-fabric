@@ -185,7 +185,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(), getHeight(), z,
-                getHeight() / 8f, themeService.fillColor(getHudElementId(), palette.background), palette.primary, 2f, 3f);
+                getHeight() / 8f, themeService.fillColor(getHudElementId(), palette.background), themeService.accentColor(getHudElementId(), palette.primary), 2f, 3f);
 
         clearButton.updateRenderForParent(ctx, CLEAR_ICON, 0.92f, 0.95f, 5f, 0.13f,
                 getWidth(), getHeight(), z, 6f,

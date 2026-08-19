@@ -608,7 +608,7 @@ public class TwinksCheckModule implements CommandProvider {
         }
 
         private PunishmentEntry parsePunishment(String data) {
-            String[] parts = data.split("\\|", 5);
+            String[] parts = data.split("(?<!\\\\)\\|", 5);
             if (parts.length != 5) return null;
             return new PunishmentEntry(
                     PunishmentType.valueOf(parts[0]),

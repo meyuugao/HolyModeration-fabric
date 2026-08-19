@@ -94,7 +94,7 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(),
-                getHeight(), z, 8f, themeService.fillColor(getHudElementId(), palette.background), palette.primary, 1.2f, 3);
+                getHeight(), z, 8f, themeService.fillColor(getHudElementId(), palette.background), themeService.accentColor(getHudElementId(), palette.primary), 1.2f, 3);
 
         render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),
                 (int) (getHeight() / 2f - tr.fontHeight / 2f + 1f), z, 0xffffffff, false, ctx);

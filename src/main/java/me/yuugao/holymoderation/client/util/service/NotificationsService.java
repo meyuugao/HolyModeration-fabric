@@ -53,7 +53,7 @@ public class NotificationsService {
         if (notificationPool.stream().noneMatch(n -> n.isPreview)) {
             Notification n = new Notification(NotificationType.SUCCESS,
                     "%s%sПример уведомления".formatted(Colors.GREEN, Colors.BOLD),
-                    "Скролл меняет размер уведомлений", Float.MAX_VALUE);
+                    "Скролл меняет размер виджетов", Float.MAX_VALUE);
             n.isPreview = true;
             notificationPool.add(n);
         }
