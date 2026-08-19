@@ -24,10 +24,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(onConstructor_ = @Inject)
 @Singleton
 public class ChatService {
-    public static final Text HM_TEXT_COMPONENT = Text.of("%s%s[%s%sHM%s%s]%s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
+    public static final Text HM_TEXT_COMPONENT = Text.of("%s%s[%s%sHM%s%s] %s".formatted(BLUE, BOLD, DARK_AQUA, BOLD, BLUE, BOLD, WHITE));
     public static final char[] CHARS = {'!', '/', '#', '$', '%', '&', '\'', '(', ')', '*', '+', '-', ',', '.', ':', ';', '<',
             '>', '=', '?', '@', '[', ']', '^', '`', '|', '~', '{', '}'};
-    private static final Pattern COLOR_CODE = Pattern.compile("§[0-9a-zA-Z]");
+    private static final Pattern COLOR_CODE = Pattern.compile("┬з[0-9a-zA-Z]");
     private final MinecraftService minecraftService;
     private final ConfigManagerService configManagerService;
     private final NotificationsService notificationsService;
@@ -105,15 +105,15 @@ public class ChatService {
                     try {
                         Runtime.getRuntime().exec(new String[]{"sh", "-c", "printf \"%s\" \"" + text.replace("\"", "\\\"") + "\" | wl-copy"}).waitFor();
                     } catch (Exception e3) {
-                        throw new UnsupportedOperationException("Ни одна утилита для буфера обмена не найдена (xclip для X11 или wl-copy для WayLand).");
+                        throw new UnsupportedOperationException("╨Э╨╕ ╨╛╨┤╨╜╨░ ╤Г╤В╨╕╨╗╨╕╤В╨░ ╨┤╨╗╤П ╨▒╤Г╤Д╨╡╤А╨░ ╨╛╨▒╨╝╨╡╨╜╨░ ╨╜╨╡ ╨╜╨░╨╣╨┤╨╡╨╜╨░ (xclip ╨┤╨╗╤П X11 ╨╕╨╗╨╕ wl-copy ╨┤╨╗╤П WayLand).");
                     }
                 }
             } else {
-                throw new UnsupportedOperationException("Неизвестная OS.");
+                throw new UnsupportedOperationException("╨Э╨╡╨╕╨╖╨▓╨╡╤Б╤В╨╜╨░╤П OS.");
             }
         } catch (Exception e) {
-            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%sИсключение".formatted(DARK_RED, BOLD),
-                    "Исключение в ChatService/copyToClipboard: %s%s".formatted(DARK_RED, e), 5f);
+            notificationsService.addNotification(NotificationType.EXCEPTION, "%s%s╨Ш╤Б╨║╨╗╤О╤З╨╡╨╜╨╕╨╡".formatted(DARK_RED, BOLD),
+                    "╨Ш╤Б╨║╨╗╤О╤З╨╡╨╜╨╕╨╡ ╨▓ ChatService/copyToClipboard: %s%s".formatted(DARK_RED, e), 5f);
             throw new RuntimeException(e);
         }
     }
@@ -122,7 +122,7 @@ public class ChatService {
         Text suggestComponent = Text.of(componentText);
         return suggestComponent.copy().setStyle(
                 suggestComponent.getStyle()
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of("Нажмите, чтобы подставить команду.")))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.of("╨Э╨░╨╢╨╝╨╕╤В╨╡, ╤З╤В╨╛╨▒╤Л ╨┐╨╛╨┤╤Б╤В╨░╨▓╨╕╤В╤М ╨║╨╛╨╝╨░╨╜╨┤╤Г.")))
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, stripColor(componentText))));
     }
 

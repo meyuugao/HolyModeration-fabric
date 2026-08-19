@@ -50,6 +50,7 @@ public class StateModule implements CommandProvider {
     private final NotificationsService notificationsService;
     private final SoundService soundService;
     private final SchedulerService schedulerService;
+    private final NetModule netModule;
 
     @Subscribe(priority = 101)
     public void onServerConnect(ServerConnectEvent event) {
@@ -197,9 +198,6 @@ public class StateModule implements CommandProvider {
     }
 
     private void cmdSetApiToken(CommandContext ctx) {
-        if (blocked()) return;
-        ApiConfig apiConfig = configManagerService.getApiConfig();
-        ClientPlayNetworkHandler clientPlayNetworkHandler = minecraftService.getClient().getNetworkHandler();
         if (!ctx.hasArg(0)) {
             notificationsService.error("Вы не ввели токен.");
             return;
@@ -209,14 +207,9 @@ public class StateModule implements CommandProvider {
             notificationsService.error("В API-ключе обнаружены пробелы, пожалуйста, указывайте его без пробелов.");
             return;
         }
-        apiConfig.setApiToken(apiToken);
-        configManagerService.saveConfig(apiConfig);
+        netModule.applyApiToken(apiToken);
         soundService.playSound("success.wav");
-
-        if (clientPlayNetworkHandler != null) {
-            clientPlayNetworkHandler.getConnection().disconnect(Text.of(
-                    "%s%sВы успешно установили API-ключ. Пожалуйста, перезайдите на сервер.".formatted(AQUA, BOLD)));
-        }
+        notificationsService.success("API-ключ установлен. Данные журнала обновляются.");
     }
 
     @Subscribe(priority = 99)
@@ -319,7 +312,7 @@ public class StateModule implements CommandProvider {
 
     private void tryFindUser() {
         schedulerService.schedule("", () -> {
-            if (userStateService.getUserLocation().isEmpty() && !userStateService.isInHub() && modStateService.isEnabled()) {
+            if (userStateService.getUserLocation().isEmpty() && !userStateService.isInHub()) {
                 chatService.chatMessage("/find %s".formatted(userStateService.getUserNickname()));
                 tryFindUser();
             }

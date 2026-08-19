@@ -124,7 +124,36 @@ public class TwinksCheckModule implements CommandProvider {
         registry.register(CommandSpec.of("twinks").group("Твинки").description("проверить твинки из checktwinks.txt").handler(this::cmdTwinks));
     }
 
+    public static Path getWorkDir() {
+        return WORK_DIR;
+    }
+
+    public static List<PlayerEntry> parseResultsFile(Path path) {
+        List<PlayerEntry> results = new ArrayList<>();
+        if (path == null || !Files.exists(path)) return results;
+        try {
+            List<String> lines = Files.readAllLines(path);
+            PlayerEntryParser parser = new PlayerEntryParser();
+            for (String line : lines) {
+                if (line.startsWith("PLAYER: ") && parser.nickname != null) {
+                    PlayerEntry entry = parser.build();
+                    if (entry != null) results.add(entry);
+                    parser.reset();
+                }
+                parser.processLine(line);
+            }
+            PlayerEntry entry = parser.build();
+            if (entry != null) results.add(entry);
+        } catch (IOException ignored) {
+        }
+        return results;
+    }
+
     private void cmdTwinks(CommandContext ctx) {
+        runCheck();
+    }
+
+    public void runCheck() {
         if (checkingTwinks) {
             notificationsService.error("Дождитесь окончания проверки твинков.");
             return;

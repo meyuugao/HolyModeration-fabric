@@ -30,7 +30,19 @@ public class SoundService {
 
         if (settingsConfig.isSoundsEnabled()) {
             try {
-                byte[] audioData = Files.readAllBytes(soundsDir.resolve(soundName));
+                String custom = settingsConfig.getCustomSounds().get(soundName);
+                Path path = (custom != null && !custom.isBlank())
+                        ? Paths.get(custom)
+                        : soundsDir.resolve(soundName);
+
+                if (!Files.exists(path)) {
+                    path = soundsDir.resolve(soundName);
+                }
+                if (!Files.exists(path)) {
+                    return;
+                }
+
+                byte[] audioData = Files.readAllBytes(path);
                 Clip clip = AudioSystem.getClip();
                 clip.open(AudioSystem.getAudioInputStream(new ByteArrayInputStream(audioData)));
                 if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {

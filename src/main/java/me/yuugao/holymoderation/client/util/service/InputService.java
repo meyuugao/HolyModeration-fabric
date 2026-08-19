@@ -25,6 +25,7 @@ public class InputService {
 
     private final Set<Integer> pressedKeys = new HashSet<>();
     private final Map<String, Boolean> keyStates = new HashMap<>();
+    private final Set<String> pendingEdges = new HashSet<>();
 
     private final Set<Integer> pressedMouseButtons = new HashSet<>();
     private final Map<Integer, Boolean> mouseButtonStates = new HashMap<>();
@@ -51,11 +52,10 @@ public class InputService {
 
             if (keyBind.getType() == KeyBindsConfig.KeyBindType.SINGLE_PRESS) {
                 if (combinationPressed && !keyStates.getOrDefault(actionName, false)) {
-                    keyStates.put(actionName, true);
+                    pendingEdges.add(actionName);
                 }
-            } else {
-                keyStates.put(actionName, combinationPressed);
             }
+            keyStates.put(actionName, combinationPressed);
         }
     }
 
@@ -76,9 +76,7 @@ public class InputService {
         if (keyBind == null) return false;
 
         if (keyBind.getType() == KeyBindsConfig.KeyBindType.SINGLE_PRESS) {
-            boolean pressed = keyStates.getOrDefault(actionName, false);
-            if (pressed) keyStates.put(actionName, false);
-            return pressed;
+            return pendingEdges.remove(actionName);
         } else if (keyBind.getType() == KeyBindsConfig.KeyBindType.HOLD) {
             return isKeyBindHeld(actionName);
         }
@@ -96,6 +94,10 @@ public class InputService {
 
     public boolean isMouseButtonHeld(int button) {
         return pressedMouseButtons.contains(button);
+    }
+
+    public boolean isKeyHeld(int keyCode) {
+        return pressedKeys.contains(keyCode);
     }
 
     public boolean wasMouseButtonPressed(int button) {

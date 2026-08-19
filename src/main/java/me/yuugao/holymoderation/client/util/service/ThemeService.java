@@ -38,4 +38,12 @@ public class ThemeService {
     public Color getSecondColor() {
         return configManagerService.getGuiConfig().getSecondColor();
     }
+
+    public Color fillColor(String hudElementId, Color base) {
+        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        if (guiConfig.isHudColorEnabled(hudElementId)) {
+            return guiConfig.getHudColor(hudElementId);
+        }
+        return base;
+    }
 }

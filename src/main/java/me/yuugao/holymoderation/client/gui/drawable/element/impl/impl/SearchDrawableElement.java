@@ -16,6 +16,9 @@ import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.Color;
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.util.function.Consumer;
 
 public class SearchDrawableElement extends DrawableElement {
@@ -33,6 +36,8 @@ public class SearchDrawableElement extends DrawableElement {
     private int caretIndex = 0;
     private boolean focused = false;
     private boolean centered = false;
+    private int selStart = -1;
+    private int selEnd = -1;
 
     private float radius;
     private float outlineWidth;
@@ -91,6 +96,9 @@ public class SearchDrawableElement extends DrawableElement {
 
     public boolean onCharTyped(char c) {
         if (!focused) return false;
+        if (hasSelection()) {
+            deleteSelection();
+        }
         query = query.substring(0, caretIndex) + c + query.substring(caretIndex);
         caretIndex++;
         if (onChange != null) onChange.accept(query);
@@ -101,30 +109,109 @@ public class SearchDrawableElement extends DrawableElement {
         if (!focused) return false;
         if (action == GLFW.GLFW_RELEASE) return true;
 
+        boolean ctrl = (modifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+        if (ctrl) {
+            switch (key) {
+                case GLFW.GLFW_KEY_C -> {
+                    copySelection();
+                    return true;
+                }
+                case GLFW.GLFW_KEY_V -> {
+                    pasteAtCaret();
+                    return true;
+                }
+                case GLFW.GLFW_KEY_A -> {
+                    selStart = 0;
+                    selEnd = query.length();
+                    caretIndex = query.length();
+                    return true;
+                }
+                default -> {
+                }
+            }
+        }
+
         switch (key) {
             case GLFW.GLFW_KEY_BACKSPACE -> {
-                if (caretIndex > 0) {
+                if (hasSelection()) {
+                    deleteSelection();
+                } else if (caretIndex > 0) {
                     query = query.substring(0, caretIndex - 1) + query.substring(caretIndex);
                     caretIndex--;
                     if (onChange != null) onChange.accept(query);
                 }
             }
             case GLFW.GLFW_KEY_DELETE -> {
-                if (caretIndex < query.length()) {
+                if (hasSelection()) {
+                    deleteSelection();
+                } else if (caretIndex < query.length()) {
                     query = query.substring(0, caretIndex) + query.substring(caretIndex + 1);
                     if (onChange != null) onChange.accept(query);
                 }
             }
-            case GLFW.GLFW_KEY_LEFT -> caretIndex = Math.max(0, caretIndex - 1);
-            case GLFW.GLFW_KEY_RIGHT -> caretIndex = Math.min(query.length(), caretIndex + 1);
-            case GLFW.GLFW_KEY_HOME -> caretIndex = 0;
-            case GLFW.GLFW_KEY_END -> caretIndex = query.length();
+            case GLFW.GLFW_KEY_LEFT -> {
+                clearSelection();
+                caretIndex = Math.max(0, caretIndex - 1);
+            }
+            case GLFW.GLFW_KEY_RIGHT -> {
+                clearSelection();
+                caretIndex = Math.min(query.length(), caretIndex + 1);
+            }
+            case GLFW.GLFW_KEY_HOME -> {
+                clearSelection();
+                caretIndex = 0;
+            }
+            case GLFW.GLFW_KEY_END -> {
+                clearSelection();
+                caretIndex = query.length();
+            }
             case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER, GLFW.GLFW_KEY_ESCAPE -> focused = false;
             default -> {
                 return false;
             }
         }
         return true;
+    }
+
+    private boolean hasSelection() {
+        return selStart >= 0 && selEnd > selStart;
+    }
+
+    private void clearSelection() {
+        selStart = -1;
+        selEnd = -1;
+    }
+
+    private void deleteSelection() {
+        if (!hasSelection()) return;
+        query = query.substring(0, selStart) + query.substring(selEnd);
+        caretIndex = selStart;
+        clearSelection();
+        if (onChange != null) onChange.accept(query);
+    }
+
+    private void copySelection() {
+        String text = hasSelection() ? query.substring(selStart, selEnd) : query;
+        if (text.isEmpty()) return;
+        try {
+            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void pasteAtCaret() {
+        try {
+            Object data = Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+            if (!(data instanceof String text) || text.isEmpty()) return;
+            if (hasSelection()) {
+                deleteSelection();
+            }
+            query = query.substring(0, caretIndex) + text + query.substring(caretIndex);
+            caretIndex += text.length();
+            clearSelection();
+            if (onChange != null) onChange.accept(query);
+        } catch (Exception ignored) {
+        }
     }
 
     @Override

@@ -21,14 +21,15 @@ public class PunishmentsService {
 
     public boolean punish(String punishCommand, String player, String reason, boolean addVk) {
         if (addVk) {
-            String vkUrl = configManagerService.getApiConfig().getVk();
+            String customVk = configManagerService.getSettingsConfig().getCustomVk();
+            String vkUrl = !customVk.isBlank() ? customVk : configManagerService.getApiConfig().getVk();
             String lastUpdateOfCachedVk = configManagerService.getApiConfig().getLastVkUpdate();
-            if (vkUrl.isEmpty() || lastUpdateOfCachedVk.isEmpty()) {
+            if (vkUrl.isEmpty()) {
                 notificationsService.addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(RED, BOLD),
                         "Не удалось наказать игрока, т.к. не установлена ссылка на вк. Добавьте ссылку на вк в бан самостоятельно, попробуйте перезайти на сервер или установите ссылку на вк самостоятельно (%s%s%s/hm setvk %s%svk%s)"
                                 .formatted(GOLD, GOLD, BOLD, GREEN, BOLD, WHITE), 5f);
                 return false;
-            } else if (!modStateService.isOnlineMode()) {
+            } else if (customVk.isBlank() && !modStateService.isOnlineMode()) {
                 notificationsService.addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(GOLD, BOLD),
                         "Не удалось получить ссылку на вк из журнала, поэтому была использована закэшированная ссылка на вк из конфига, последний раз обновлённая %s".formatted(lastUpdateOfCachedVk), 5f);
             }

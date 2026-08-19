@@ -38,6 +38,7 @@ public class ServicesModule implements DIModule {
         container.register(PunishmentsService.class, PunishmentsService.class);
         container.register(ScreenHandlerService.class, ScreenHandlerService.class);
         container.register(ThemeService.class, ThemeService.class);
+        container.register(HudOverrideService.class, HudOverrideService.class);
         container.register(ModuleManagerService.class, ModuleManagerService.class);
         container.register(CommandRegistry.class, CommandRegistry.class);
         container.register(AsyncExecutor.class, AsyncExecutor.class);

@@ -10,6 +10,7 @@ import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
+import me.yuugao.holymoderation.client.util.service.HudOverrideService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.ThemePalette;
 import me.yuugao.holymoderation.client.util.service.ThemeService;
@@ -30,6 +31,8 @@ import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.text.Text;
+
+import org.lwjgl.glfw.GLFW;
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -55,6 +58,8 @@ public class GuiManagerModule {
     private final ConfigManagerService configManagerService;
     private final Render2DService render2DService;
     private final ThemeService themeService;
+    private final MainGuiScreen mainGuiScreen;
+    private final HudOverrideService hudOverrideService;
     private DrawableModule<?> dragging;
     private float dragOffsetX;
     private float dragOffsetY;
@@ -100,6 +105,12 @@ public class GuiManagerModule {
                 float targetAnchorY = event.getMouseY() - dragOffsetY;
                 targetAnchorX = clampAnchor(targetAnchorX, sw, elem.getScaledWidth(), elem.getPivotMode().getXFactor());
                 targetAnchorY = clampAnchor(targetAnchorY, sh, elem.getScaledHeight(), elem.getPivotMode().getYFactor());
+
+                if (isShiftHeld()) {
+                    targetAnchorX = snapToCenter(targetAnchorX, sw);
+                    targetAnchorY = snapToCenter(targetAnchorY, sh);
+                }
+
                 elem.setRelativePos(targetAnchorX / sw, targetAnchorY / sh);
             }
         } else {
@@ -133,7 +144,7 @@ public class GuiManagerModule {
         if (!(mc.currentScreen instanceof MainGuiScreen)) return;
 
         if (event.getButton() == 1) {
-            resetHoveredElementScale(event.getX(), event.getY());
+            openOverrideEditor(event.getX(), event.getY());
             return;
         }
 
@@ -151,6 +162,36 @@ public class GuiManagerModule {
         for (DrawableModule<?> d : list) {
             if (d.getDrawableElement().handleClick(screen)) return;
         }
+    }
+
+    private void openOverrideEditor(int mouseX, int mouseY) {
+        MinecraftClient mc = minecraftService.getClient();
+        float windowW = mc.getWindow().getScaledWidth();
+        float windowH = mc.getWindow().getScaledHeight();
+
+        DrawableModule<?> hovered = findHoveredModule(windowW, windowH, mouseX, mouseY);
+        if (hovered == null) return;
+        DrawableElement hoveredElem = hovered.getDrawableElement();
+        if (!(hoveredElem instanceof StatefulDrawableElement<?> stateful)) return;
+
+        String id = stateful.getHudElementId();
+        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        if (!guiConfig.isHudColorEnabled(id)) {
+            guiConfig.setHudColor(id, guiConfig.getSecondColor());
+            guiConfig.setHudColorEnabled(id, true);
+            configManagerService.saveConfig(guiConfig);
+        }
+        hudOverrideService.setSelectedId(id);
+        mainGuiScreen.selectTab("Оформление");
+    }
+
+    private boolean isShiftHeld() {
+        return inputService.isKeyHeld(GLFW.GLFW_KEY_LEFT_SHIFT) || inputService.isKeyHeld(GLFW.GLFW_KEY_RIGHT_SHIFT);
+    }
+
+    private float snapToCenter(float anchor, float size) {
+        float center = size / 2f;
+        return Math.abs(anchor - center) <= 20f ? center : anchor;
     }
 
     private void scaleHoveredElement(double dy, int mouseX, int mouseY) {

@@ -44,11 +44,11 @@ public class AutomationTab extends SettingsTab {
             c.setAutoAnyDeskEnabled(v);
             configManagerService.saveConfig(c);
         });
-        addToggle("Авто-TP к чеку", c.isAutoCheckoutTpEnabled(), v -> {
+        addToggle("Авто-TP на logo", c.isAutoCheckoutTpEnabled(), v -> {
             c.setAutoCheckoutTpEnabled(v);
             configManagerService.saveConfig(c);
         });
-        addToggle("Авто-Spy TP", c.isAutoSpyTpEnabled(), v -> {
+        addToggle("Авто-ТП к слежке", c.isAutoSpyTpEnabled(), v -> {
             c.setAutoSpyTpEnabled(v);
             configManagerService.saveConfig(c);
         });
