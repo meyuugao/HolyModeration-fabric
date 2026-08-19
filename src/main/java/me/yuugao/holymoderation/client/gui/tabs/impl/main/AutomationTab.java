@@ -36,7 +36,7 @@ public class AutomationTab extends SettingsTab {
             c.setAutoGodEnabled(v);
             configManagerService.saveConfig(c);
         });
-        addToggle("DupeIP", c.isDupeIpEnabled(), v -> {
+        addToggle("Авто-DupeIp", c.isDupeIpEnabled(), v -> {
             c.setDupeIpEnabled(v);
             configManagerService.saveConfig(c);
         });
@@ -55,7 +55,7 @@ public class AutomationTab extends SettingsTab {
 
         addSlider("Задержка spy", 0f, 60f, 1f, c.getSpyDelay(),
                 v -> c.setSpyDelay(Math.round(v)),
-                () -> c.getSpyDelay() + " сек",
+                () -> String.valueOf(c.getSpyDelay()),
                 () -> configManagerService.saveConfig(c));
     }
 }

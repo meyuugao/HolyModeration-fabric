@@ -32,6 +32,7 @@ public class SearchDrawableElement extends DrawableElement {
     private String placeholder = "Поиск...";
     private int caretIndex = 0;
     private boolean focused = false;
+    private boolean centered = false;
 
     private float radius;
     private float outlineWidth;
@@ -69,6 +70,10 @@ public class SearchDrawableElement extends DrawableElement {
 
     public void setPlaceholder(String placeholder) {
         this.placeholder = placeholder == null ? "" : placeholder;
+    }
+
+    public void setCentered(boolean centered) {
+        this.centered = centered;
     }
 
     public void clear() {
@@ -135,19 +140,30 @@ public class SearchDrawableElement extends DrawableElement {
         float[] b = transformPoint(ms, getWidth() - H_PADDING + 2f, getHeight());
         ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
 
-        float textY = (getHeight() - tr.fontHeight) / 2f;
+        float textY = (getHeight() - tr.fontHeight) / 2f + 1f;
+        float availW = getWidth() - H_PADDING * 2f;
 
         if (query.isEmpty()) {
+            float px = H_PADDING;
+            if (centered) {
+                int tw = tr.getWidth(placeholder);
+                px = Math.max(H_PADDING, H_PADDING + (availW - tw) / 2f);
+            }
             render2DService.renderText(tr, Text.literal(placeholder).asOrderedText(),
-                    (int) H_PADDING, (int) textY, z, placeholderColor.getRGB(), false, ctx);
+                    (int) px, (int) textY, z, placeholderColor.getRGB(), false, ctx);
         } else {
+            int qw = tr.getWidth(query);
+            float qx = H_PADDING;
+            if (centered) {
+                qx = Math.max(H_PADDING, H_PADDING + (availW - qw) / 2f);
+            }
             render2DService.renderText(tr, Text.literal(query).asOrderedText(),
-                    (int) H_PADDING, (int) textY, z, textColor.getRGB(), false, ctx);
-        }
+                    (int) qx, (int) textY, z, textColor.getRGB(), false, ctx);
 
-        if (focused && (System.currentTimeMillis() / 500) % 2 == 0) {
-            int caretX = (int) (H_PADDING + tr.getWidth(query.substring(0, caretIndex)));
-            render2DService.renderRect(ms, caretX, textY, CARET_WIDTH, tr.fontHeight, z, caretColor);
+            if (focused && (System.currentTimeMillis() / 500) % 2 == 0) {
+                int caretX = (int) (qx + tr.getWidth(query.substring(0, caretIndex)));
+                render2DService.renderRect(ms, caretX, textY, CARET_WIDTH, tr.fontHeight, z, caretColor);
+            }
         }
 
         ctx.disableScissor();

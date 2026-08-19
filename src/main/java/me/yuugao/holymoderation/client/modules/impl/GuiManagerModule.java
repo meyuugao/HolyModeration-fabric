@@ -31,6 +31,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.text.Text;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -113,84 +114,6 @@ public class GuiManagerModule {
         }
     }
 
-    private float clampAnchor(float anchor, float screenSize, float scaledSize, float pivotFactor) {
-        float pivotOffset = scaledSize * pivotFactor;
-        float minAnchor = DRAG_MARGIN + pivotOffset;
-        float maxAnchor = screenSize - DRAG_MARGIN - scaledSize + pivotOffset;
-        if (maxAnchor < minAnchor) {
-            return screenSize / 2f;
-        }
-        return Math.max(minAnchor, Math.min(maxAnchor, anchor));
-    }
-
-    private void snapNotificationToCorner(NotificationsDrawableElement notif, double mouseX, double mouseY, float screenW, float screenH) {
-        PivotMode corner = nearestCorner(mouseX, mouseY, screenW, screenH);
-        notif.setPivotMode(corner);
-        notif.setRelativePos(corner.getXFactor(), corner.getYFactor());
-
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
-        guiConfig.setPivotMode(notif.getHudElementId(), corner);
-        configManagerService.saveConfig(guiConfig);
-    }
-
-    private PivotMode nearestCorner(double mouseX, double mouseY, float screenW, float screenH) {
-        double dLU = mouseX * mouseX + mouseY * mouseY;
-        double dRU = (screenW - mouseX) * (screenW - mouseX) + mouseY * mouseY;
-        double dLD = mouseX * mouseX + (screenH - mouseY) * (screenH - mouseY);
-        double dRD = (screenW - mouseX) * (screenW - mouseX) + (screenH - mouseY) * (screenH - mouseY);
-        double min = Math.min(Math.min(dLU, dRU), Math.min(dLD, dRD));
-        if (min == dLU) return PivotMode.LEFT_UP;
-        if (min == dRU) return PivotMode.RIGHT_UP;
-        if (min == dLD) return PivotMode.LEFT_DOWN;
-        return PivotMode.RIGHT_DOWN;
-    }
-
-    private void renderNotificationAnchors(DrawContext ctx, double mouseX, double mouseY) {
-        float sw = ctx.getScaledWindowWidth();
-        float sh = ctx.getScaledWindowHeight();
-        float size = 20f;
-        float margin = 8f;
-        PivotMode nearest = nearestCorner(mouseX, mouseY, sw, sh);
-        int highlight = 0xFFFFFFFF;
-        int normal = 0x80FFFFFF;
-
-        drawAnchor(ctx, margin, margin, size, nearest == PivotMode.LEFT_UP ? highlight : normal);
-        drawAnchor(ctx, sw - margin - size, margin, size, nearest == PivotMode.RIGHT_UP ? highlight : normal);
-        drawAnchor(ctx, margin, sh - margin - size, size, nearest == PivotMode.LEFT_DOWN ? highlight : normal);
-        drawAnchor(ctx, sw - margin - size, sh - margin - size, size, nearest == PivotMode.RIGHT_DOWN ? highlight : normal);
-    }
-
-    private void drawAnchor(DrawContext ctx, float x, float y, float size, int color) {
-        ctx.fill((int) x, (int) y, (int) (x + size), (int) (y + size), color);
-    }
-
-    private void renderScaleBadge(DrawContext ctx, StatefulDrawableElement<?> elem) {
-        String id = elem.getHudElementId();
-        float scale = configManagerService.getGuiConfig().getHudScale(id);
-        String text = "%.2f\u00d7".formatted(scale);
-
-        TextRenderer tr = minecraftService.getClient().textRenderer;
-        ThemePalette palette = themeService.getPalette();
-
-        float sw = ctx.getScaledWindowWidth();
-        float sh = ctx.getScaledWindowHeight();
-        float w = tr.getWidth(text) + 12f;
-        float h = tr.fontHeight + 6f;
-
-        float x = elem.getAbsoluteX(sw) + elem.getScaledWidth() + 6f;
-        float y = elem.getAbsoluteY(sh);
-        if (x + w > sw) x = elem.getAbsoluteX(sw) - w - 6f;
-        y = Math.max(4f, Math.min(y, sh - h - 4f));
-
-        render2DService.setupRender();
-        render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), x, y, w, h, 3000,
-                h / 2f, palette.surfaceElevated, palette.outline, 1f, 2f);
-        render2DService.renderText(tr, Text.literal(text).asOrderedText(),
-                (int) (x + 6f), (int) (y + (h - tr.fontHeight) / 2f), 3000,
-                palette.textPrimary.getRGB(), false, ctx);
-        render2DService.endRender();
-    }
-
     @Subscribe
     public void onMouseScroll(MouseScrollEvent event) {
         MinecraftClient mc = minecraftService.getClient();
@@ -250,6 +173,94 @@ public class GuiManagerModule {
             guiConfig.setHudScale(id, next);
             configManagerService.saveConfig(guiConfig);
         }
+    }
+
+    private float clampAnchor(float anchor, float screenSize, float scaledSize, float pivotFactor) {
+        float pivotOffset = scaledSize * pivotFactor;
+        float minAnchor = DRAG_MARGIN + pivotOffset;
+        float maxAnchor = screenSize - DRAG_MARGIN - scaledSize + pivotOffset;
+        if (maxAnchor < minAnchor) {
+            return screenSize / 2f;
+        }
+        return Math.max(minAnchor, Math.min(maxAnchor, anchor));
+    }
+
+    private void snapNotificationToCorner(NotificationsDrawableElement notif, double mouseX, double mouseY, float screenW, float screenH) {
+        PivotMode corner = nearestCorner(mouseX, mouseY, screenW, screenH);
+        notif.setPivotMode(corner);
+        notif.setRelativePos(corner.getXFactor(), corner.getYFactor());
+
+        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        guiConfig.setPivotMode(notif.getHudElementId(), corner);
+        configManagerService.saveConfig(guiConfig);
+    }
+
+    private PivotMode nearestCorner(double mouseX, double mouseY, float screenW, float screenH) {
+        double dLU = mouseX * mouseX + mouseY * mouseY;
+        double dRU = (screenW - mouseX) * (screenW - mouseX) + mouseY * mouseY;
+        double dLD = mouseX * mouseX + (screenH - mouseY) * (screenH - mouseY);
+        double dRD = (screenW - mouseX) * (screenW - mouseX) + (screenH - mouseY) * (screenH - mouseY);
+        double min = Math.min(Math.min(dLU, dRU), Math.min(dLD, dRD));
+        if (min == dLU) return PivotMode.LEFT_UP;
+        if (min == dRU) return PivotMode.RIGHT_UP;
+        if (min == dLD) return PivotMode.LEFT_DOWN;
+        return PivotMode.RIGHT_DOWN;
+    }
+
+    private void renderNotificationAnchors(DrawContext ctx, double mouseX, double mouseY) {
+        float sw = ctx.getScaledWindowWidth();
+        float sh = ctx.getScaledWindowHeight();
+        float size = 22f;
+        float margin = 8f;
+        PivotMode nearest = nearestCorner(mouseX, mouseY, sw, sh);
+        ThemePalette palette = themeService.getPalette();
+
+        render2DService.setupRender();
+        drawAnchor(ctx, margin, margin, size, nearest == PivotMode.LEFT_UP, palette);
+        drawAnchor(ctx, sw - margin - size, margin, size, nearest == PivotMode.RIGHT_UP, palette);
+        drawAnchor(ctx, margin, sh - margin - size, size, nearest == PivotMode.LEFT_DOWN, palette);
+        drawAnchor(ctx, sw - margin - size, sh - margin - size, size, nearest == PivotMode.RIGHT_DOWN, palette);
+        render2DService.endRender();
+    }
+
+    private void drawAnchor(DrawContext ctx, float x, float y, float size, boolean active, ThemePalette palette) {
+        Color fill = active ? palette.primary : palette.surface;
+        Color outline = active ? palette.primaryBright : palette.outline;
+        render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), x, y, size, size, 3001,
+                size / 3f, fill, outline, active ? 2f : 1f, 2f);
+    }
+
+    private void renderScaleBadge(DrawContext ctx, StatefulDrawableElement<?> elem) {
+        float scaledW = elem.getScaledWidth();
+        float scaledH = elem.getScaledHeight();
+        if (scaledW <= 0f || scaledH <= 0f) return;
+
+        String id = elem.getHudElementId();
+        float scale = configManagerService.getGuiConfig().getHudScale(id);
+        String text = "%.2f\u00d7".formatted(scale);
+
+        TextRenderer tr = minecraftService.getClient().textRenderer;
+        ThemePalette palette = themeService.getPalette();
+
+        float sw = ctx.getScaledWindowWidth();
+        float sh = ctx.getScaledWindowHeight();
+        float w = tr.getWidth(text) + 12f;
+        float h = tr.fontHeight + 5f;
+
+        float centerX = elem.getAbsoluteX(sw) + scaledW / 2f;
+        float x = centerX - w / 2f;
+        float y = elem.getAbsoluteY(sh) + scaledH + 4f;
+
+        x = Math.max(4f, Math.min(x, sw - w - 4f));
+        y = Math.max(4f, Math.min(y, sh - h - 4f));
+
+        render2DService.setupRender();
+        render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), x, y, w, h, 3000,
+                h / 2f, palette.surface, palette.outline, 1f, 2f);
+        render2DService.renderText(tr, Text.literal(text).asOrderedText(),
+                (int) (x + 6f), (int) (y + (h - tr.fontHeight) / 2f + 1f), 3000,
+                palette.textMuted.getRGB(), false, ctx);
+        render2DService.endRender();
     }
 
     private void resetHoveredElementScale(int mouseX, int mouseY) {

@@ -48,6 +48,12 @@ public class ColorFieldSet {
         this.b = factory.createSearch(s -> onChannel(s, 2));
         this.a = factory.createSearch(s -> onChannel(s, 3));
 
+        hex.setCentered(true);
+        r.setCentered(true);
+        g.setCentered(true);
+        b.setCentered(true);
+        a.setCentered(true);
+
         hex.setPlaceholder("RRGGBB");
         r.setPlaceholder("R");
         g.setPlaceholder("G");
@@ -84,14 +90,6 @@ public class ColorFieldSet {
             channels[i].updateRenderForParent(ctx, cx / pW, chanY / pH, cw, 18f, pW, pH, z,
                     6f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
         }
-
-        float statusY = chanY + 27f;
-        Color c = getter.get();
-        float[] hsb = Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
-        String status = "%s  RGB(%d,%d,%d)  HSB(%d°,%d%%,%d%%)".formatted(
-                hexText(c), c.getRed(), c.getGreen(), c.getBlue(),
-                Math.round(hsb[0] * 360f), Math.round(hsb[1] * 100f), Math.round(hsb[2] * 100f));
-        renderTextCentered(ctx, z, status, centerX, statusY, tr, palette.textMuted);
     }
 
     public boolean handleClick(float pW, float pH, double mouseX, double mouseY) {
