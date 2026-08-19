@@ -22,9 +22,16 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class SettingsTab extends Tab<MainGuiScreen> {
-    protected static final float ROW_START_Y = 34f;
-    protected static final float ROW_HEIGHT = 27f;
-    protected static final float LABEL_X = 16f;
+    protected static final float ROW_START_Y = 36f;
+    protected static final float ROW_HEIGHT = 28f;
+    protected static final float PAD = 16f;
+    protected static final float LABEL_W = 132f;
+    protected static final float VAL_W = 58f;
+    protected static final float GAP = 10f;
+    protected static final float FIELD_H = 20f;
+    protected static final float TOGGLE_W = 42f;
+    protected static final float TOGGLE_H = 22f;
+    protected static final float BADGE_H = 18f;
 
     protected final ThemeService themeService;
     protected final ConfigManagerService configManagerService;
@@ -90,25 +97,32 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         float pH = parent.getHeight();
         int z = parent.getRenderPriority();
 
+        float fieldX = PAD + LABEL_W + GAP;
+        float fieldW = pW - PAD * 2f - LABEL_W - GAP;
+        float valX = pW - PAD - VAL_W;
+        float sliderW = valX - fieldX - GAP;
+
         for (int i = 0; i < rows.size(); i++) {
             Row row = rows.get(i);
-            float y = ROW_START_Y + i * ROW_HEIGHT;
+            float rowTop = ROW_START_Y + i * ROW_HEIGHT;
 
-            renderLabel(ctx, z, row.label, LABEL_X, y + 9f, palette);
+            renderLabel(ctx, z, row.label, PAD, rowTop + (ROW_HEIGHT - minecraftService.getClient().textRenderer.fontHeight) / 2f, palette);
 
-            if (row.element instanceof ToggleDrawableElement toggle) {
-                toggle.updateRenderForParent(ctx, (pW - 62f) / pW, y / pH, 42f, 22f, pW, pH, z,
+            DrawableElement element = row.element;
+            if (element instanceof ToggleDrawableElement toggle) {
+                toggle.updateRenderForParent(ctx, (pW - PAD - TOGGLE_W) / pW, (rowTop + (ROW_HEIGHT - TOGGLE_H) / 2f) / pH,
+                        TOGGLE_W, TOGGLE_H, pW, pH, z,
                         palette.primary, palette.surface, palette.textPrimary, palette.outline, 1.5f, 2f);
-            } else if (row.element instanceof SliderDrawableElement slider) {
-                float w = pW * 0.34f;
-                slider.updateRenderForParent(ctx, (pW - w - 62f) / pW, y / pH, w, pW, pH, z,
-                        4f, palette.track, palette.primary, palette.primaryBright, palette.outline, 1.5f, 2f);
+            } else if (element instanceof SliderDrawableElement slider) {
+                slider.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                        sliderW, pW, pH, z,
+                        5f, palette.track, palette.primary, palette.primaryBright, palette.outline, 1.5f, 2f);
                 if (row.valueText != null) {
-                    renderValue(ctx, z, row.valueText.get(), pW - 58f, y + 9f, palette);
+                    renderBadge(ctx, z, row.valueText.get(), valX, rowTop + (ROW_HEIGHT - BADGE_H) / 2f, VAL_W, BADGE_H, palette);
                 }
-            } else if (row.element instanceof SearchDrawableElement field) {
-                float w = pW * 0.40f;
-                field.updateRenderForParent(ctx, (pW - w - 20f) / pW, y / pH, w, 20f, pW, pH, z,
+            } else if (element instanceof SearchDrawableElement field) {
+                field.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                        fieldW, FIELD_H, pW, pH, z,
                         8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
             }
         }
@@ -120,11 +134,13 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 (int) x, (int) y, z, palette.textSecondary.getRGB(), false, ctx);
     }
 
-    protected void renderValue(DrawContext ctx, int z, String text, float rightX, float y, ThemePalette palette) {
+    protected void renderBadge(DrawContext ctx, int z, String text, float x, float y, float w, float h, ThemePalette palette) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
-        int w = tr.getWidth(text);
+        render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), x, y, w, h, z,
+                h / 2f, palette.surface, palette.outline, 1f, 2f);
+        int tw = tr.getWidth(text);
         render2DService.renderText(tr, Text.literal(text).asOrderedText(),
-                (int) (rightX - w), (int) y, z, palette.textPrimary.getRGB(), false, ctx);
+                (int) (x + (w - tw) / 2f), (int) (y + (h - tr.fontHeight) / 2f), z, palette.textPrimary.getRGB(), false, ctx);
     }
 
     @Override
@@ -168,6 +184,17 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
     @Override
     public void onMouseDrag(float mouseX, float mouseY) {
+        float pW = parent.getWidth();
+        float pH = parent.getHeight();
+        for (Row row : rows) {
+            if (row.element instanceof SliderDrawableElement slider) {
+                slider.handleDrag(pW, pH, mouseX, mouseY);
+            }
+        }
+    }
+
+    @Override
+    public void onMouseMoved(float mouseX, float mouseY) {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
         for (Row row : rows) {

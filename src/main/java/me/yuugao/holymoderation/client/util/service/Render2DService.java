@@ -33,6 +33,8 @@ public class Render2DService {
     private ShaderProgram ROUNDED_RECT_OUTLINE;
     private ShaderProgram SOFT_ROUNDED_RECT_OUTLINE;
     private ShaderProgram RGB_PALETTE;
+    private ShaderProgram SV_SQUARE;
+    private ShaderProgram HUE_BAR;
 
     private VertexConsumerProvider.Immediate textBuffers;
 
@@ -44,6 +46,8 @@ public class Render2DService {
             ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
             SOFT_ROUNDED_RECT_OUTLINE = new ShaderProgram(rm, "soft_rounded_rect_outline", VertexFormats.POSITION_COLOR_TEXTURE);
             RGB_PALETTE = new ShaderProgram(rm, "rgb_palette", VertexFormats.POSITION_COLOR_TEXTURE);
+            SV_SQUARE = new ShaderProgram(rm, "sv_square", VertexFormats.POSITION_COLOR_TEXTURE);
+            HUE_BAR = new ShaderProgram(rm, "hue_bar", VertexFormats.POSITION_COLOR_TEXTURE);
 
             textBuffers = minecraftService.getClient().getBufferBuilders().getEntityVertexConsumers();
         } catch (IOException e) {
@@ -109,6 +113,25 @@ public class Render2DService {
         RGB_PALETTE.getUniformOrDefault("Size").set(size, size);
         RenderSystem.setShader(() -> RGB_PALETTE);
         renderQuad(matrices, x, y, size, size, z);
+    }
+
+    public void renderSVSquare(MatrixStack matrices, float x, float y, float w, float h, int z, float radius, float hue, Color outlineColor, float outlineWidth) {
+        SV_SQUARE.getUniformOrDefault("Radius").set(radius);
+        SV_SQUARE.getUniformOrDefault("Size").set(w, h);
+        SV_SQUARE.getUniformOrDefault("Hue").set(hue);
+        SV_SQUARE.getUniformOrDefault("OutlineColor").set(outlineColor.getRed() / 255f, outlineColor.getGreen() / 255f, outlineColor.getBlue() / 255f, outlineColor.getAlpha() / 255f);
+        SV_SQUARE.getUniformOrDefault("OutlineWidth").set(outlineWidth);
+        RenderSystem.setShader(() -> SV_SQUARE);
+        renderQuad(matrices, x, y, w, h, z);
+    }
+
+    public void renderHueBar(MatrixStack matrices, float x, float y, float w, float h, int z, float radius, Color outlineColor, float outlineWidth) {
+        HUE_BAR.getUniformOrDefault("Radius").set(radius);
+        HUE_BAR.getUniformOrDefault("Size").set(w, h);
+        HUE_BAR.getUniformOrDefault("OutlineColor").set(outlineColor.getRed() / 255f, outlineColor.getGreen() / 255f, outlineColor.getBlue() / 255f, outlineColor.getAlpha() / 255f);
+        HUE_BAR.getUniformOrDefault("OutlineWidth").set(outlineWidth);
+        RenderSystem.setShader(() -> HUE_BAR);
+        renderQuad(matrices, x, y, w, h, z);
     }
 
     public void renderImage(DrawContext ctx, Identifier texture, float x, float y, float w, float h, int z) {

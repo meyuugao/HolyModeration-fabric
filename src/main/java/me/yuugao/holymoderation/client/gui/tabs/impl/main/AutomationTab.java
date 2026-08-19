@@ -44,7 +44,7 @@ public class AutomationTab extends SettingsTab {
             c.setAutoAnyDeskEnabled(v);
             configManagerService.saveConfig(c);
         });
-        addToggle("Авто-TP на проверку", c.isAutoCheckoutTpEnabled(), v -> {
+        addToggle("Авто-TP к чеку", c.isAutoCheckoutTpEnabled(), v -> {
             c.setAutoCheckoutTpEnabled(v);
             configManagerService.saveConfig(c);
         });

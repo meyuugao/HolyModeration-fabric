@@ -47,11 +47,11 @@ public class ThemeTab extends Tab<MainGuiScreen> {
         float pH = parent.getHeight();
         int z = parent.getRenderPriority();
 
-        float radius = Math.min(pW, pH) * 0.11f;
-        float fieldW = 160f;
+        float square = Math.min(pW, pH) * 0.24f;
+        float fieldW = 170f;
 
-        mainSet.render(ctx, z, pW * 0.29f, 30f, pW, pH, radius, fieldW, palette);
-        secondSet.render(ctx, z, pW * 0.73f, 30f, pW, pH, radius, fieldW, palette);
+        mainSet.render(ctx, z, pW * 0.29f, 30f, pW, pH, square, fieldW, palette);
+        secondSet.render(ctx, z, pW * 0.71f, 30f, pW, pH, square, fieldW, palette);
     }
 
     @Override

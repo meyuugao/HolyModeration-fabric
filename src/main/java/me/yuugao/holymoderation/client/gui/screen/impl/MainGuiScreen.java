@@ -24,7 +24,12 @@ import lombok.Getter;
 
 @Singleton
 public class MainGuiScreen extends AnimatedGuiScreen {
-    private static final float TAB_BAR_HEIGHT = 22f;
+    private static final float TARGET_WIDTH = 470f;
+    private static final float TARGET_HEIGHT = 370f;
+    private static final float TAB_BAR_HEIGHT = 24f;
+    private static final float TAB_PILL_HEIGHT = 16f;
+    private static final float TAB_PAD_X = 12f;
+    private static final float TAB_GAP = 6f;
 
     @Getter
     private final int renderPriority = 2000;
@@ -33,6 +38,8 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     private final ConfigManagerService configManagerService;
     private final ThemeService themeService;
     private final MinecraftService minecraftService;
+
+    private float renderAnim = 1f;
 
     @Inject
     public MainGuiScreen(AnimationService animationService, Render2DService render2DService,
@@ -58,15 +65,12 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         MatrixStack ms = ctx.getMatrices();
         ThemePalette palette = themeService.getPalette();
 
-        float targetWidth = 435f;
-        float targetHeight = 300f;
-
-        this.width = targetWidth * getAnimValue();
-        this.height = targetHeight * getAnimValue();
+        this.width = TARGET_WIDTH;
+        this.height = TARGET_HEIGHT;
+        this.renderAnim = Math.max(getAnimValue(), 0.001f);
 
         float baseOutline = 1f;
-        float scaleFactor = Math.min(width, height) / 100f;
-        float scaledOutline = baseOutline * scaleFactor;
+        float scaledOutline = baseOutline * (Math.min(width, height) / 100f);
 
         this.screenScale = Math.min(ctx.getScaledWindowWidth() / 1280f, ctx.getScaledWindowHeight() / 720f);
 
@@ -77,24 +81,26 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         float windowWidth = ctx.getScaledWindowWidth();
         float windowHeight = ctx.getScaledWindowHeight();
 
-        this.x = (windowWidth - width * screenScale) / 2f;
-        this.y = (windowHeight - height * screenScale) / 2f;
+        this.x = (windowWidth - width * renderAnim * screenScale) / 2f;
+        this.y = (windowHeight - height * renderAnim * screenScale) / 2f;
 
-        ms.translate(x, y, 0);
+        ms.translate(x, y, 0f);
         ms.scale(screenScale, screenScale, 1f);
+        ms.translate(width / 2f, height / 2f, 0f);
+        ms.scale(renderAnim, renderAnim, 1f);
+        ms.translate(-width / 2f, -height / 2f, 0f);
 
         render2DService.renderSoftRoundedRectOutline(
-                ms, 0f, 0f,
-                Math.max(1, this.width), Math.max(1, this.height),
-                renderPriority, 10f,
+                ms, 0f, 0f, width, height,
+                renderPriority, 12f,
                 palette.background, palette.outline,
                 scaledOutline, 3
         );
 
         renderTabBar(ctx, ms, palette);
 
-        int relMouseX = (int) ((mouseX - x) / screenScale);
-        int relMouseY = (int) ((mouseY - y) / screenScale);
+        int relMouseX = (int) toLocalX(mouseX);
+        int relMouseY = (int) toLocalY(mouseY);
         renderTabs(ctx, relMouseX, relMouseY, tickDelta);
 
         ms.pop();
@@ -104,28 +110,53 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
     private void renderTabBar(DrawContext ctx, MatrixStack ms, ThemePalette palette) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
-        int tabCount = tabOrder.size();
-        float tabWidth = width / tabCount;
 
-        for (int i = 0; i < tabCount; i++) {
-            String key = tabOrder.get(i);
-            boolean active = key.equals(activeTabKey);
-
-            float tabX = i * tabWidth + 4f;
-            float tabY = 4f;
-            float tabW = tabWidth - 8f;
-            float tabH = TAB_BAR_HEIGHT - 8f;
-
-            render2DService.renderSoftRoundedRectOutline(ms, tabX, tabY, tabW, tabH, renderPriority,
-                    6f, active ? palette.primary : palette.surface, palette.outline, 1.5f, 2f);
-
-            String label = key;
-            int textWidth = tr.getWidth(label);
-            float textX = tabX + (tabW - textWidth) / 2f;
-            float textY = tabY + (tabH - tr.fontHeight) / 2f;
-            render2DService.renderText(tr, Text.literal(label).asOrderedText(),
-                    (int) textX, (int) textY, renderPriority, palette.textPrimary.getRGB(), false, ctx);
+        float total = 0f;
+        for (String key : tabOrder) {
+            total += tr.getWidth(key) + TAB_PAD_X * 2f;
         }
+        total += TAB_GAP * (tabOrder.size() - 1);
+
+        float cursorX = (width - total) / 2f;
+        for (String key : tabOrder) {
+            boolean active = key.equals(activeTabKey);
+            float pillW = tr.getWidth(key) + TAB_PAD_X * 2f;
+            float pillX = cursorX;
+            float pillY = (TAB_BAR_HEIGHT - TAB_PILL_HEIGHT) / 2f;
+
+            render2DService.renderSoftRoundedRect(ms, pillX, pillY, pillW, TAB_PILL_HEIGHT, renderPriority,
+                    TAB_PILL_HEIGHT / 2f, active ? palette.primary : palette.surface, 0);
+
+            if (active) {
+                render2DService.renderSoftRoundedRectOutline(ms, pillX, pillY, pillW, TAB_PILL_HEIGHT, renderPriority,
+                        TAB_PILL_HEIGHT / 2f, palette.primary, palette.primaryBright, 1.2f, 2f);
+            }
+
+            float textX = pillX + TAB_PAD_X;
+            float textY = pillY + (TAB_PILL_HEIGHT - tr.fontHeight) / 2f;
+            render2DService.renderText(tr, Text.literal(key).asOrderedText(),
+                    (int) textX, (int) textY, renderPriority,
+                    (active ? palette.onPrimary : palette.textSecondary).getRGB(), false, ctx);
+
+            cursorX += pillW + TAB_GAP;
+        }
+
+        render2DService.renderRoundedRect(ms, 16f, TAB_BAR_HEIGHT + 2f, width - 32f, 1.2f, renderPriority,
+                1f, palette.selection);
+    }
+
+    @Override
+    protected float toLocalX(double mouseX) {
+        if (screenScale <= 0f) return (float) mouseX;
+        float raw = (float) ((mouseX - x) / screenScale);
+        return width / 2f + (raw - width / 2f) / renderAnim;
+    }
+
+    @Override
+    protected float toLocalY(double mouseY) {
+        if (screenScale <= 0f) return (float) mouseY;
+        float raw = (float) ((mouseY - y) / screenScale);
+        return height / 2f + (raw - height / 2f) / renderAnim;
     }
 
     @Override
@@ -134,13 +165,29 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         float localY = toLocalY(mouseY);
         int tabCount = tabOrder.size();
 
-        if (button == 0 && tabCount > 0 && width > 0f
+        if (button == 0 && tabCount > 0
                 && localX >= 0f && localX <= width && localY >= 0f && localY <= TAB_BAR_HEIGHT) {
-            int index = (int) (localX / (width / tabCount));
-            index = Math.max(0, Math.min(tabCount - 1, index));
-            activeTabKey = tabOrder.get(index);
+            activeTabKey = tabOrder.get(tabIndexFor(localX));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private int tabIndexFor(float localX) {
+        TextRenderer tr = minecraftService.getClient().textRenderer;
+        float total = 0f;
+        for (String key : tabOrder) {
+            total += tr.getWidth(key) + TAB_PAD_X * 2f;
+        }
+        total += TAB_GAP * (tabOrder.size() - 1);
+
+        float cursorX = (width - total) / 2f;
+        for (int i = 0; i < tabOrder.size(); i++) {
+            String key = tabOrder.get(i);
+            float pillW = tr.getWidth(key) + TAB_PAD_X * 2f;
+            if (localX >= cursorX && localX <= cursorX + pillW) return i;
+            cursorX += pillW + TAB_GAP;
+        }
+        return Math.max(0, tabOrder.size() - 1);
     }
 }
