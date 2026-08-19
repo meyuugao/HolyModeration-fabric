@@ -1,33 +1,64 @@
 package me.yuugao.holymoderation.client.gui.tabs.impl.main;
 
-import me.yuugao.holymoderation.client.gui.drawable.element.impl.impl.ColorPickerDrawableElement;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
-import me.yuugao.holymoderation.client.gui.tabs.Tab;
+import me.yuugao.holymoderation.client.gui.tabs.SettingsTab;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
+import me.yuugao.holymoderation.client.util.service.MinecraftService;
+import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
+import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
+import me.yuugao.holymoderation.client.util.service.config.impl.SettingsConfig;
 
-import net.minecraft.client.gui.DrawContext;
+public class GeneralTab extends SettingsTab {
+    public GeneralTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
+                      MinecraftService minecraftService, Render2DService render2DService, DrawableElementFactory factory) {
+        super(parent, themeService, configManagerService, minecraftService, render2DService, factory);
 
-import java.awt.Color;
+        SettingsConfig c = configManagerService.getSettingsConfig();
+        GuiConfig g = configManagerService.getGuiConfig();
 
-public class GeneralTab extends Tab<MainGuiScreen> {
-    public GeneralTab(MainGuiScreen parent, DrawableElementFactory drawableElementFactory) {
-        super(parent);
+        addToggle("Звуки", c.isSoundsEnabled(), v -> {
+            c.setSoundsEnabled(v);
+            configManagerService.saveConfig(c);
+        });
 
-        drawableElements.put("ColorPicker", drawableElementFactory.createColorPicker());
+        addSlider("Громкость", 0f, 100f, 1f, c.getSoundsVolume(),
+                v -> c.setSoundsVolume(Math.round(v)),
+                () -> c.getSoundsVolume() + "%",
+                () -> configManagerService.saveConfig(c));
+
+        addSlider("Масштаб HUD", 0.5f, 2f, 0.05f, c.getHudScale(),
+                v -> c.setHudScale(round2(v)),
+                () -> String.format("%.2f", c.getHudScale()),
+                () -> configManagerService.saveConfig(c));
+
+        addToggle("Ватермарка", g.isWatermarkEnabled(), v -> {
+            g.setWatermarkEnabled(v);
+            configManagerService.saveConfig(g);
+        });
+
+        addToggle("Кнопка копирования", c.isCopyButtonEnabled(), v -> {
+            c.setCopyButtonEnabled(v);
+            configManagerService.saveConfig(c);
+        });
+
+        addTextField("Текст кнопки", "§ = &", toDisplay(c.getCopyButtonText()), s -> {
+            c.setCopyButtonText(toModel(s));
+            configManagerService.saveConfig(c);
+        });
+
+        addTextField("Маркер игрока", "§ = &", toDisplay(c.getPlayerMarker()), s -> {
+            c.setPlayerMarker(toModel(s));
+            configManagerService.saveConfig(c);
+        });
     }
 
-    @Override
-    public void onRender(DrawContext ctx, int relMouseX, int relMouseY, float tickDelta) {
-        ColorPickerDrawableElement colorPicker = (ColorPickerDrawableElement) drawableElements.get("ColorPicker");
+    private static String toDisplay(String value) {
+        return value == null ? "" : value.replace('§', '&');
+    }
 
-        float relRadius = 0.15f;
-        float animatedRelRadius = relRadius * parent.getAnimValue();
-
-        float pW = parent.getWidth();
-        float pH = parent.getHeight();
-
-        colorPicker.updateRenderForParent(ctx, 0.5f, 0.5f, pW, pH,
-                parent.getRenderPriority(), Math.min(pW, pH) * animatedRelRadius,
-                new Color(0x000000), 2f);
+    private static String toModel(String value) {
+        return value == null ? "" : value.replace('&', '§');
     }
 }
