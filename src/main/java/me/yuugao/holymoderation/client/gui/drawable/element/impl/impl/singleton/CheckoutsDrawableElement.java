@@ -9,8 +9,9 @@ import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.ThemePalette;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
-import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -25,6 +26,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
     private final ConfigManagerService configManagerService;
+    private final ThemeService themeService;
 
     private String lastPlayer = StringUtils.EMPTY;
 
@@ -34,6 +36,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
     @Inject
     public CheckoutsDrawableElement(AnimationService animationService, MinecraftService minecraftService,
                                     Render2DService render2DService, ConfigManagerService configManagerService,
+                                    ThemeService themeService,
                                     CheckoutsRenderStateProvider checkoutsRenderStateProvider) {
         super(animationService, PivotMode.DOWN, configManagerService, checkoutsRenderStateProvider);
 
@@ -43,6 +46,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
         this.configManagerService = configManagerService;
+        this.themeService = themeService;
     }
 
     @Override
@@ -91,7 +95,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
     private void renderContent(String display, DrawContext ctx, int z) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        ThemePalette palette = themeService.getPalette();
 
         float targetWidth = tr.getWidth(display) + 16f;
         float targetHeight = tr.fontHeight + 12f;
@@ -108,7 +112,7 @@ public class CheckoutsDrawableElement extends StatefulDrawableElement<CheckoutsR
 
         render2DService.renderSoftRoundedRectOutline(
                 ms, 0f, 0f, getWidth(), getHeight(), z,
-                10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
+                10f, palette.background, palette.primary, 1.5f, 3);
 
         render2DService.renderText(
                 tr,

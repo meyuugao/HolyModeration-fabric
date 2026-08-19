@@ -9,8 +9,9 @@ import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.ThemePalette;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
-import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -25,10 +26,12 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
     private final ConfigManagerService configManagerService;
+    private final ThemeService themeService;
 
     @Inject
     public SpyDrawableElement(AnimationService animationService, MinecraftService minecraftService, Render2DService render2DService,
-                              ConfigManagerService configManagerService, SpyRenderStateProvider spyRenderStateProvider) {
+                              ConfigManagerService configManagerService, ThemeService themeService,
+                              SpyRenderStateProvider spyRenderStateProvider) {
         super(animationService, PivotMode.UP, configManagerService, spyRenderStateProvider);
 
         this.currentWidth = animationService.createValue(1f);
@@ -37,6 +40,7 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
         this.configManagerService = configManagerService;
+        this.themeService = themeService;
     }
 
     @Override
@@ -54,7 +58,7 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
     protected void render(DrawContext ctx, int z, SpyRenderState renderState) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        ThemePalette palette = themeService.getPalette();
 
         String[] current = renderState.stringsToRender();
         float animTarget;
@@ -90,7 +94,7 @@ public class SpyDrawableElement extends StatefulDrawableElement<SpyRenderState> 
 
         float baseY = (getHeight() - textBlockHeight) / 2f + 0.5f;
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
-                10f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.5f, 3);
+                10f, palette.background, palette.primary, 1.5f, 3);
 
         render2DService.renderText(tr, display0, (int) (getWidth() / 2f - tr.getWidth(display0) / 2f),
                 (int) baseY, z, 0xffffffff, false, ctx);

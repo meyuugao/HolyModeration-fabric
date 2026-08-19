@@ -9,8 +9,9 @@ import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.ThemePalette;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
-import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import net.minecraft.client.font.TextRenderer;
@@ -32,12 +33,14 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
     private final UserStateService userStateService;
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
+    private final ThemeService themeService;
     private long lastTick;
 
     @Inject
     public WatermarkDrawableElement(AnimationService animationService, ConfigManagerService configManagerService,
                                     UserStateService userStateService, MinecraftService minecraftService,
-                                    Render2DService render2DService, WatermarkRenderStateProvider watermarkRenderStateProvider) {
+                                    Render2DService render2DService, ThemeService themeService,
+                                    WatermarkRenderStateProvider watermarkRenderStateProvider) {
         super(animationService, PivotMode.LEFT_UP, configManagerService, watermarkRenderStateProvider);
 
         this.lastTick = System.currentTimeMillis();
@@ -45,6 +48,7 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
         this.userStateService = userStateService;
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
+        this.themeService = themeService;
     }
 
     @Override
@@ -66,7 +70,7 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
     protected void render(DrawContext ctx, int z, WatermarkRenderState state) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         MatrixStack ms = ctx.getMatrices();
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        ThemePalette palette = themeService.getPalette();
 
         long now = System.currentTimeMillis();
         if (now - lastTick >= TICK_MS) {
@@ -92,7 +96,7 @@ public class WatermarkDrawableElement extends StatefulDrawableElement<WatermarkR
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(),
-                getHeight(), z, 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 1.2f, 3);
+                getHeight(), z, 8f, palette.background, palette.primary, 1.2f, 3);
 
         render2DService.renderText(tr, text, (int) (getWidth() / 2f - tr.getWidth(text) / 2f),
                 (int) (getHeight() / 2f - tr.fontHeight / 2f + 1f), z, 0xffffffff, false, ctx);
