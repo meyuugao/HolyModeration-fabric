@@ -9,10 +9,10 @@ import me.yuugao.holymoderation.client.util.service.Render2DService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.RotationAxis;
 
+import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.math.RotationAxis;
 import org.joml.Matrix4f;
 
 import java.awt.Color;
@@ -90,21 +90,15 @@ public class DropdownDrawableElement extends DrawableElement {
 
     @Override
     protected void render(DrawContext ctx, int z) {
-        MatrixStack ms = ctx.getMatrices();
-
-        render2DService.setupRender();
-
-        renderField(ctx, ms, z);
+        renderField(ctx, z);
 
         if (expanded) {
-            renderOptions(ctx, ms, z);
+            renderOptions(ctx, z);
         }
-
-        render2DService.endRender();
     }
 
-    private void renderField(DrawContext ctx, MatrixStack ms, int z) {
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, getWidth(), getHeight(), z,
+    private void renderField(DrawContext ctx, int z) {
+        render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), 0f, 0f, getWidth(), getHeight(), z,
                 radius, fieldColor, outlineColor, outlineWidth, blurWidth);
 
         String selected = getSelected();
@@ -112,25 +106,26 @@ public class DropdownDrawableElement extends DrawableElement {
 
         if (selected != null) {
             render2DService.renderText(tr, Text.literal(selected).asOrderedText(), (int) H_PADDING, (int) textY, z,
-                    textColor.getRGB(), false, ctx);
+                    readableOn(fieldColor), false, ctx);
         }
 
-        renderArrow(ms, z, expanded);
+        renderArrow(ctx, ctx.getMatrices(), z, expanded);
     }
 
-    private void renderArrow(MatrixStack ms, int z, boolean up) {
+    private void renderArrow(DrawContext ctx, MatrixStack ms, int z, boolean up) {
         float cx = getWidth() - H_PADDING - 5f;
         float cy = getHeight() / 2f;
         float spread = 4f;
         float drop = up ? -3f : 3f;
         float stroke = Math.max(1.5f, getHeight() * 0.08f);
 
-        renderArrowSegment(ms, z, cx - spread, cy - drop, cx, cy + drop, stroke);
-        renderArrowSegment(ms, z, cx, cy + drop, cx + spread, cy - drop, stroke);
+        Color arrow = new Color(readableOn(fieldColor), true);
+        renderArrowSegment(ctx, ms, z, cx - spread, cy - drop, cx, cy + drop, stroke, arrow);
+        renderArrowSegment(ctx, ms, z, cx, cy + drop, cx + spread, cy - drop, stroke, arrow);
     }
 
-    private void renderArrowSegment(MatrixStack ms, int z,
-                                    float x1, float y1, float x2, float y2, float stroke) {
+    private void renderArrowSegment(DrawContext ctx, MatrixStack ms, int z,
+                                    float x1, float y1, float x2, float y2, float stroke, Color color) {
         float dx = x2 - x1;
         float dy = y2 - y1;
         float len = (float) Math.sqrt(dx * dx + dy * dy);
@@ -139,22 +134,25 @@ public class DropdownDrawableElement extends DrawableElement {
         float midY = (y1 + y2) / 2f;
 
         ms.push();
-        rotateAbout(ms, angle, midX, midY);
-        render2DService.renderSoftRoundedRect(ms, midX - len / 2f, midY - stroke / 2f, len, stroke, z,
-                stroke / 2f, arrowColor, 0);
+        ms.translate(midX, midY, 0);
+        ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float) Math.toDegrees(angle)));
+        ms.translate(-midX, -midY, 0);
+        render2DService.renderSoftRoundedRect(ctx.getMatrices(), midX - len / 2f, midY - stroke / 2f, len, stroke, z,
+                stroke / 2f, color, 0);
         ms.pop();
     }
 
-    private void renderOptions(DrawContext ctx, MatrixStack ms, int z) {
+    private void renderOptions(DrawContext ctx, int z) {
         float listTop = getHeight() + GAP;
         float listHeight = Math.min(options.size(), MAX_VISIBLE) * OPTION_HEIGHT;
         maxScroll = Math.max(0f, options.size() * OPTION_HEIGHT - listHeight);
 
+        MatrixStack ms = ctx.getMatrices();
         float[] a = transformPoint(ms, 0f, listTop);
         float[] b = transformPoint(ms, getWidth(), listTop + listHeight);
-        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
+        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
 
-        render2DService.renderSoftRoundedRectOutline(ms, 0f, listTop, getWidth(), listHeight, z,
+        render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), 0f, listTop, getWidth(), listHeight, z,
                 radius, optionColor, outlineColor, outlineWidth, blurWidth);
 
         int firstIdx = Math.max(0, (int) Math.floor(scrollOffset / OPTION_HEIGHT));
@@ -164,15 +162,20 @@ public class DropdownDrawableElement extends DrawableElement {
             float y = listTop + i * OPTION_HEIGHT - scrollOffset;
 
             Color bg = i == selectedIndex ? optionSelectedColor : (i == hoveredIndex ? optionHoverColor : optionColor);
-            render2DService.renderSoftRoundedRect(ms, 1f, y + 1f, getWidth() - 2f, OPTION_HEIGHT - 2f, z,
+            render2DService.renderSoftRoundedRect(ctx.getMatrices(), 1f, y + 1f, getWidth() - 2f, OPTION_HEIGHT - 2f, z,
                     radius, bg, 0);
 
             float textY = y + (OPTION_HEIGHT - tr.fontHeight) / 2f;
             render2DService.renderText(tr, Text.literal(options.get(i)).asOrderedText(),
-                    (int) H_PADDING, (int) textY, z, textColor.getRGB(), false, ctx);
+                    (int) H_PADDING, (int) textY, z, readableOn(bg), false, ctx);
         }
 
-        ctx.disableScissor();
+        render2DService.popScissor();
+    }
+
+    private static int readableOn(Color background) {
+        double luminance = (0.299 * background.getRed() + 0.587 * background.getGreen() + 0.114 * background.getBlue()) / 255.0;
+        return luminance > 0.6 ? 0xFF181A20 : 0xFFFFFFFF;
     }
 
     public void updateRenderForParent(DrawContext ctx, float relX, float relY, float width, float height,
@@ -265,12 +268,6 @@ public class DropdownDrawableElement extends DrawableElement {
         scrollOffset -= (float) (dy * SCROLL_SPEED);
         scrollOffset = Math.max(0f, Math.min(scrollOffset, maxScroll));
         return true;
-    }
-
-    private void rotateAbout(MatrixStack ms, float angle, float cx, float cy) {
-        ms.translate(cx, cy, 0);
-        ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((float) Math.toDegrees(angle)));
-        ms.translate(-cx, -cy, 0);
     }
 
     private static float[] transformPoint(MatrixStack ms, float x, float y) {

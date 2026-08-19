@@ -54,12 +54,12 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         this.themeService = themeService;
         this.minecraftService = minecraftService;
 
-        addTab("Автоматика", new AutomationTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Оформление", new AppearanceTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Звуки", new SoundsTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Чат", new ChatTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Твинки", new TwinksTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Журнал", new JournalTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("╨Р╨▓╤В╨╛╨╝╨░╤В╨╕╨║╨░", new AutomationTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("╨Ю╤Д╨╛╤А╨╝╨╗╨╡╨╜╨╕╨╡", new AppearanceTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("╨Ч╨▓╤Г╨║╨╕", new SoundsTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("╨з╨░╤В", new ChatTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("╨в╨▓╨╕╨╜╨║╨╕", new TwinksTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("╨Ц╤Г╤А╨╜╨░╨╗", new JournalTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
     }
 
     @Override
@@ -68,6 +68,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         MatrixStack ms = ctx.getMatrices();
         ThemePalette palette = themeService.getPalette();
+        render2DService.resetScissor();
 
         this.width = TARGET_WIDTH;
         this.height = TARGET_HEIGHT;

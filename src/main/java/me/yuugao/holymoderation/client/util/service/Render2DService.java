@@ -37,6 +37,8 @@ public class Render2DService {
     private ShaderProgram HUE_BAR;
 
     private VertexConsumerProvider.Immediate textBuffers;
+    private final java.util.ArrayDeque<int[]> scissorStack = new java.util.ArrayDeque<>();
+    private int[] scissor = null;
 
     public void initializeShaders(ResourceManager rm) {
         try {
@@ -151,7 +153,9 @@ public class Render2DService {
         b.vertex(m, 0f, h, 0f).texture(0f, 1f).color(1f, 1f, 1f, 1f).next();
         b.vertex(m, w, h, 0f).texture(1f, 1f).color(1f, 1f, 1f, 1f).next();
         b.vertex(m, w, 0f, 0f).texture(1f, 0f).color(1f, 1f, 1f, 1f).next();
+        applyScissor();
         t.draw();
+        clearScissor();
 
         matrices.pop();
         GlStateManager._activeTexture(33984);
@@ -169,7 +173,9 @@ public class Render2DService {
         b.vertex(m, w, h, 0).color(1f, 1f, 1f, 1f).texture(w, h).next();
         b.vertex(m, w, 0, 0).color(1f, 1f, 1f, 1f).texture(w, 0).next();
         b.vertex(m, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0, 0).next();
+        applyScissor();
         t.draw();
+        clearScissor();
         matrices.pop();
     }
 
@@ -182,7 +188,9 @@ public class Render2DService {
         tr.draw(text, x, y, color, shadow, ms.peek().getPositionMatrix(), textBuffers,
                 TextRenderer.TextLayerType.NORMAL, 0, 15728880);
 
+        applyScissor();
         textBuffers.draw();
+        clearScissor();
 
         ms.pop();
     }
@@ -196,7 +204,9 @@ public class Render2DService {
         tr.draw(text, x, y, color, shadow, ms.peek().getPositionMatrix(), textBuffers,
                 TextRenderer.TextLayerType.NORMAL, 0, 15728880);
 
+        applyScissor();
         textBuffers.draw();
+        clearScissor();
 
         ms.pop();
     }
@@ -211,5 +221,45 @@ public class Render2DService {
         RenderSystem.disableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+    }
+
+    public void resetScissor() {
+        scissorStack.clear();
+        scissor = null;
+    }
+
+    public void pushScissor(float x0, float y0, float x1, float y1) {
+        int nx0 = Math.round(Math.min(x0, x1));
+        int ny0 = Math.round(Math.min(y0, y1));
+        int nx1 = Math.round(Math.max(x0, x1));
+        int ny1 = Math.round(Math.max(y0, y1));
+        if (scissor != null) {
+            nx0 = Math.max(nx0, scissor[0]);
+            ny0 = Math.max(ny0, scissor[1]);
+            nx1 = Math.min(nx1, scissor[2]);
+            ny1 = Math.min(ny1, scissor[3]);
+        }
+        scissorStack.push(scissor);
+        scissor = new int[]{nx0, ny0, nx1, ny1};
+    }
+
+    public void popScissor() {
+        scissor = scissorStack.isEmpty() ? null : scissorStack.pop();
+    }
+
+    private void applyScissor() {
+        if (scissor == null) return;
+        float sf = (float) minecraftService.getClient().getWindow().getScaleFactor();
+        int sx = Math.max(0, (int) Math.floor(scissor[0] * sf));
+        int sy = Math.max(0, (int) Math.floor(scissor[1] * sf));
+        int ex = Math.max(sx, (int) Math.ceil(scissor[2] * sf));
+        int ey = Math.max(sy, (int) Math.ceil(scissor[3] * sf));
+        RenderSystem.enableScissor(sx, sy, ex - sx, ey - sy);
+    }
+
+    private void clearScissor() {
+        if (scissor != null) {
+            RenderSystem.disableScissor();
+        }
     }
 }
