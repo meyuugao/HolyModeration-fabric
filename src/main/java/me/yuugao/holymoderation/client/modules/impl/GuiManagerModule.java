@@ -10,7 +10,6 @@ import me.yuugao.holymoderation.client.gui.drawable.render.PivotMode;
 import me.yuugao.holymoderation.client.gui.drawable.render.RenderMode;
 import me.yuugao.holymoderation.client.gui.screen.impl.MainGuiScreen;
 import me.yuugao.holymoderation.client.modules.DrawableModule;
-import me.yuugao.holymoderation.client.util.service.HudOverrideService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.ThemePalette;
 import me.yuugao.holymoderation.client.util.service.ThemeService;
@@ -58,8 +57,6 @@ public class GuiManagerModule {
     private final ConfigManagerService configManagerService;
     private final Render2DService render2DService;
     private final ThemeService themeService;
-    private final MainGuiScreen mainGuiScreen;
-    private final HudOverrideService hudOverrideService;
     private DrawableModule<?> dragging;
     private float dragOffsetX;
     private float dragOffsetY;
@@ -144,7 +141,7 @@ public class GuiManagerModule {
         if (!(mc.currentScreen instanceof MainGuiScreen)) return;
 
         if (event.getButton() == 1) {
-            openOverrideEditor(event.getX(), event.getY());
+            resetHoveredElementScale(event.getX(), event.getY());
             return;
         }
 
@@ -162,27 +159,6 @@ public class GuiManagerModule {
         for (DrawableModule<?> d : list) {
             if (d.getDrawableElement().handleClick(screen)) return;
         }
-    }
-
-    private void openOverrideEditor(int mouseX, int mouseY) {
-        MinecraftClient mc = minecraftService.getClient();
-        float windowW = mc.getWindow().getScaledWidth();
-        float windowH = mc.getWindow().getScaledHeight();
-
-        DrawableModule<?> hovered = findHoveredModule(windowW, windowH, mouseX, mouseY);
-        if (hovered == null) return;
-        DrawableElement hoveredElem = hovered.getDrawableElement();
-        if (!(hoveredElem instanceof StatefulDrawableElement<?> stateful)) return;
-
-        String id = stateful.getHudElementId();
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
-        if (!guiConfig.isHudColorEnabled(id)) {
-            guiConfig.setHudColor(id, guiConfig.getSecondColor());
-            guiConfig.setHudColorEnabled(id, true);
-            configManagerService.saveConfig(guiConfig);
-        }
-        hudOverrideService.setSelectedId(id);
-        mainGuiScreen.selectTab("Оформление");
     }
 
     private boolean isShiftHeld() {
@@ -290,7 +266,13 @@ public class GuiManagerModule {
 
         float centerX = elem.getAbsoluteX(sw) + scaledW / 2f;
         float x = centerX - w / 2f;
-        float y = elem.getAbsoluteY(sh) + scaledH + 4f;
+        float gap = 7f;
+        float y;
+        if (elem.getPivotMode().getYFactor() >= 0.5f) {
+            y = elem.getAbsoluteY(sh) + scaledH + gap;
+        } else {
+            y = elem.getAbsoluteY(sh) - h - gap;
+        }
 
         x = Math.max(4f, Math.min(x, sw - w - 4f));
         y = Math.max(4f, Math.min(y, sh - h - 4f));

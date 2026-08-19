@@ -9,8 +9,9 @@ import me.yuugao.holymoderation.client.util.service.Render2DService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
+
+import net.minecraft.client.util.math.MatrixStack;
 
 import java.awt.Color;
 
@@ -57,7 +58,7 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
 
         ms.push();
 
-        ms.translate(offsetX, offsetY, 0);
+        ms.translate(offsetX, offsetY, 0f);
         ms.scale(scale, scale, 1f);
 
         render2DService.renderSoftRoundedRectOutline(ms, 0f, 0f, idealWidth, idealHeight, z,
@@ -65,7 +66,7 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
 
         float textX = (idealWidth - textWidth) / 2f;
         float textY = (idealHeight - textHeight) / 2f;
-        render2DService.renderText(tr, text.asOrderedText(), (int) textX, (int) textY, z, 0xffffffff, false, ctx);
+        render2DService.renderText(tr, text.asOrderedText(), (int) textX, (int) textY, z, readableOn(buttonColor), false, ctx);
 
         ms.pop();
 
@@ -90,5 +91,10 @@ public class TextButtonDrawableElement extends ButtonDrawableElement {
         this.blurWidth = blurWidth;
 
         super.updateRenderForParent(ctx, parW, parH, z);
+    }
+
+    private static int readableOn(Color background) {
+        double luminance = (0.299 * background.getRed() + 0.587 * background.getGreen() + 0.114 * background.getBlue()) / 255.0;
+        return luminance > 0.6 ? 0xFF181A20 : 0xFFFFFFFF;
     }
 }

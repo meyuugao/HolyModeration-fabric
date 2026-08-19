@@ -15,7 +15,11 @@ import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+
+import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix4f;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -31,6 +35,11 @@ public class TwinksTab extends Tab<MainGuiScreen> {
     private static final float LEFT_W = 170f;
     private static final float PAD = 14f;
 
+    private static final Color BAN_COLOR = new Color(224, 96, 96);
+    private static final Color MUTE_COLOR = new Color(235, 190, 70);
+    private static final Color KICK_COLOR = new Color(230, 140, 70);
+    private static final Color BLOP_COLOR = new Color(92, 204, 130);
+
     private final ThemeService themeService;
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
@@ -44,8 +53,10 @@ public class TwinksTab extends Tab<MainGuiScreen> {
     private List<TwinksCheckModule.PlayerEntry> entries = new ArrayList<>();
     private String selectedName = "";
     private int selectedIndex = -1;
-    private float scroll = 0f;
-    private float maxScroll = 0f;
+    private float contentScroll = 0f;
+    private float contentMax = 0f;
+    private float fileScroll = 0f;
+    private float fileMax = 0f;
     private long lastDirScan = 0L;
 
     private record FileEntry(String name, String shortName, Path path, long modified) {
@@ -118,7 +129,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         selectedIndex = index;
         selectedName = f.name;
         entries = TwinksCheckModule.parseResultsFile(f.path);
-        scroll = 0f;
+        contentScroll = 0f;
     }
 
     @Override
@@ -130,14 +141,13 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
         scanFiles();
 
-        filter.updateRenderForParent(ctx, PAD / pW, 30f / pH, LEFT_W, 20f, pW, pH, z,
+        filter.updateRenderForParent(ctx, PAD / pW, 36f / pH, LEFT_W, 20f, pW, pH, z,
                 9f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
 
-        runButton.updateRenderForParent(ctx, PAD / pW, 56f / pH, LEFT_W, pW, pH, z,
+        runButton.updateRenderForParent(ctx, PAD / pW, 62f / pH, LEFT_W, pW, pH, z,
                 8f, palette.primary, palette.primaryBright, 1.5f, 2f);
 
         renderFileList(ctx, z, palette, pW, pH);
-
         renderContent(ctx, z, palette, pW, pH);
     }
 
@@ -146,22 +156,20 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         List<FileEntry> visible = visibleFiles();
 
-        float listTop = 84f;
-        float listH = pH - listTop - 8f;
-        int visibleCount = Math.max(0, (int) ((listH) / 24f));
+        float listTop = 90f;
+        float listBottom = pH - 10f;
+        float listH = listBottom - listTop;
 
-        float fileScroll = 0f;
         float totalH = visible.size() * 24f;
-        if (totalH > listH) {
-            fileScroll = Math.max(0f, Math.min(scroll * 0.2f, totalH - listH));
-        }
+        fileMax = Math.max(0f, totalH - listH);
+        fileScroll = Math.max(0f, Math.min(fileScroll, fileMax));
 
-        ctx.enableScissor((int) (parent.getX()), (int) (parent.getY() + listTop), (int) (parent.getX() + PAD + LEFT_W), (int) (parent.getY() + listTop + listH));
+        scissor(ctx, PAD, listTop, PAD + LEFT_W, listBottom);
 
         for (int i = 0; i < visible.size(); i++) {
             FileEntry f = visible.get(i);
             float y = listTop + i * 24f - fileScroll;
-            if (y + 20f < listTop || y > listTop + listH) continue;
+            if (y + 20f < listTop || y > listBottom) continue;
 
             boolean selected = i == selectedIndex;
             render2DService.renderSoftRoundedRect(ctx.getMatrices(), PAD, y, LEFT_W, 20f, z,
@@ -184,71 +192,118 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         TextRenderer tr = minecraftService.getClient().textRenderer;
         float x = PAD + LEFT_W + 14f;
         float w = pW - x - PAD;
-        float top = 30f;
-        float bottom = pH - 8f;
+        float top = 36f;
+        float bottom = pH - 10f;
 
-        ctx.enableScissor((int) (parent.getX() + x), (int) (parent.getY() + top), (int) (parent.getX() + x + w), (int) (parent.getY() + bottom));
+        scissor(ctx, x, top, x + w, bottom);
 
         if (entries.isEmpty()) {
             render2DService.renderText(tr, Text.literal(selectedName.isBlank() ? "Выберите файл слева." : "Нет данных.").asOrderedText(),
                     (int) x, (int) (top + 6f), z, palette.textMuted.getRGB(), false, ctx);
             ctx.disableScissor();
+            contentMax = 0f;
             return;
         }
 
-        float y = top - scroll;
+        float y = top + 4f - contentScroll;
         for (TwinksCheckModule.PlayerEntry e : entries) {
             y = renderPlayerCard(ctx, z, palette, tr, x, w, y, e);
             y += 10f;
         }
 
-        maxScroll = Math.max(0f, (y + scroll) - bottom);
+        contentMax = Math.max(0f, (y + contentScroll) - bottom);
+        contentScroll = Math.max(0f, Math.min(contentScroll, contentMax));
+
         ctx.disableScissor();
     }
 
     private float renderPlayerCard(DrawContext ctx, int z, ThemePalette palette, TextRenderer tr,
                                    float x, float w, float y, TwinksCheckModule.PlayerEntry e) {
-        Color ban = new Color(224, 96, 96);
-        Color mute = new Color(235, 190, 70);
-        Color kick = new Color(230, 140, 70);
-        Color ok = new Color(92, 204, 130);
-
         render2DService.renderSoftRoundedRect(ctx.getMatrices(), x, y, w, 24f, z, 8f, palette.surface, 0);
 
         render2DService.renderText(tr, Text.literal(e.nickname).asOrderedText(),
                 (int) (x + 10f), (int) (y + 7f), z, palette.textPrimary.getRGB(), false, ctx);
 
-        String badges = (e.isBanned ? "BANNED  " : "") + (e.isInBLOP ? "IN_BLOP  " : "") + (e.historyFound ? "" : "NO_HISTORY");
-        if (!badges.isBlank()) {
-            int bw = tr.getWidth(badges);
-            render2DService.renderText(tr, Text.literal(badges).asOrderedText(),
-                    (int) (x + w - bw - 10f), (int) (y + 7f), z,
-                    (e.isBanned ? ban : e.isInBLOP ? mute : palette.textMuted).getRGB(), false, ctx);
-        }
+        float chipX = x + w - 8f;
+        chipX = renderChip(ctx, z, tr, chipX, y, "ЧСП", e.isInBLOP, BLOP_COLOR, palette);
+        chipX = renderChip(ctx, z, tr, chipX, y, "Мут", e.isMuted, MUTE_COLOR, palette);
+        chipX = renderChip(ctx, z, tr, chipX, y, "Бан", e.isBanned, BAN_COLOR, palette);
 
-        y += 26f;
+        y += 27f;
 
         List<TwinksCheckModule.PunishmentEntry> list = e.fullHistory.isEmpty() ? e.recentHistory : e.fullHistory;
         for (TwinksCheckModule.PunishmentEntry p : list) {
-            if (y > parent.getHeight()) break;
-            String reason = p.reason();
-            if (reason.length() > 48) reason = reason.substring(0, 48) + "…";
-            String line = "%s · %s · %s".formatted(p.by(), p.timeAgo(), reason);
-
-            Color typeColor = switch (p.type()) {
-                case BAN -> ban;
-                case MUTE -> mute;
-                case KICK -> kick;
-            };
-
-            render2DService.renderText(tr, Text.literal("▪").asOrderedText(),
-                    (int) (x + 10f), (int) (y + 4f), z, typeColor.getRGB(), false, ctx);
-            render2DService.renderText(tr, Text.literal(line).asOrderedText(),
-                    (int) (x + 26f), (int) (y + 4f), z, palette.textSecondary.getRGB(), false, ctx);
-            y += tr.fontHeight + 3f;
+            y = renderPunishment(ctx, z, palette, tr, x, w, y, p);
         }
 
         return y;
+    }
+
+    private float renderChip(DrawContext ctx, int z, TextRenderer tr, float rightX, float cardY,
+                             String label, boolean active, Color color, ThemePalette palette) {
+        int lw = tr.getWidth(label);
+        float w = lw + 10f;
+        float h = 14f;
+        float x = rightX - w - 4f;
+        float y = cardY + 5f;
+
+        Color bg = active ? color : palette.surface;
+        render2DService.renderSoftRoundedRect(ctx.getMatrices(), x, y, w, h, z, h / 2f, bg, 0);
+        render2DService.renderText(tr, Text.literal(label).asOrderedText(),
+                (int) (x + 5f), (int) (y + (h - tr.fontHeight) / 2f + 1f), z,
+                (active ? palette.onPrimary : palette.textMuted).getRGB(), false, ctx);
+        return x;
+    }
+
+    private float renderPunishment(DrawContext ctx, int z, ThemePalette palette, TextRenderer tr,
+                                   float x, float w, float y, TwinksCheckModule.PunishmentEntry p) {
+        Color typeColor = switch (p.type()) {
+            case BAN -> BAN_COLOR;
+            case MUTE -> MUTE_COLOR;
+            case KICK -> KICK_COLOR;
+        };
+        String typeLabel = switch (p.type()) {
+            case BAN -> "БАН";
+            case MUTE -> "МУТ";
+            case KICK -> "КИК";
+        };
+
+        float dotX = x + 10f;
+        render2DService.renderSoftRoundedRect(ctx.getMatrices(), dotX, y + 6f, 6f, 6f, z, 3f, typeColor, 0);
+
+        render2DService.renderText(tr, Text.literal(typeLabel).asOrderedText(),
+                (int) (dotX + 10f), (int) (y + 4f), z, typeColor.getRGB(), false, ctx);
+
+        String meta = "%s · %s".formatted(p.timeAgo(), p.by());
+        render2DService.renderText(tr, Text.literal(meta).asOrderedText(),
+                (int) (dotX + 10f + tr.getWidth(typeLabel) + 8f), (int) (y + 4f), z, palette.textMuted.getRGB(), false, ctx);
+
+        y += tr.fontHeight + 2f;
+
+        String reason = p.reason().isBlank() ? "—" : p.reason();
+        int wrapWidth = Math.max(20, (int) (w - 26f));
+        List<OrderedText> lines = tr.wrapLines(Text.literal(reason), wrapWidth);
+        for (OrderedText line : lines) {
+            render2DService.renderText(tr, line, (int) (dotX + 10f), (int) y, z, palette.textSecondary.getRGB(), false, ctx);
+            y += tr.fontHeight + 1f;
+        }
+
+        return y + 3f;
+    }
+
+    private void scissor(DrawContext ctx, float x, float y, float x2, float y2) {
+        MatrixStack ms = ctx.getMatrices();
+        float[] a = transformPoint(ms, x, y);
+        float[] b = transformPoint(ms, x2, y2);
+        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
+    }
+
+    private static float[] transformPoint(MatrixStack ms, float x, float y) {
+        Matrix4f m = ms.peek().getPositionMatrix();
+        return new float[]{
+                m.m00() * x + m.m10() * y + m.m20(),
+                m.m01() * x + m.m11() * y + m.m21()
+        };
     }
 
     @Override
@@ -258,7 +313,10 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
         boolean overFilter = filter.isMouseOver(pW, pH, mouseX, mouseY);
         filter.setFocused(overFilter);
-        if (overFilter) return true;
+        if (overFilter) {
+            filter.handleClick(pW, pH, mouseX, mouseY);
+            return true;
+        }
 
         if (runButton.hitInParent(pW, pH, mouseX, mouseY)) return true;
 
@@ -275,8 +333,11 @@ public class TwinksTab extends Tab<MainGuiScreen> {
     public void onMouseScroll(double dx, double dy, float mouseX, float mouseY) {
         float pW = parent.getWidth();
         if (mouseX > PAD + LEFT_W) {
-            scroll -= (float) (dy * 20f);
-            scroll = Math.max(0f, Math.min(scroll, maxScroll));
+            contentScroll -= (float) (dy * 22f);
+            contentScroll = Math.max(0f, Math.min(contentScroll, contentMax));
+        } else {
+            fileScroll -= (float) (dy * 22f);
+            fileScroll = Math.max(0f, Math.min(fileScroll, fileMax));
         }
     }
 

@@ -20,12 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ChatTab extends SettingsTab {
+    private static final int MAX_TEXT_LENGTH = 200;
+
     private final SettingsConfig settingsConfig;
 
     private final SearchDrawableElement addField;
     private final TextButtonDrawableElement addButton;
     private final TextButtonDrawableElement saveButton;
-    private final List<float[]> removeButtons = new ArrayList<>();
+    private final List<float[]> rowHitboxes = new ArrayList<>();
     private int editIndex = -1;
 
     public ChatTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
@@ -56,6 +58,7 @@ public class ChatTab extends SettingsTab {
 
         this.addField = factory.createSearch(null);
         this.addField.setPlaceholder("Новый текст (Ctrl+V — вставить)");
+        this.addField.setMaxLength(MAX_TEXT_LENGTH);
         this.addButton = factory.createTextButton(me.yuugao.holymoderation.client.gui.drawable.render.PivotMode.LEFT_UP,
                 this::doAdd, true, Text.literal("Добавить"));
         this.saveButton = factory.createTextButton(me.yuugao.holymoderation.client.gui.drawable.render.PivotMode.LEFT_UP,
@@ -65,6 +68,7 @@ public class ChatTab extends SettingsTab {
     private void doAdd() {
         String text = addField.getQuery().trim();
         if (text.isEmpty()) return;
+        if (text.length() > MAX_TEXT_LENGTH) text = text.substring(0, MAX_TEXT_LENGTH);
         settingsConfig.getTextsList().add(text);
         configManagerService.saveConfig(settingsConfig);
         addField.setQuerySilent("");
@@ -74,6 +78,7 @@ public class ChatTab extends SettingsTab {
         if (editIndex < 0 || editIndex >= settingsConfig.getTextsList().size()) return;
         String text = addField.getQuery().trim();
         if (text.isEmpty()) return;
+        if (text.length() > MAX_TEXT_LENGTH) text = text.substring(0, MAX_TEXT_LENGTH);
         settingsConfig.getTextsList().set(editIndex, text);
         configManagerService.saveConfig(settingsConfig);
         editIndex = -1;
@@ -81,11 +86,17 @@ public class ChatTab extends SettingsTab {
     }
 
     @Override
-    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
-        removeButtons.clear();
+    protected float extraHeight() {
+        float h = 30f + (editIndex >= 0 ? 26f : 0f) + settingsConfig.getTextsList().size() * 24f + 12f;
+        return h;
+    }
+
+    @Override
+    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
+        rowHitboxes.clear();
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
-        float y = rowsEndY() + 8f;
+        float y = rowsEndY() - scroll + 8f;
         renderText(ctx, z, "Тексты для проверки", PAD, y, tr, palette.textSecondary);
         y += tr.fontHeight + 6f;
 
@@ -104,21 +115,34 @@ public class ChatTab extends SettingsTab {
         }
 
         List<String> texts = settingsConfig.getTextsList();
+        float rowH = 20f;
+        float editW = 26f;
+        float delW = 26f;
+        float gap = 4f;
+        float bodyW = pW - PAD * 2f - editW - delW - gap * 2f;
+
         for (int i = 0; i < texts.size(); i++) {
             String full = texts.get(i);
-            String shown = full.length() > 52 ? full.substring(0, 52) + "…" : full;
+            String shown = full.length() > 60 ? full.substring(0, 60) + "…" : full;
 
-            render2DService.renderSoftRoundedRect(ctx.getMatrices(), PAD, y, pW - PAD * 2f - 34f, 20f, z,
-                    6f, editIndex == i ? palette.primaryDark : palette.surface, 0);
-            renderText(ctx, z, (i + 1) + ". " + shown, PAD + 8f, y + 5f, tr,
-                    editIndex == i ? palette.textPrimary : palette.textPrimary);
+            boolean editing = editIndex == i;
 
-            float bx = pW - PAD - 28f;
-            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), bx, y, 28f, 20f, z,
+            render2DService.renderSoftRoundedRect(ctx.getMatrices(), PAD, y, bodyW, rowH, z,
+                    6f, editing ? palette.primaryDark : palette.surface, 0);
+            renderText(ctx, z, (i + 1) + ". " + shown, PAD + 8f, y + 4f, tr, palette.textPrimary);
+
+            float editX = PAD + bodyW + gap;
+            float delX = editX + editW + gap;
+
+            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), editX, y, editW, rowH, z,
                     6f, palette.surface, palette.outline, 1f, 1f);
-            renderText(ctx, z, "✕", bx + 10f, y + 5f, tr, palette.textMuted);
+            renderText(ctx, z, "✎", editX + 8f, y + 4f, tr, palette.textSecondary);
 
-            removeButtons.add(new float[]{PAD, y, pW - PAD * 2f - 34f, 20f, i, bx, y, 28f, 20f});
+            render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), delX, y, delW, rowH, z,
+                    6f, palette.surface, palette.outline, 1f, 1f);
+            renderText(ctx, z, "✕", delX + 9f, y + 4f, tr, palette.textMuted);
+
+            rowHitboxes.add(new float[]{PAD, y, bodyW, rowH, i, editX, y, editW, rowH, delX, y, delW, rowH});
             y += 24f;
         }
     }
@@ -137,13 +161,20 @@ public class ChatTab extends SettingsTab {
 
         boolean overAdd = addField.isMouseOver(pW, pH, mouseX, mouseY);
         addField.setFocused(overAdd);
-        if (overAdd) return true;
+        if (overAdd) {
+            addField.handleClick(pW, pH, mouseX, mouseY);
+            return true;
+        }
         if (addButton.hitInParent(pW, pH, mouseX, mouseY)) return true;
         if (editIndex >= 0 && saveButton.hitInParent(pW, pH, mouseX, mouseY)) return true;
 
-        for (float[] b : removeButtons) {
-            if (mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3]) {
-                int index = (int) b[4];
+        for (float[] b : rowHitboxes) {
+            int index = (int) b[4];
+            boolean inBody = mouseX >= b[0] && mouseX <= b[0] + b[2] && mouseY >= b[1] && mouseY <= b[1] + b[3];
+            boolean inEdit = mouseX >= b[5] && mouseX <= b[5] + b[7] && mouseY >= b[6] && mouseY <= b[6] + b[8];
+            boolean inDel = mouseX >= b[9] && mouseX <= b[9] + b[11] && mouseY >= b[10] && mouseY <= b[10] + b[12];
+
+            if (inDel) {
                 if (index >= 0 && index < settingsConfig.getTextsList().size()) {
                     settingsConfig.getTextsList().remove(index);
                     configManagerService.saveConfig(settingsConfig);
@@ -156,9 +187,7 @@ public class ChatTab extends SettingsTab {
                 }
                 return true;
             }
-            float rx = b[5], ry = b[6], rw = b[7], rh = b[8];
-            if (mouseX >= rx && mouseX <= rx + rw && mouseY >= ry && mouseY <= ry + rh) {
-                int index = (int) b[4];
+            if (inEdit || inBody) {
                 if (index >= 0 && index < settingsConfig.getTextsList().size()) {
                     editIndex = index;
                     addField.setQuerySilent(settingsConfig.getTextsList().get(index));
@@ -167,6 +196,18 @@ public class ChatTab extends SettingsTab {
             }
         }
         return false;
+    }
+
+    @Override
+    public void onMouseDrag(float mouseX, float mouseY) {
+        super.onMouseDrag(mouseX, mouseY);
+        addField.handleDrag(parent.getWidth(), parent.getHeight(), mouseX, mouseY);
+    }
+
+    @Override
+    public void onMouseRelease() {
+        super.onMouseRelease();
+        addField.handleRelease();
     }
 
     @Override

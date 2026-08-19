@@ -28,7 +28,7 @@ import lombok.Getter;
 public class MainGuiScreen extends AnimatedGuiScreen {
     private static final float TARGET_WIDTH = 560f;
     private static final float TARGET_HEIGHT = 470f;
-    private static final float TAB_BAR_HEIGHT = 24f;
+    private static final float TAB_BAR_HEIGHT = 30f;
     private static final float TAB_PILL_HEIGHT = 16f;
     private static final float TAB_PAD_X = 9f;
     private static final float TAB_GAP = 4f;
@@ -171,8 +171,11 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         if (button == 0 && tabCount > 0
                 && localX >= 0f && localX <= width && localY >= 0f && localY <= TAB_BAR_HEIGHT) {
-            activeTabKey = tabOrder.get(tabIndexFor(localX));
-            return true;
+            int index = tabIndexFor(localX);
+            if (index >= 0) {
+                activeTabKey = tabOrder.get(index);
+                return true;
+            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -192,7 +195,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
             if (localX >= cursorX && localX <= cursorX + pillW) return i;
             cursorX += pillW + TAB_GAP;
         }
-        return Math.max(0, tabOrder.size() - 1);
+        return -1;
     }
 
     public void selectTab(String key) {

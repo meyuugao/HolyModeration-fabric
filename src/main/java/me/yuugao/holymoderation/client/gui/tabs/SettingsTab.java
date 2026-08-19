@@ -18,6 +18,9 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
+import net.minecraft.client.util.math.MatrixStack;
+import org.joml.Matrix4f;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -25,9 +28,8 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public abstract class SettingsTab extends Tab<MainGuiScreen> {
-    protected static final float SEARCH_Y = 29f;
+    protected static final float SEARCH_Y = 36f;
     protected static final float SEARCH_H = 20f;
-    protected static final float ROW_OFFSET = 32f;
     protected static final float ROW_HEIGHT = 28f;
     protected static final float PAD = 16f;
     protected static final float LABEL_W = 140f;
@@ -37,6 +39,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     protected static final float TOGGLE_W = 42f;
     protected static final float TOGGLE_H = 22f;
     protected static final float BADGE_H = 18f;
+    protected static final float BOTTOM_PAD = 10f;
 
     protected final ThemeService themeService;
     protected final ConfigManagerService configManagerService;
@@ -46,6 +49,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
     protected final List<Row> rows = new ArrayList<>();
     private final SearchDrawableElement searchField;
+
+    protected float scroll = 0f;
+    protected float maxScroll = 0f;
 
     protected static final class Row {
         public final String label;
@@ -107,6 +113,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
         SearchDrawableElement valueField = factory.createSearch(s -> parseSliderValue(slider, s, commit));
         valueField.setCentered(true);
+        valueField.setPlaceholder("");
         valueField.setQuerySilent(valueText.get());
         fieldRef[0] = valueField;
 
@@ -155,7 +162,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     }
 
     protected float contentStartY() {
-        return SEARCH_Y + SEARCH_H + 14f;
+        return SEARCH_Y + SEARCH_H + 12f;
     }
 
     protected String searchQuery() {
@@ -166,7 +173,18 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         return contentStartY() + visibleRows().size() * ROW_HEIGHT;
     }
 
-    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
+    protected float extraHeight() {
+        return 0f;
+    }
+
+    protected float contentHeight() {
+        return rowsEndY() + extraHeight() + BOTTOM_PAD;
+    }
+
+    protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
+    }
+
+    protected void renderOverlay(DrawContext ctx, ThemePalette palette, float pW, float pH, int z) {
     }
 
     @Override
@@ -184,10 +202,16 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         float valX = pW - PAD - VAL_W;
         float sliderW = valX - fieldX - GAP;
 
+        float bottom = pH - 6f;
+        maxScroll = Math.max(0f, contentHeight() - bottom);
+        scroll = Math.max(0f, Math.min(scroll, maxScroll));
+
+        scissor(ctx, 0f, contentStartY() - 8f, pW, bottom);
+
         List<Row> visible = visibleRows();
         for (int i = 0; i < visible.size(); i++) {
             Row row = visible.get(i);
-            float rowTop = contentStartY() + i * ROW_HEIGHT;
+            float rowTop = contentStartY() + i * ROW_HEIGHT - scroll;
 
             renderLabel(ctx, z, row.label, PAD, rowTop + (ROW_HEIGHT - minecraftService.getClient().textRenderer.fontHeight) / 2f + 1f, palette);
 
@@ -215,7 +239,26 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             }
         }
 
-        renderExtra(ctx, palette, pW, pH, z);
+        renderExtra(ctx, palette, pW, pH, z, scroll);
+
+        ctx.disableScissor();
+
+        renderOverlay(ctx, palette, pW, pH, z);
+    }
+
+    protected void scissor(DrawContext ctx, float x, float y, float x2, float y2) {
+        MatrixStack ms = ctx.getMatrices();
+        float[] a = transformPoint(ms, x, y);
+        float[] b = transformPoint(ms, x2, y2);
+        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
+    }
+
+    protected static float[] transformPoint(MatrixStack ms, float x, float y) {
+        Matrix4f m = ms.peek().getPositionMatrix();
+        return new float[]{
+                m.m00() * x + m.m10() * y + m.m20(),
+                m.m01() * x + m.m11() * y + m.m21()
+        };
     }
 
     protected void renderLabel(DrawContext ctx, int z, String text, float x, float y, ThemePalette palette) {
@@ -262,7 +305,11 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 if (over && !was && row.valueField == field && row.valueText != null) {
                     field.setQuerySilent(row.valueText.get());
                 }
-                field.setFocused(over);
+                if (over) {
+                    field.handleClick(pW, pH, mouseX, mouseY);
+                } else {
+                    field.setFocused(false);
+                }
                 if (over) overField = true;
             }
         }
@@ -273,10 +320,17 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     public void onMouseScroll(double dx, double dy, float mouseX, float mouseY) {
         float pW = parent.getWidth();
         float pH = parent.getHeight();
+        boolean handled = false;
         for (Row row : visibleRows()) {
             if (row.element instanceof SliderDrawableElement slider) {
-                slider.handleScroll(pW, pH, dy, mouseX, mouseY);
+                if (slider.handleScroll(pW, pH, dy, mouseX, mouseY)) {
+                    handled = true;
+                }
             }
+        }
+        if (!handled && maxScroll > 0f) {
+            scroll -= (float) (dy * 22f);
+            scroll = Math.max(0f, Math.min(scroll, maxScroll));
         }
     }
 
@@ -287,6 +341,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         for (Row row : visibleRows()) {
             if (row.element instanceof SliderDrawableElement slider) {
                 slider.handleDrag(pW, pH, mouseX, mouseY);
+            }
+            for (SearchDrawableElement field : row.fields()) {
+                field.handleDrag(pW, pH, mouseX, mouseY);
             }
         }
     }
@@ -308,6 +365,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             if (row.element instanceof SliderDrawableElement slider) {
                 slider.handleRelease();
                 if (row.commit != null) row.commit.run();
+            }
+            for (SearchDrawableElement field : row.fields()) {
+                field.handleRelease();
             }
         }
     }
