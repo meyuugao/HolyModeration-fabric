@@ -13,8 +13,9 @@ import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.ChatService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
+import me.yuugao.holymoderation.client.util.service.ThemePalette;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
-import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.GenericContainerScreen;
@@ -43,6 +44,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
     private final Render2DService render2DService;
     private final MinecraftService minecraftService;
     private final ConfigManagerService configManagerService;
+    private final ThemeService themeService;
     private final DrawableElementFactory drawableElementFactory;
     private final ChatService chatService;
     private float scrollOffset = 0f;
@@ -51,6 +53,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
     @Inject
     public ReportsParserDrawableElement(AnimationService animationService, MinecraftService minecraftService,
                                         Render2DService render2DService, ConfigManagerService configManagerService,
+                                        ThemeService themeService,
                                         DrawableElementFactory drawableElementFactory,
                                         ChatService chatService,
                                         ReportsParserRenderStateProvider reportsParserRenderStateProvider) {
@@ -60,6 +63,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         this.render2DService = render2DService;
         this.minecraftService = minecraftService;
         this.configManagerService = configManagerService;
+        this.themeService = themeService;
         this.chatService = chatService;
 
         this.startButton = drawableElementFactory.createTextButton(PivotMode.LEFT_DOWN,
@@ -164,7 +168,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
     @Override
     protected void render(DrawContext ctx, int z, ReportsParserRenderState state) {
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        ThemePalette palette = themeService.getPalette();
 
         this.scale.setTarget(state.animTarget());
         this.scale.update();
@@ -181,15 +185,15 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         render2DService.setupRender();
 
         render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, getWidth(), getHeight(), z,
-                getHeight() / 8f, guiConfig.getMainColor(), guiConfig.getSecondColor(), 2f, 3f);
+                getHeight() / 8f, palette.background, palette.primary, 2f, 3f);
 
         clearButton.updateRenderForParent(ctx, CLEAR_ICON, 0.92f, 0.95f, 5f, 0.13f,
                 getWidth(), getHeight(), z, 6f,
-                guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
+                palette.surface, palette.primaryBright, 2f, 3f);
 
         startButton.updateRenderForParent(ctx, 0.08f, 0.95f, 85f,
                 getWidth(), getHeight(), z, 6f,
-                guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
+                palette.surface, palette.primaryBright, 2f, 3f);
 
         float baseAbsX = getAbsoluteX(ctx.getScaledWindowWidth());
         float baseAbsY = getAbsoluteY(ctx.getScaledWindowHeight());
@@ -201,14 +205,14 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
         int clipY2 = (int) Math.ceil(baseAbsY + listHeight * screenScale);
         ctx.enableScissor(clipX, clipY, clipX2, clipY2);
 
-        renderVisibleButtons(ctx, z, guiConfig, listHeight, buttonWidth, itemTotal);
+        renderVisibleButtons(ctx, z, palette, listHeight, buttonWidth, itemTotal);
 
         ctx.disableScissor();
 
         render2DService.endRender();
     }
 
-    private void renderVisibleButtons(DrawContext ctx, int z, GuiConfig guiConfig,
+    private void renderVisibleButtons(DrawContext ctx, int z, ThemePalette palette,
                                       float listHeight, float buttonWidth, float itemTotal) {
         int firstIdx = Math.max(0, (int) Math.floor(scrollOffset / itemTotal));
         int lastIdx = Math.min(playerButtons.size() - 1,
@@ -221,7 +225,7 @@ public class ReportsParserDrawableElement extends StatefulDrawableElement<Report
 
             playerButtons.get(i).updateRenderForParent(ctx, 0.5f, (y + ITEM_HEIGHT / 2f) / getHeight(),
                     buttonWidth, getWidth(), getHeight(), z, 6f,
-                    guiConfig.getMainColor().brighter(), guiConfig.getSecondColor().brighter(), 2f, 3f);
+                    palette.surface, palette.primaryBright, 2f, 3f);
         }
     }
 }

@@ -3,39 +3,46 @@ package me.yuugao.holymoderation.client.gui.screen.impl;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.ElementsTab;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
+import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
-import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
-import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
+import me.yuugao.holymoderation.client.util.service.ThemePalette;
+import me.yuugao.holymoderation.client.util.service.ThemeService;
 
+import net.minecraft.client.font.TextRenderer;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
 import org.joml.Matrix3x2fStack;
 
-import java.awt.Color;
-
 import lombok.Getter;
 
 @Singleton
 public class MainGuiScreen extends AnimatedGuiScreen {
+    private static final float TAB_BAR_HEIGHT = 22f;
+
     @Getter
     private final int renderPriority = 2000;
-    private final Color outlineColor = Color.WHITE;
 
     private final Render2DService render2DService;
-    private final ConfigManagerService configManagerService;
+    private final ThemeService themeService;
+    private final MinecraftService minecraftService;
 
     @Inject
     public MainGuiScreen(AnimationService animationService, Render2DService render2DService,
-                         ConfigManagerService configManagerService, DrawableElementFactory drawableElementFactory) {
+                         DrawableElementFactory drawableElementFactory,
+                         ThemeService themeService, MinecraftService minecraftService) {
         super(Text.of("HolyModeration Main Gui Screen"), animationService);
-        this.tabs.put("General", new GeneralTab(this, drawableElementFactory));
+        addTab("General", new GeneralTab(this, drawableElementFactory));
+        addTab("Elements", new ElementsTab(this, drawableElementFactory, themeService));
 
         this.render2DService = render2DService;
-        this.configManagerService = configManagerService;
+        this.themeService = themeService;
+        this.minecraftService = minecraftService;
     }
 
     @Override
@@ -43,7 +50,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         super.render(ctx, mouseX, mouseY, tickDelta);
 
         Matrix3x2fStack ms = ctx.getMatrices();
-        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        ThemePalette palette = themeService.getPalette();
 
         float targetWidth = 435f;
         float targetHeight = 300f;
@@ -74,9 +81,11 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 ctx, 0f, 0f,
                 Math.max(1, this.width), Math.max(1, this.height),
                 renderPriority, 10f,
-                guiConfig.getSecondColor(), outlineColor,
+                palette.background, palette.outline,
                 scaledOutline, 3
         );
+
+        renderTabBar(ctx, ms, palette);
 
         int relMouseX = (int) ((mouseX - x) / screenScale);
         int relMouseY = (int) ((mouseY - y) / screenScale);
@@ -85,5 +94,47 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         ms.popMatrix();
 
         render2DService.endRender();
+    }
+
+    private void renderTabBar(DrawContext ctx, Matrix3x2fStack ms, ThemePalette palette) {
+        TextRenderer tr = minecraftService.getClient().textRenderer;
+        int tabCount = tabOrder.size();
+        float tabWidth = width / tabCount;
+
+        for (int i = 0; i < tabCount; i++) {
+            String key = tabOrder.get(i);
+            boolean active = key.equals(activeTabKey);
+
+            float tabX = i * tabWidth + 4f;
+            float tabY = 4f;
+            float tabW = tabWidth - 8f;
+            float tabH = TAB_BAR_HEIGHT - 8f;
+
+            render2DService.renderSoftRoundedRectOutline(ctx, tabX, tabY, tabW, tabH, renderPriority,
+                    6f, active ? palette.primary : palette.surface, palette.outline, 1.5f, 2f);
+
+            String label = key;
+            int textWidth = tr.getWidth(label);
+            float textX = tabX + (tabW - textWidth) / 2f;
+            float textY = tabY + (tabH - tr.fontHeight) / 2f;
+            render2DService.renderText(tr, Text.literal(label).asOrderedText(),
+                    (int) textX, (int) textY, renderPriority, palette.textPrimary.getRGB(), false, ctx);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(Click click, boolean doubleClick) {
+        float localX = toLocalX(click.x());
+        float localY = toLocalY(click.y());
+        int tabCount = tabOrder.size();
+
+        if (click.button() == 0 && tabCount > 0 && width > 0f
+                && localX >= 0f && localX <= width && localY >= 0f && localY <= TAB_BAR_HEIGHT) {
+            int index = (int) (localX / (width / tabCount));
+            index = Math.max(0, Math.min(tabCount - 1, index));
+            activeTabKey = tabOrder.get(index);
+            return true;
+        }
+        return super.mouseClicked(click, doubleClick);
     }
 }
