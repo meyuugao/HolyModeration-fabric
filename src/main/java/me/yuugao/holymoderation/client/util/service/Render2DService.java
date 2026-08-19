@@ -308,6 +308,8 @@ public class Render2DService {
         scissor = null;
     }
 
+    private static final int[] EMPTY_SCISSOR = new int[0];
+
     public void pushScissor(float x0, float y0, float x1, float y1) {
         int nx0 = Math.round(Math.min(x0, x1));
         int ny0 = Math.round(Math.min(y0, y1));
@@ -319,12 +321,17 @@ public class Render2DService {
             nx1 = Math.min(nx1, scissor[2]);
             ny1 = Math.min(ny1, scissor[3]);
         }
-        scissorStack.push(scissor);
+        scissorStack.push(scissor == null ? EMPTY_SCISSOR : scissor);
         scissor = new int[]{nx0, ny0, nx1, ny1};
     }
 
     public void popScissor() {
-        scissor = scissorStack.isEmpty() ? null : scissorStack.pop();
+        if (scissorStack.isEmpty()) {
+            scissor = null;
+            return;
+        }
+        int[] prev = scissorStack.pop();
+        scissor = prev == EMPTY_SCISSOR ? null : prev;
     }
 
     private void ensureShaders() {
