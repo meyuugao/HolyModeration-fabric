@@ -70,6 +70,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
 
         Matrix3x2fStack ms = ctx.getMatrices();
         ThemePalette palette = themeService.getPalette();
+        render2DService.resetScissor();
 
         this.width = TARGET_WIDTH;
         this.height = TARGET_HEIGHT;

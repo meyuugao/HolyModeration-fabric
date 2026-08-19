@@ -19,8 +19,6 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
-import org.joml.Matrix3x2fStack;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -231,7 +229,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         maxScroll = Math.max(0f, contentHeight() - bottom);
         scroll = Math.max(0f, Math.min(scroll, maxScroll));
 
-        scissor(ctx, 0f, contentStartY() - 8f, pW, bottom);
+        render2DService.pushScissor(0f, contentStartY() - 8f, pW, bottom);
 
         List<Row> visible = visibleRows();
         List<Row> dropdownRows = new ArrayList<>();
@@ -243,8 +241,6 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 dropdownRows.add(row);
                 continue;
             }
-
-            if (rowTop + ROW_HEIGHT < contentStartY() - 8f || rowTop > bottom) continue;
 
             renderLabel(ctx, z, row.label, PAD, rowTop + (ROW_HEIGHT - minecraftService.getClient().textRenderer.fontHeight) / 2f + 1f, palette);
 
@@ -267,9 +263,10 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                         fieldW, FIELD_H, pW, pH, z,
                         8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
             } else if (element instanceof TextButtonDrawableElement button) {
-                float bx = row.centeredButton ? (pW - 180f) / 2f : (pW - PAD - 180f);
+                float bw = row.centeredButton ? (pW - PAD * 2f) : 180f;
+                float bx = row.centeredButton ? PAD : (pW - PAD - 180f);
                 button.updateRenderForParent(ctx, bx / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
-                        180f, pW, pH, z, 9f, palette.primary, palette.primaryBright, 1.5f, 2f);
+                        bw, pW, pH, z, 9f, palette.primary, palette.primaryBright, 1.5f, 2f);
             }
         }
 
@@ -277,37 +274,26 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             renderExtra(ctx, palette, pW, pH, z, scroll);
         }
 
-        ctx.disableScissor();
+        render2DService.popScissor();
 
-        for (int i = 0; i < dropdownRows.size(); i++) {
-            Row row = dropdownRows.get(i);
-            int rowIndex = visible.indexOf(row);
-            float rowTop = contentStartY() + rowIndex * ROW_HEIGHT - scroll;
-            if (rowTop + ROW_HEIGHT < contentStartY() - 8f || rowTop > bottom) continue;
-            DropdownDrawableElement dropdown = (DropdownDrawableElement) row.element;
-            dropdown.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
-                    fieldW, FIELD_H, pW, pH, z,
-                    8f, palette.surface, palette.outline, palette.surfaceElevated,
-                    palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
+        for (int pass = 0; pass < 2; pass++) {
+            for (int i = 0; i < dropdownRows.size(); i++) {
+                Row row = dropdownRows.get(i);
+                DropdownDrawableElement dropdown = (DropdownDrawableElement) row.element;
+                if ((pass == 0) == dropdown.isExpanded()) continue;
+
+                int rowIndex = visible.indexOf(row);
+                float rowTop = contentStartY() + rowIndex * ROW_HEIGHT - scroll;
+                dropdown.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
+                        fieldW, FIELD_H, pW, pH, z,
+                        8f, palette.surface, palette.outline, palette.surfaceElevated,
+                        palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
+            }
         }
 
         if (searchQuery().isBlank()) {
             renderOverlay(ctx, palette, pW, pH, z);
         }
-    }
-
-    protected void scissor(DrawContext ctx, float x, float y, float x2, float y2) {
-        Matrix3x2fStack ms = ctx.getMatrices();
-        float[] a = transformPoint(ms, x, y);
-        float[] b = transformPoint(ms, x2, y2);
-        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
-    }
-
-    protected static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {
-        return new float[]{
-                ms.m00 * x + ms.m10 * y + ms.m20,
-                ms.m01 * x + ms.m11 * y + ms.m21
-        };
     }
 
     protected void renderLabel(DrawContext ctx, int z, String text, float x, float y, ThemePalette palette) {

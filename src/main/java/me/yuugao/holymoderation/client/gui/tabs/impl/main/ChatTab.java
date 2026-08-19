@@ -129,7 +129,6 @@ public class ChatTab extends SettingsTab {
 
         for (int i = 0; i < texts.size(); i++) {
             float rowY = listTop + i * 24f - textScroll;
-            if (rowY + rowH < listTop || rowY > listBottom) continue;
 
             String full = texts.get(i);
             String shown = full.length() > 60 ? full.substring(0, 60) + "…" : full;

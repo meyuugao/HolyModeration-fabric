@@ -70,6 +70,8 @@ public class Render2DService {
 
     private ProjectionMatrix2 guiProjection;
     private final Map<String, GpuBuffer> uniformBuffers = new HashMap<>();
+    private final java.util.ArrayDeque<int[]> scissorStack = new java.util.ArrayDeque<>();
+    private int[] scissor = null;
     private final Matrix4f guiModelView = new Matrix4f();
     private final Vector4f guiColorModulator = new Vector4f(1f, 1f, 1f, 1f);
     private final Vector3f guiModelOffset = new Vector3f();
@@ -301,6 +303,30 @@ public class Render2DService {
     public void endRender() {
     }
 
+    public void resetScissor() {
+        scissorStack.clear();
+        scissor = null;
+    }
+
+    public void pushScissor(float x0, float y0, float x1, float y1) {
+        int nx0 = Math.round(Math.min(x0, x1));
+        int ny0 = Math.round(Math.min(y0, y1));
+        int nx1 = Math.round(Math.max(x0, x1));
+        int ny1 = Math.round(Math.max(y0, y1));
+        if (scissor != null) {
+            nx0 = Math.max(nx0, scissor[0]);
+            ny0 = Math.max(ny0, scissor[1]);
+            nx1 = Math.min(nx1, scissor[2]);
+            ny1 = Math.min(ny1, scissor[3]);
+        }
+        scissorStack.push(scissor);
+        scissor = new int[]{nx0, ny0, nx1, ny1};
+    }
+
+    public void popScissor() {
+        scissor = scissorStack.isEmpty() ? null : scissorStack.pop();
+    }
+
     private void ensureShaders() {
         if (rectPipeline == null) {
             initializeShaders(minecraftService.getClient().getResourceManager());
@@ -370,7 +396,18 @@ public class Render2DService {
                     int indexCount = built.getDrawParameters().indexCount();
                     pass.setVertexBuffer(0, vbo);
                     pass.setIndexBuffer(shapeIndexBuffer.getIndexBuffer(indexCount), shapeIndexBuffer.getIndexType());
+                    if (scissor != null) {
+                        float sf = (float) minecraftService.getClient().getWindow().getScaleFactor();
+                        int sx = Math.max(0, (int) Math.floor(scissor[0] * sf));
+                        int sy = Math.max(0, (int) Math.floor(scissor[1] * sf));
+                        int ex = Math.max(sx, (int) Math.ceil(scissor[2] * sf));
+                        int ey = Math.max(sy, (int) Math.ceil(scissor[3] * sf));
+                        pass.enableScissor(sx, sy, ex - sx, ey - sy);
+                    }
                     pass.drawIndexed(0, 0, indexCount, 1);
+                    if (scissor != null) {
+                        pass.disableScissor();
+                    }
                 }
             } finally {
                 vbo.close();

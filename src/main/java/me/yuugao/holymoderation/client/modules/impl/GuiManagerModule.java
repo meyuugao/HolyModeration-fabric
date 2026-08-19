@@ -68,6 +68,7 @@ public class GuiManagerModule {
         Screen currentScreen = mc.currentScreen;
         DrawContext ctx = event.getDrawContext();
         if (currentScreen != null && !shouldGuiRender(currentScreen)) return;
+        render2DService.resetScissor();
         for (DrawableModule<?> drawableModule : guiManagerService.getDrawableModules()) {
             DrawableElement elem = drawableModule.getDrawableElement();
             drawableModule.render(event.getDrawContext(), currentScreen instanceof MainGuiScreen ? RenderMode.CONFIG : RenderMode.LIVE);

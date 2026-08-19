@@ -104,7 +104,7 @@ public class DropdownDrawableElement extends DrawableElement {
 
         if (selected != null) {
             render2DService.renderText(tr, Text.literal(selected).asOrderedText(), (int) H_PADDING, (int) textY, z,
-                    textColor.getRGB(), false, ctx);
+                    readableOn(fieldColor), false, ctx);
         }
 
         renderArrow(ctx, ctx.getMatrices(), z, expanded);
@@ -117,12 +117,13 @@ public class DropdownDrawableElement extends DrawableElement {
         float drop = up ? -3f : 3f;
         float stroke = Math.max(1.5f, getHeight() * 0.08f);
 
-        renderArrowSegment(ctx, ms, z, cx - spread, cy - drop, cx, cy + drop, stroke);
-        renderArrowSegment(ctx, ms, z, cx, cy + drop, cx + spread, cy - drop, stroke);
+        Color arrow = new Color(readableOn(fieldColor), true);
+        renderArrowSegment(ctx, ms, z, cx - spread, cy - drop, cx, cy + drop, stroke, arrow);
+        renderArrowSegment(ctx, ms, z, cx, cy + drop, cx + spread, cy - drop, stroke, arrow);
     }
 
     private void renderArrowSegment(DrawContext ctx, Matrix3x2fStack ms, int z,
-                                    float x1, float y1, float x2, float y2, float stroke) {
+                                    float x1, float y1, float x2, float y2, float stroke, Color color) {
         float dx = x2 - x1;
         float dy = y2 - y1;
         float len = (float) Math.sqrt(dx * dx + dy * dy);
@@ -133,7 +134,7 @@ public class DropdownDrawableElement extends DrawableElement {
         ms.pushMatrix();
         ms.rotateAbout(angle, midX, midY);
         render2DService.renderSoftRoundedRect(ctx, midX - len / 2f, midY - stroke / 2f, len, stroke, z,
-                stroke / 2f, arrowColor, 0);
+                stroke / 2f, color, 0);
         ms.popMatrix();
     }
 
@@ -145,7 +146,7 @@ public class DropdownDrawableElement extends DrawableElement {
         Matrix3x2fStack ms = ctx.getMatrices();
         float[] a = transformPoint(ms, 0f, listTop);
         float[] b = transformPoint(ms, getWidth(), listTop + listHeight);
-        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
+        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
 
         render2DService.renderSoftRoundedRectOutline(ctx, 0f, listTop, getWidth(), listHeight, z,
                 radius, optionColor, outlineColor, outlineWidth, blurWidth);
@@ -162,10 +163,15 @@ public class DropdownDrawableElement extends DrawableElement {
 
             float textY = y + (OPTION_HEIGHT - tr.fontHeight) / 2f;
             render2DService.renderText(tr, Text.literal(options.get(i)).asOrderedText(),
-                    (int) H_PADDING, (int) textY, z, textColor.getRGB(), false, ctx);
+                    (int) H_PADDING, (int) textY, z, readableOn(bg), false, ctx);
         }
 
-        ctx.disableScissor();
+        render2DService.popScissor();
+    }
+
+    private static int readableOn(Color background) {
+        double luminance = (0.299 * background.getRed() + 0.587 * background.getGreen() + 0.114 * background.getBlue()) / 255.0;
+        return luminance > 0.6 ? 0xFF181A20 : 0xFFFFFFFF;
     }
 
     public void updateRenderForParent(DrawContext ctx, float relX, float relY, float width, float height,

@@ -290,9 +290,9 @@ public class SearchDrawableElement extends DrawableElement {
                 radius, fieldColor, outlineColor, outlineWidth, blurWidth);
 
         Matrix3x2fStack ms = ctx.getMatrices();
-        float[] a = transformPoint(ms, H_PADDING - 2f, 0f);
-        float[] b = transformPoint(ms, getWidth() - H_PADDING + 2f, getHeight());
-        ctx.enableScissor((int) a[0], (int) a[1], (int) Math.ceil(b[0]), (int) Math.ceil(b[1]));
+        float[] a = transformPoint(ms, 0f, 0f);
+        float[] b = transformPoint(ms, getWidth(), getHeight());
+        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
 
         float textY = (getHeight() - tr.fontHeight) / 2f + 1f;
         float caretY = (getHeight() - tr.fontHeight) / 2f;
@@ -320,7 +320,7 @@ public class SearchDrawableElement extends DrawableElement {
             render2DService.renderRect(ctx, cx, caretY, CARET_WIDTH, tr.fontHeight, z, caretColor);
         }
 
-        ctx.disableScissor();
+        render2DService.popScissor();
     }
 
     private float textStartX(String renderedText) {
