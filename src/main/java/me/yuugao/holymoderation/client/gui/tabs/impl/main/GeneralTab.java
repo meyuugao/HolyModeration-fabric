@@ -25,7 +25,7 @@ public class GeneralTab extends SettingsTab {
 
         addSlider("Громкость", 0f, 100f, 1f, c.getSoundsVolume(),
                 v -> c.setSoundsVolume(Math.round(v)),
-                () -> c.getSoundsVolume() + "%",
+                () -> String.valueOf(c.getSoundsVolume()),
                 () -> configManagerService.saveConfig(c));
 
         addSlider("Масштаб HUD", 0.5f, 2f, 0.05f, c.getHudScale(),

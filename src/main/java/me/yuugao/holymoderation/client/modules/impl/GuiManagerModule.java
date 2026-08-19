@@ -31,6 +31,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.text.Text;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -209,23 +210,31 @@ public class GuiManagerModule {
     private void renderNotificationAnchors(DrawContext ctx, double mouseX, double mouseY) {
         float sw = ctx.getScaledWindowWidth();
         float sh = ctx.getScaledWindowHeight();
-        float size = 20f;
+        float size = 22f;
         float margin = 8f;
         PivotMode nearest = nearestCorner(mouseX, mouseY, sw, sh);
-        int highlight = 0xFFFFFFFF;
-        int normal = 0x80FFFFFF;
+        ThemePalette palette = themeService.getPalette();
 
-        drawAnchor(ctx, margin, margin, size, nearest == PivotMode.LEFT_UP ? highlight : normal);
-        drawAnchor(ctx, sw - margin - size, margin, size, nearest == PivotMode.RIGHT_UP ? highlight : normal);
-        drawAnchor(ctx, margin, sh - margin - size, size, nearest == PivotMode.LEFT_DOWN ? highlight : normal);
-        drawAnchor(ctx, sw - margin - size, sh - margin - size, size, nearest == PivotMode.RIGHT_DOWN ? highlight : normal);
+        render2DService.setupRender();
+        drawAnchor(ctx, margin, margin, size, nearest == PivotMode.LEFT_UP, palette);
+        drawAnchor(ctx, sw - margin - size, margin, size, nearest == PivotMode.RIGHT_UP, palette);
+        drawAnchor(ctx, margin, sh - margin - size, size, nearest == PivotMode.LEFT_DOWN, palette);
+        drawAnchor(ctx, sw - margin - size, sh - margin - size, size, nearest == PivotMode.RIGHT_DOWN, palette);
+        render2DService.endRender();
     }
 
-    private void drawAnchor(DrawContext ctx, float x, float y, float size, int color) {
-        ctx.fill((int) x, (int) y, (int) (x + size), (int) (y + size), color);
+    private void drawAnchor(DrawContext ctx, float x, float y, float size, boolean active, ThemePalette palette) {
+        Color fill = active ? palette.primary : palette.surface;
+        Color outline = active ? palette.primaryBright : palette.outline;
+        render2DService.renderSoftRoundedRectOutline(ctx, x, y, size, size, 3001,
+                size / 3f, fill, outline, active ? 2f : 1f, 2f);
     }
 
     private void renderScaleBadge(DrawContext ctx, StatefulDrawableElement<?> elem) {
+        float scaledW = elem.getScaledWidth();
+        float scaledH = elem.getScaledHeight();
+        if (scaledW <= 0f || scaledH <= 0f) return;
+
         String id = elem.getHudElementId();
         float scale = configManagerService.getGuiConfig().getHudScale(id);
         String text = "%.2f\u00d7".formatted(scale);
@@ -236,19 +245,21 @@ public class GuiManagerModule {
         float sw = ctx.getScaledWindowWidth();
         float sh = ctx.getScaledWindowHeight();
         float w = tr.getWidth(text) + 12f;
-        float h = tr.fontHeight + 6f;
+        float h = tr.fontHeight + 5f;
 
-        float x = elem.getAbsoluteX(sw) + elem.getScaledWidth() + 6f;
-        float y = elem.getAbsoluteY(sh);
-        if (x + w > sw) x = elem.getAbsoluteX(sw) - w - 6f;
+        float centerX = elem.getAbsoluteX(sw) + scaledW / 2f;
+        float x = centerX - w / 2f;
+        float y = elem.getAbsoluteY(sh) + scaledH + 4f;
+
+        x = Math.max(4f, Math.min(x, sw - w - 4f));
         y = Math.max(4f, Math.min(y, sh - h - 4f));
 
         render2DService.setupRender();
         render2DService.renderSoftRoundedRectOutline(ctx, x, y, w, h, 3000,
-                h / 2f, palette.surfaceElevated, palette.outline, 1f, 2f);
+                h / 2f, palette.surface, palette.outline, 1f, 2f);
         render2DService.renderText(tr, Text.literal(text).asOrderedText(),
-                (int) (x + 6f), (int) (y + (h - tr.fontHeight) / 2f), 3000,
-                palette.textPrimary.getRGB(), false, ctx);
+                (int) (x + 6f), (int) (y + (h - tr.fontHeight) / 2f + 1f), 3000,
+                palette.textMuted.getRGB(), false, ctx);
         render2DService.endRender();
     }
 
