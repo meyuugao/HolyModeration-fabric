@@ -60,6 +60,7 @@ public class GuiManagerModule {
     private DrawableModule<?> dragging;
     private float dragOffsetX;
     private float dragOffsetY;
+    private final java.util.Map<String, float[]> badgePositions = new java.util.HashMap<>();
 
     @Subscribe
     public void onRender(RenderEvent event) {
@@ -265,17 +266,25 @@ public class GuiManagerModule {
         float h = tr.fontHeight + 5f;
 
         float centerX = elem.getAbsoluteX(sw) + scaledW / 2f;
-        float x = centerX - w / 2f;
+        float targetX = centerX - w / 2f;
         float gap = 7f;
-        float y;
+        float targetY;
         if (elem.getPivotMode().getYFactor() >= 0.5f) {
-            y = elem.getAbsoluteY(sh) + scaledH + gap;
+            targetY = elem.getAbsoluteY(sh) + scaledH + gap;
         } else {
-            y = elem.getAbsoluteY(sh) - h - gap;
+            targetY = elem.getAbsoluteY(sh) - h - gap;
         }
 
-        x = Math.max(4f, Math.min(x, sw - w - 4f));
-        y = Math.max(4f, Math.min(y, sh - h - 4f));
+        targetX = Math.max(4f, Math.min(targetX, sw - w - 4f));
+        targetY = Math.max(4f, Math.min(targetY, sh - h - 4f));
+
+        final float fx = targetX;
+        final float fy = targetY;
+        float[] prev = badgePositions.computeIfAbsent(id, k -> new float[]{fx, fy});
+        prev[0] += (targetX - prev[0]) * 0.25f;
+        prev[1] += (targetY - prev[1]) * 0.25f;
+        float x = prev[0];
+        float y = prev[1];
 
         render2DService.setupRender();
         render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), x, y, w, h, 3000,

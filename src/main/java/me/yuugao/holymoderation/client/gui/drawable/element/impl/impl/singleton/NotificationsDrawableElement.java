@@ -76,40 +76,43 @@ public class NotificationsDrawableElement extends StatefulDrawableElement<Notifi
         ms.pop();
 
         float stackHeight = notificationsService.getNotificationsStackHeight(10f);
-        setWidth(notifBaseWidth * screenScale);
-        setHeight(stackHeight * screenScale);
+        setWidth(notifBaseWidth);
+        setHeight(stackHeight);
     }
 
     @Override
     public boolean isMouseOver(float parentW, float parentH, double mouseX, double mouseY) {
-        if (getHeight() <= 0f) return false;
+        if (getScaledHeight() <= 0f) return false;
 
         float margin = 8f * screenScale;
         float[] cfg = getConfig();
         float stackDirY = cfg[0];
         float hideDirX = cfg[1];
 
+        float w = getScaledWidth();
+        float h = getScaledHeight();
+
         float x1, x2, y1, y2;
         if (hideDirX > 0) {
-            x1 = parentW - getWidth() - margin;
+            x1 = parentW - w - margin;
             x2 = parentW + margin;
         } else if (hideDirX < 0) {
             x1 = -margin;
-            x2 = getWidth() + margin;
+            x2 = w + margin;
         } else {
-            x1 = (parentW - getWidth()) / 2f - margin;
-            x2 = (parentW + getWidth()) / 2f + margin;
+            x1 = (parentW - w) / 2f - margin;
+            x2 = (parentW + w) / 2f + margin;
         }
 
         if (stackDirY < 0) {
-            y1 = parentH - getHeight() - margin;
+            y1 = parentH - h - margin;
             y2 = parentH + margin;
         } else if (stackDirY > 0) {
             y1 = -margin;
-            y2 = getHeight() + margin;
+            y2 = h + margin;
         } else {
-            y1 = (parentH - getHeight()) / 2f - margin;
-            y2 = (parentH + getHeight()) / 2f + margin;
+            y1 = (parentH - h) / 2f - margin;
+            y2 = (parentH + h) / 2f + margin;
         }
 
         return mouseX >= x1 && mouseX <= x2 && mouseY >= y1 && mouseY <= y2;

@@ -33,7 +33,7 @@ public class NotificationsService {
         notificationPool.add(new Notification(type, title, text, liveTime));
         soundService.playSound(type.getSoundName());
         if (type.equals(NotificationType.EXCEPTION)) {
-            loggerService.exception("Исключение из уведомлений: %s".formatted(text));
+            loggerService.exception("╨Ш╤Б╨║╨╗╤О╤З╨╡╨╜╨╕╨╡ ╨╕╨╖ ╤Г╨▓╨╡╨┤╨╛╨╝╨╗╨╡╨╜╨╕╨╣: %s".formatted(text));
         }
     }
 
@@ -51,8 +51,8 @@ public class NotificationsService {
     public void showPreview() {
         if (notificationPool.stream().noneMatch(n -> n.isPreview)) {
             Notification n = new Notification(NotificationType.SUCCESS,
-                    "%s%sПример уведомления".formatted(Colors.GREEN, Colors.BOLD),
-                    "Скролл меняет размер уведомлений", Float.MAX_VALUE);
+                    "%s%s╨Я╤А╨╕╨╝╨╡╤А ╤Г╨▓╨╡╨┤╨╛╨╝╨╗╨╡╨╜╨╕╤П".formatted(Colors.GREEN, Colors.BOLD),
+                    "╨б╨║╤А╨╛╨╗╨╗ ╨╝╨╡╨╜╤П╨╡╤В ╤А╨░╨╖╨╝╨╡╤А ╤Г╨▓╨╡╨┤╨╛╨╝╨╗╨╡╨╜╨╕╨╣", Float.MAX_VALUE);
             n.isPreview = true;
             notificationPool.add(n);
         }
@@ -73,27 +73,27 @@ public class NotificationsService {
     }
 
     public void error(String text) {
-        addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(Colors.RED, Colors.BOLD), text, 5f);
+        addNotification(NotificationType.ERROR, "%s%s╨Ю╤И╨╕╨▒╨║╨░".formatted(Colors.RED, Colors.BOLD), text, 5f);
     }
 
     public void success(String text) {
-        addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(Colors.GREEN, Colors.BOLD), text, 5f);
+        addNotification(NotificationType.SUCCESS, "%s%s╨г╤Б╨┐╨╡╤Е".formatted(Colors.GREEN, Colors.BOLD), text, 5f);
     }
 
     public void warning(String text) {
-        addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(Colors.GOLD, Colors.BOLD), text, 5f);
+        addNotification(NotificationType.WARNING, "%s%s╨Я╤А╨╡╨┤╤Г╨┐╤А╨╡╨╢╨┤╨╡╨╜╨╕╨╡".formatted(Colors.GOLD, Colors.BOLD), text, 5f);
     }
 
     public void error(String text, float liveTime) {
-        addNotification(NotificationType.ERROR, "%s%sОшибка".formatted(Colors.RED, Colors.BOLD), text, liveTime);
+        addNotification(NotificationType.ERROR, "%s%s╨Ю╤И╨╕╨▒╨║╨░".formatted(Colors.RED, Colors.BOLD), text, liveTime);
     }
 
     public void success(String text, float liveTime) {
-        addNotification(NotificationType.SUCCESS, "%s%sУспех".formatted(Colors.GREEN, Colors.BOLD), text, liveTime);
+        addNotification(NotificationType.SUCCESS, "%s%s╨г╤Б╨┐╨╡╤Е".formatted(Colors.GREEN, Colors.BOLD), text, liveTime);
     }
 
     public void warning(String text, float liveTime) {
-        addNotification(NotificationType.WARNING, "%s%sПредупреждение".formatted(Colors.GOLD, Colors.BOLD), text, liveTime);
+        addNotification(NotificationType.WARNING, "%s%s╨Я╤А╨╡╨┤╤Г╨┐╤А╨╡╨╢╨┤╨╡╨╜╨╕╨╡".formatted(Colors.GOLD, Colors.BOLD), text, liveTime);
     }
 
     public void renderNotificationsLocal(DrawContext ctx, int z, float stackDirY, float hideDirX, float hideDirY,

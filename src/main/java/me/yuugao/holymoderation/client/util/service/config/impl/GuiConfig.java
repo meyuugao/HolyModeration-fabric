@@ -27,6 +27,8 @@ public class GuiConfig extends Config {
     @Expose
     private final Map<String, Color> hudColors = new HashMap<>();
     @Expose
+    private final Map<String, Color> hudColors2 = new HashMap<>();
+    @Expose
     private final Map<String, Boolean> hudColorEnabled = new HashMap<>();
 
     public GuiConfig() {
@@ -55,6 +57,14 @@ public class GuiConfig extends Config {
 
     public void setHudColor(String elementId, Color color) {
         hudColors.put(elementId, color);
+    }
+
+    public Color getHudColor2(String elementId) {
+        return hudColors2.getOrDefault(elementId, mainColor);
+    }
+
+    public void setHudColor2(String elementId, Color color) {
+        hudColors2.put(elementId, color);
     }
 
     public boolean isHudColorEnabled(String elementId) {

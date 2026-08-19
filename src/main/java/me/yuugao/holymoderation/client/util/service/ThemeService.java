@@ -46,4 +46,12 @@ public class ThemeService {
         }
         return base;
     }
+
+    public Color accentColor(String hudElementId, Color base) {
+        GuiConfig guiConfig = configManagerService.getGuiConfig();
+        if (guiConfig.isHudColorEnabled(hudElementId)) {
+            return guiConfig.getHudColor2(hudElementId);
+        }
+        return base;
+    }
 }

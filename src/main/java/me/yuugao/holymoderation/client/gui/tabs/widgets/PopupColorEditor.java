@@ -4,7 +4,6 @@ import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.ThemePalette;
-import me.yuugao.holymoderation.client.util.service.config.impl.GuiConfig;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -17,22 +16,21 @@ public class PopupColorEditor {
     private final DrawableElementFactory factory;
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
-    private final GuiConfig guiConfig;
     private final Runnable save;
 
     private boolean visible = false;
     private String elementId = "";
     private String title = "";
     private ColorFieldSet fieldSet;
+    private Consumer<Color> applyColor;
     private float cbX, cbY;
     private static final float CB_SIZE = 18f;
 
     public PopupColorEditor(DrawableElementFactory factory, MinecraftService minecraftService,
-                            Render2DService render2DService, GuiConfig guiConfig, Runnable save) {
+                            Render2DService render2DService, Runnable save) {
         this.factory = factory;
         this.minecraftService = minecraftService;
         this.render2DService = render2DService;
-        this.guiConfig = guiConfig;
         this.save = save;
     }
 
@@ -44,9 +42,10 @@ public class PopupColorEditor {
         return elementId;
     }
 
-    public void open(String elementId, String title, Color initial) {
+    public void open(String elementId, String title, Color initial, Consumer<Color> applyColor) {
         this.elementId = elementId;
         this.title = title;
+        this.applyColor = applyColor;
         this.visible = true;
 
         final Color[] holder = {initial};
@@ -54,7 +53,7 @@ public class PopupColorEditor {
                 () -> holder[0],
                 color -> {
                     holder[0] = color;
-                    guiConfig.setHudColor(elementId, color);
+                    applyColor.accept(color);
                     save.run();
                 },
                 () -> {

@@ -16,9 +16,6 @@ import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.Color;
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
 import java.util.function.Consumer;
 
 public class SearchDrawableElement extends DrawableElement {
@@ -262,15 +259,15 @@ public class SearchDrawableElement extends DrawableElement {
         String text = hasSelection() ? query.substring(selStart, selEnd) : query;
         if (text.isEmpty()) return;
         try {
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(text), null);
+            GLFW.glfwSetClipboardString(minecraftService.getClient().getWindow().getHandle(), text);
         } catch (Exception ignored) {
         }
     }
 
     private void pasteAtCaret() {
         try {
-            Object data = Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
-            if (!(data instanceof String text) || text.isEmpty()) return;
+            String text = GLFW.glfwGetClipboardString(minecraftService.getClient().getWindow().getHandle());
+            if (text == null || text.isEmpty()) return;
             if (hasSelection()) {
                 deleteSelection();
             }

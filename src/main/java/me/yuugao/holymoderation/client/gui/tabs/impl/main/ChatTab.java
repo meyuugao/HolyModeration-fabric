@@ -87,8 +87,7 @@ public class ChatTab extends SettingsTab {
 
     @Override
     protected float extraHeight() {
-        float h = 30f + (editIndex >= 0 ? 26f : 0f) + settingsConfig.getTextsList().size() * 24f + 12f;
-        return h;
+        return 30f + settingsConfig.getTextsList().size() * 24f + 12f;
     }
 
     @Override
@@ -103,16 +102,12 @@ public class ChatTab extends SettingsTab {
         float addW = pW - PAD * 2f - 110f;
         addField.updateRenderForParent(ctx, PAD / pW, y / pH, addW, 20f, pW, pH, z,
                 8f, palette.surface, palette.outline, palette.textPrimary, palette.textMuted, palette.primary, 1.5f, 2f);
-        addButton.updateRenderForParent(ctx, (pW - PAD - 100f) / pW, y / pH, 100f, pW, pH, z,
+
+        TextButtonDrawableElement activeButton = editIndex >= 0 ? saveButton : addButton;
+        activeButton.updateRenderForParent(ctx, (pW - PAD - 100f) / pW, y / pH, 100f, pW, pH, z,
                 8f, palette.primary, palette.primaryBright, 1.5f, 2f);
 
         y += 26f;
-
-        if (editIndex >= 0) {
-            saveButton.updateRenderForParent(ctx, (pW - PAD - 100f) / pW, y / pH, 100f, pW, pH, z,
-                    8f, palette.primary, palette.primaryBright, 1.5f, 2f);
-            y += 26f;
-        }
 
         List<String> texts = settingsConfig.getTextsList();
         float rowH = 20f;
@@ -136,15 +131,22 @@ public class ChatTab extends SettingsTab {
 
             render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), editX, y, editW, rowH, z,
                     6f, palette.surface, palette.outline, 1f, 1f);
-            renderText(ctx, z, "✎", editX + 8f, y + 4f, tr, palette.textSecondary);
+            renderCenteredGlyph(ctx, z, "✎", editX, y, editW, rowH, tr, palette.textSecondary);
 
             render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), delX, y, delW, rowH, z,
                     6f, palette.surface, palette.outline, 1f, 1f);
-            renderText(ctx, z, "✕", delX + 9f, y + 4f, tr, palette.textMuted);
+            renderCenteredGlyph(ctx, z, "✕", delX, y, delW, rowH, tr, palette.textMuted);
 
             rowHitboxes.add(new float[]{PAD, y, bodyW, rowH, i, editX, y, editW, rowH, delX, y, delW, rowH});
             y += 24f;
         }
+    }
+
+    private void renderCenteredGlyph(DrawContext ctx, int z, String glyph, float x, float y, float w, float h,
+                                     TextRenderer tr, java.awt.Color color) {
+        int tw = tr.getWidth(glyph);
+        render2DService.renderText(tr, Text.literal(glyph).asOrderedText(),
+                (int) (x + (w - tw) / 2f), (int) (y + (h - tr.fontHeight) / 2f + 1f), z, color.getRGB(), false, ctx);
     }
 
     private void renderText(DrawContext ctx, int z, String text, float x, float y, TextRenderer tr, java.awt.Color color) {
