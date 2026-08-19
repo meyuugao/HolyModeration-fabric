@@ -3,14 +3,17 @@ package me.yuugao.holymoderation.client.gui.screen.impl;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.gui.screen.AnimatedGuiScreen;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.AutomationTab;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.ElementsTab;
 import me.yuugao.holymoderation.client.gui.tabs.impl.main.GeneralTab;
+import me.yuugao.holymoderation.client.gui.tabs.impl.main.ThemeTab;
 import me.yuugao.holymoderation.client.util.factory.DrawableElementFactory;
 import me.yuugao.holymoderation.client.util.service.AnimationService;
 import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.ThemePalette;
 import me.yuugao.holymoderation.client.util.service.ThemeService;
+import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -27,20 +30,25 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     private final int renderPriority = 2000;
 
     private final Render2DService render2DService;
+    private final ConfigManagerService configManagerService;
     private final ThemeService themeService;
     private final MinecraftService minecraftService;
 
     @Inject
     public MainGuiScreen(AnimationService animationService, Render2DService render2DService,
-                         DrawableElementFactory drawableElementFactory,
+                         ConfigManagerService configManagerService, DrawableElementFactory drawableElementFactory,
                          ThemeService themeService, MinecraftService minecraftService) {
         super(Text.of("HolyModeration Main Gui Screen"), animationService);
-        addTab("General", new GeneralTab(this, drawableElementFactory));
-        addTab("Elements", new ElementsTab(this, drawableElementFactory, themeService));
 
         this.render2DService = render2DService;
+        this.configManagerService = configManagerService;
         this.themeService = themeService;
         this.minecraftService = minecraftService;
+
+        addTab("Основные", new GeneralTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Автоматика", new AutomationTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Тема", new ThemeTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Элементы", new ElementsTab(this, drawableElementFactory, themeService));
     }
 
     @Override

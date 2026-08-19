@@ -62,6 +62,15 @@ public class SearchDrawableElement extends DrawableElement {
         if (onChange != null) onChange.accept(this.query);
     }
 
+    public void setQuerySilent(String query) {
+        this.query = query == null ? "" : query;
+        this.caretIndex = this.query.length();
+    }
+
+    public void setPlaceholder(String placeholder) {
+        this.placeholder = placeholder == null ? "" : placeholder;
+    }
+
     public void clear() {
         setQuery("");
     }

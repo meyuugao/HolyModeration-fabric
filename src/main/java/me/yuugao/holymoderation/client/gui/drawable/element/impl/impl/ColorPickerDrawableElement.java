@@ -24,6 +24,8 @@ public class ColorPickerDrawableElement extends DrawableElement {
     private float radius;
     private float outlineWidth;
 
+    private boolean dragging = false;
+
     public ColorPickerDrawableElement(AnimationService animationService, Render2DService render2DService) {
         this(animationService, render2DService, null);
     }
@@ -46,9 +48,17 @@ public class ColorPickerDrawableElement extends DrawableElement {
         if (selectedColor != null) {
             float cx = getWidth() / 2f;
             float cy = getHeight() / 2f;
-            float dotR = radius * 0.22f;
-            render2DService.renderSoftRoundedRectOutline(ms, cx - dotR, cy - dotR, dotR * 2f, dotR * 2f, z,
-                    dotR, selectedColor, outlineColor, outlineWidth, 0f);
+            float ballR = radius * 0.20f;
+            float ringW = Math.max(2f, radius * 0.055f);
+
+            render2DService.renderSoftRoundedRect(ms, cx - ballR - ringW, cy - ballR - ringW,
+                    (ballR + ringW) * 2f, (ballR + ringW) * 2f, z, ballR + ringW, outlineColor, 0);
+            render2DService.renderSoftRoundedRect(ms, cx - ballR, cy - ballR,
+                    ballR * 2f, ballR * 2f, z, ballR, selectedColor, 0);
+
+            float hlR = ballR * 0.42f;
+            render2DService.renderSoftRoundedRect(ms, cx - ballR * 0.45f, cy - ballR * 0.58f,
+                    hlR * 2f, hlR * 2f, z, hlR, new Color(255, 255, 255, 115), 0);
         }
 
         render2DService.endRender();
@@ -91,6 +101,10 @@ public class ColorPickerDrawableElement extends DrawableElement {
 
     @Nullable
     public Color getColorFromMouse(float parentWidth, float parentHeight, double mouseX, double mouseY) {
+        return getColorFromMouse(parentWidth, parentHeight, mouseX, mouseY, false);
+    }
+
+    private Color getColorFromMouse(float parentWidth, float parentHeight, double mouseX, double mouseY, boolean clamp) {
         float centerX = getAnchorX(parentWidth);
         float centerY = getAnchorY(parentHeight);
 
@@ -100,7 +114,10 @@ public class ColorPickerDrawableElement extends DrawableElement {
 
         float effectiveRadius = radius * scale.get();
 
-        if (dist > effectiveRadius) return null;
+        if (dist > effectiveRadius) {
+            if (!clamp) return null;
+            dist = effectiveRadius;
+        }
 
         float angle = (float) Math.atan2(dy, dx);
         float hue = (angle + (float) Math.PI) / (2.0f * (float) Math.PI);
@@ -120,11 +137,25 @@ public class ColorPickerDrawableElement extends DrawableElement {
 
     @Override
     public boolean handleClick(ScreenCtx screen) {
-        Color color = getColorFromMouse(screen.screenWidth(), screen.screenHeight(), screen.mouseX(), screen.mouseY());
-        if (color == null) return false;
+        if (!isMouseOver(screen.screenWidth(), screen.screenHeight(), screen.mouseX(), screen.mouseY())) return false;
+        dragging = true;
+        applyColor(getColorFromMouse(screen.screenWidth(), screen.screenHeight(), screen.mouseX(), screen.mouseY(), true));
+        return true;
+    }
 
+    public boolean handleDrag(float parentW, float parentH, double mouseX, double mouseY) {
+        if (!dragging) return false;
+        applyColor(getColorFromMouse(parentW, parentH, mouseX, mouseY, true));
+        return true;
+    }
+
+    public void handleRelease() {
+        dragging = false;
+    }
+
+    private void applyColor(Color color) {
+        if (color == null) return;
         this.selectedColor = color;
         if (onChange != null) onChange.accept(color);
-        return true;
     }
 }
