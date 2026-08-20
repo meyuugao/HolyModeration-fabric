@@ -19,6 +19,8 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
+import org.joml.Matrix3x2fStack;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -51,25 +53,10 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
     protected float scroll = 0f;
     protected float maxScroll = 0f;
 
-    protected static final class Row {
-        public final String label;
-        public final DrawableElement element;
-        public final SearchDrawableElement valueField;
-        public final Supplier<String> valueText;
-        public final Runnable commit;
-        public final boolean centeredButton;
-
+    protected record Row(String label, DrawableElement element, SearchDrawableElement valueField,
+                         Supplier<String> valueText, Runnable commit, boolean centeredButton) {
         public Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit) {
             this(label, element, valueField, valueText, commit, false);
-        }
-
-        public Row(String label, DrawableElement element, SearchDrawableElement valueField, Supplier<String> valueText, Runnable commit, boolean centeredButton) {
-            this.label = label;
-            this.element = element;
-            this.valueField = valueField;
-            this.valueText = valueText;
-            this.commit = commit;
-            this.centeredButton = centeredButton;
         }
 
         List<SearchDrawableElement> fields() {
@@ -227,9 +214,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
         float bottom = pH - 6f;
         maxScroll = Math.max(0f, contentHeight() - bottom);
-        scroll = Math.max(0f, Math.min(scroll, maxScroll));
+        scroll = Math.clamp(scroll, 0f, maxScroll);
 
-        render2DService.pushScissor(0f, contentStartY() - 8f, pW, bottom);
+        //pushScissor(ctx, 0f, contentStartY() - 8f, pW, bottom); //TIP: ОБРЕЗАЕТ НИЗ
 
         List<Row> visible = visibleRows();
         List<Row> dropdownRows = new ArrayList<>();
@@ -274,7 +261,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             renderExtra(ctx, palette, pW, pH, z, scroll);
         }
 
-        render2DService.popScissor();
+        //render2DService.popScissor();
 
         for (int pass = 0; pass < 2; pass++) {
             for (int i = 0; i < dropdownRows.size(); i++) {
@@ -294,6 +281,20 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         if (searchQuery().isBlank()) {
             renderOverlay(ctx, palette, pW, pH, z);
         }
+    }
+
+    private void pushScissor(DrawContext ctx, float x0, float y0, float x1, float y1) {
+        Matrix3x2fStack ms = ctx.getMatrices();
+        float[] a = transformPoint(ms, x0, y0);
+        float[] b = transformPoint(ms, x1, y1);
+        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
+    }
+
+    private static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {
+        return new float[]{
+                ms.m00 * x + ms.m10 * y + ms.m20,
+                ms.m01 * x + ms.m11 * y + ms.m21
+        };
     }
 
     protected void renderLabel(DrawContext ctx, int z, String text, float x, float y, ThemePalette palette) {

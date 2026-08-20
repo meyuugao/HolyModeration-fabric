@@ -42,13 +42,15 @@ public abstract class MouseMixin {
         }
     }
 
-    @Inject(method = "onMouseScroll", at = @At("HEAD"))
+    @Inject(method = "onMouseScroll", at = @At("HEAD"), cancellable = true)
     private void onMouseScroll(long window, double horizontal, double vertical, CallbackInfo ci) {
         MinecraftService minecraftService = DIAccessor.getDI().get(MinecraftService.class);
         InputService inputService = DIAccessor.getDI().get(InputService.class);
 
         double guiScale = minecraftService.getClient().getWindow().getScaleFactor();
 
-        inputService.updateScroll(horizontal, vertical, getX() / guiScale, getY() / guiScale);
+        if (inputService.updateScroll(horizontal, vertical, getX() / guiScale, getY() / guiScale)) {
+            ci.cancel();
+        }
     }
 }

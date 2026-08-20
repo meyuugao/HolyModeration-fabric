@@ -31,6 +31,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.text.Text;
 
+import org.joml.Matrix3x2fStack;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.Color;
@@ -128,7 +129,9 @@ public class GuiManagerModule {
     public void onMouseScroll(MouseScrollEvent event) {
         MinecraftClient mc = minecraftService.getClient();
         if (mc.currentScreen instanceof MainGuiScreen) {
-            scaleHoveredElement(event.getDy(), event.getX(), event.getY());
+            if (scaleHoveredElement(event.getDy(), event.getX(), event.getY())) {
+                event.setCancelled(true);
+            }
             return;
         }
         for (DrawableModule<?> drawableModule : new ArrayList<>(guiManagerService.getDrawableModules())) {
@@ -172,13 +175,13 @@ public class GuiManagerModule {
         return Math.abs(anchor - center) <= 20f ? center : anchor;
     }
 
-    private void scaleHoveredElement(double dy, int mouseX, int mouseY) {
+    private boolean scaleHoveredElement(double dy, int mouseX, int mouseY) {
         MinecraftClient mc = minecraftService.getClient();
         float windowW = mc.getWindow().getScaledWidth();
         float windowH = mc.getWindow().getScaledHeight();
 
         DrawableModule<?> hovered = findHoveredModule(windowW, windowH, mouseX, mouseY);
-        if (hovered == null) return;
+        if (hovered == null) return false;
 
         StatefulDrawableElement<?> element = (StatefulDrawableElement<?>) hovered.getDrawableElement();
         String id = element.getHudElementId();
@@ -187,11 +190,12 @@ public class GuiManagerModule {
         float step = dy > 0 ? HUD_SCALE_STEP : -HUD_SCALE_STEP;
 
         float current = guiConfig.getHudScale(id);
-        float next = Math.max(MIN_HUD_SCALE, Math.min(MAX_HUD_SCALE, current + step));
+        float next = Math.clamp(current + step, MIN_HUD_SCALE, MAX_HUD_SCALE);
         if (Float.compare(next, current) != 0) {
             guiConfig.setHudScale(id, next);
             configManagerService.saveConfig(guiConfig);
         }
+        return true;
     }
 
     private float clampAnchor(float anchor, float screenSize, float scaledSize, float pivotFactor) {
@@ -201,7 +205,7 @@ public class GuiManagerModule {
         if (maxAnchor < minAnchor) {
             return screenSize / 2f;
         }
-        return Math.max(minAnchor, Math.min(maxAnchor, anchor));
+        return Math.clamp(anchor, minAnchor, maxAnchor);
     }
 
     private void snapNotificationToCorner(NotificationsDrawableElement notif, double mouseX, double mouseY, float screenW, float screenH) {
@@ -256,19 +260,23 @@ public class GuiManagerModule {
 
         String id = elem.getHudElementId();
         float scale = configManagerService.getGuiConfig().getHudScale(id);
-        String text = "%.2f\u00d7".formatted(scale);
+        String text = "%.2f×".formatted(scale);
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
         ThemePalette palette = themeService.getPalette();
 
         float sw = ctx.getScaledWindowWidth();
         float sh = ctx.getScaledWindowHeight();
-        float w = tr.getWidth(text) + 12f;
-        float h = tr.fontHeight + 5f;
+        float resScale = Math.min(sw / 1280f, sh / 720f);
+
+        float bw = tr.getWidth(text) + 12f;
+        float bh = tr.fontHeight + 5f;
+        float w = bw * resScale;
+        float h = bh * resScale;
 
         float centerX = elem.getAbsoluteX(sw) + scaledW / 2f;
         float targetX = centerX - w / 2f;
-        float gap = 7f;
+        float gap = 7f * resScale;
         float targetY;
         if (elem.getPivotMode().getYFactor() >= 0.5f) {
             targetY = elem.getAbsoluteY(sh) + scaledH + gap;
@@ -276,8 +284,8 @@ public class GuiManagerModule {
             targetY = elem.getAbsoluteY(sh) - h - gap;
         }
 
-        targetX = Math.max(4f, Math.min(targetX, sw - w - 4f));
-        targetY = Math.max(4f, Math.min(targetY, sh - h - 4f));
+        targetX = Math.clamp(targetX, 4f, sw - w - 4f);
+        targetY = Math.clamp(targetY, 4f, sh - h - 4f);
 
         final float fx = targetX;
         final float fy = targetY;
@@ -287,12 +295,17 @@ public class GuiManagerModule {
         float x = prev[0];
         float y = prev[1];
 
+        Matrix3x2fStack ms = ctx.getMatrices();
         render2DService.setupRender();
-        render2DService.renderSoftRoundedRectOutline(ctx, x, y, w, h, 3000,
-                h / 2f, palette.surface, palette.outline, 1f, 2f);
+        ms.pushMatrix();
+        ms.translate(x, y);
+        ms.scale(resScale, resScale);
+        render2DService.renderSoftRoundedRectOutline(ctx, 0f, 0f, bw, bh, 3000,
+                bh / 2f, palette.surface, palette.outline, 1f, 2f);
         render2DService.renderText(tr, Text.literal(text).asOrderedText(),
-                (int) (x + 6f), (int) (y + (h - tr.fontHeight) / 2f + 1f), 3000,
+                (int) 6f, (int) ((bh - tr.fontHeight) / 2f + 1f), 3000,
                 palette.textMuted.getRGB(), false, ctx);
+        ms.popMatrix();
         render2DService.endRender();
     }
 

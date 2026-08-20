@@ -75,7 +75,7 @@ public class SoundsTab extends SettingsTab {
 
         for (int i = 0; i < visible.size(); i++) {
             Row row = visible.get(i);
-            if (row.element instanceof SearchDrawableElement && i >= 2) {
+            if (row.element() instanceof SearchDrawableElement && i >= 2) {
                 int soundIndex = i - 2;
                 if (soundIndex >= SOUNDS.length) continue;
                 float rowTop = contentStartY() + i * ROW_HEIGHT - scroll;

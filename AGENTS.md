@@ -1,205 +1,296 @@
 # AGENTS.md — Universal Delegation Rules
 
-Stack-agnostic. Operates over the opencode config (roles: build, plan, reviewer) backed by DeepSeek V4 Pro via the native DeepSeek API endpoint.
+Purpose: a strict multi-agent pipeline with maximum token economy. Stack-agnostic. Operates over the opencode config (roles: build, plan, reviewer) backed by DeepSeek V4 (Pro + Flash) via the native DeepSeek API endpoint.
 
-Language: English. Russian tokenizes ~25-30% worse.
+Language note: English is intentional. Russian tokenizes ~25-30% worse; an always-loaded file in English is the single highest-ROI economy decision.
 
-DeepSeek cache: automatic disk cache on the messages[] prefix. Cache-hit billed ~1/30 of cache-miss. A full byte-for-byte prefix match from index 0 is required. Any change to system prompt, tool list, provider, or a mid-sequence insertion breaks the entire prefix cache.
+DeepSeek economics (native v1 endpoint, July 2026 V4-Flash-0731 release):
+- V4 Pro: input cache miss $0.27/M, cache hit $0.014/M (19x discount), output $0.87/M.
+- V4 Flash: input cache miss $0.14/M, cache hit $0.003/M (47x discount), output $0.28/M.
+- Output is ~2-3x more expensive than input — minimize output tokens.
+- Context caching is automatic (disk cache, no `cache_control` needed — it is silently ignored by DeepSeek). Cache-hit tokens are billed at the cache-hit rate, shown in `usage.prompt_cache_hit_tokens` of every API response.
+- Persistence happens at request boundaries and on common-prefix detection. Cache lives hours-days while in use.
+- Peak hours 01:00-04:00 and 06:00-10:00 UTC — schedule batch work outside these for 50% off. Pro concurrency 500, Flash 2500.
 
-Maintenance: humans edit this file. Agents MUST NOT write, regenerate, or auto-append to AGENTS.md.
+Cache hit rules (official DeepSeek docs — api-docs.deepseek.com/guides/kv_cache):
+- Cache hit requires the FULL prefix to match byte-for-byte from index 0.
+- Any insertion, deletion, or content change before the final position breaks the prefix hash → full cache miss.
+- Tool result insertion between assistant and next user message breaks the prefix in naive agent loops. opencode with `setCacheKey: true` mitigates this by sending a stable cache key per session.
+- Multiple agents with different system prompts = separate cache entries, no sharing. This is why the agent topology below uses 3 agents, not 6.
+
+Maintenance rule: humans edit this file. Agents MUST NOT write, regenerate, or auto-append to AGENTS.md. Every line must trace to a real incident. No speculative rules. Audit monthly; delete stale rules.
 
 ---
 
-## 0. NEVER
+## 0. NEVER (critical — read first)
 
-- NEVER edit this file. Lead approves every line.
-- NEVER re-read a file already in session context. Cite it from memory.
-- NEVER switch to a different agent mid-task. Each agent has its own system prompt -> cache miss on the whole prefix.
-- NEVER call a subagent for work you can do yourself. Every subagent invocation is a separate cache.
-- NEVER inject dynamic data (timestamps, paths, session IDs) into prompts or rules files.
-- NEVER write "clean up this code" — it strips WHY comments. Use "refactor X, preserve comments that explain intent".
+- NEVER let an agent (build/reviewer) edit this file. Lead approves every line. LLM-generated context files measurably reduce success rate.
+- NEVER re-read a file already summarized in-session. Cite the summary.
 - NEVER dump full codebase context into a subagent. Pass only the relevant slice.
-- NEVER accept build output as final when a commit is intended — reviewer must pass first.
-- NEVER raise `subagent_depth` above 1.
-- NEVER retry the same approach expecting different results.
-- NEVER retry a shell command that failed with a file-lock error (AccessDeniedException, LockedException, "being used by another process", EBUSY, EPERM on write). The lock is held by another process — retrying the same command will hang or fail identically.
-- NEVER pipe long-running build output through a buffer-stage command (`Select-Object`, `head`, `tail`, `more`) when wrapping a shell call. These buffer the entire stream in memory and cause pipe deadlocks when the underlying process holds a handle after exit.
+- NEVER accept build output without a reviewer pass (when reviewer was invoked).
+- NEVER raise `subagent_depth` above 1 (opencode native key, default 1 already forbids nested subagents). Recursive fan-out is the #1 token blow-up.
+- NEVER run more than 2 active subagents. The only subagent is `reviewer`.
+- NEVER write "clean up this code" — it strips WHY comments. Use "refactor X, preserve comments that explain intent".
+- NEVER ship conflicting rules. Resolve before commit.
+- NEVER include philosophy, CONTRIBUTING.md restatement, install guides, or roadmap.
+- NEVER inject dynamic data (timestamps, current date, session IDs, working directory paths) into the system prompt, this file, or rules files. One char difference breaks the entire prefix cache.
+- NEVER switch providers between sessions. The cache is keyed per-provider; switching from deepseek to anthropic and back invalidates everything.
 
 ---
 
-## 1. Topology
+## 1. Topology (3 agents, cache-optimized)
 
-| Role    | Mode     | Write | Shell | Subagent | Purpose                                          |
-|---------|----------|-------|-------|----------|--------------------------------------------------|
-| build   | primary  | allow | ask   | allow    | Orchestrator + executor: plan, read, edit, verify |
-| plan    | primary  | deny  | deny  | deny     | Read-only analysis, architecture, tradeoffs       |
-| reviewer| subagent | deny  | allow | deny     | Pre-commit verification; PASS or FIX              |
+| Role    | Model | Mode     | Write | Shell | Purpose                              |
+|---------|-------|----------|-------|-------|--------------------------------------|
+| build   | pro   | primary  | allow | ask   | Orchestrator + executor: plan, read, edit, verify, run tests |
+| plan    | pro   | primary  | deny  | deny  | Read-only analysis, architecture, tradeoffs |
+| reviewer| pro   | subagent | deny  | allow | Verify before commit; PASS or FIX |
 
-All three run on DeepSeek V4 Pro. build does the work itself. plan and reviewer are narrow specialists invoked only when their isolation is genuinely useful — every agent switch costs a full cache miss.
+Target: 1 single agent (build) per task. Subagent only for pre-commit review.
+
+Why not the old 6-agent topology (pm, build, plan, coder, explorer, reviewer):
+- Each agent has its own system prompt → separate DeepSeek cache entries → 0% cache sharing.
+- pm + build + coder + explorer + reviewer = 5 separate requests per task = 5 cache misses on system+tools.
+- With 1 build agent doing everything, system + tools stay stable across all steps → cache hit rate 80-95%.
+- The old "build delegates to coder" pattern doubles tokens (build's system + coder's system) and breaks cache between them.
+
+Rule: pm and plan are replaced by build + plain user prompts. coder is merged into build. explorer is merged into build. Only reviewer stays as a separate subagent — its isolated context is genuinely useful (it should not see build's reasoning, only its output file).
 
 ---
 
 ## 2. Delegation protocol
 
-Default flow: build does everything — reads, plans, edits, runs checks. One agent, one session, one stable cache prefix.
+Flow: build (does everything itself, including reads and edits) → reviewer (only for pre-commit verification).
 
-- build reads files directly. Do not delegate reading.
-- build edits files directly. Do not delegate edits.
-- build calls reviewer ONLY before a commit, passing the path `.agent/task-N.md` — never the content.
-- For a multi-step refactor: write a plan to `.agent/plan-N.md` first, then execute step by step. This externalizes reasoning so reviewer has a reference.
-- For a single-file fix: edit directly. No plan file, no reviewer.
-- Do NOT switch to plan mid-task. If architectural judgment is needed, finish the current step first or start a fresh build session.
-- reviewer runs in its own isolated context. It sees only the file you point it to.
+- build reads files directly (it has read+glob+grep permissions now).
+- build edits files directly (it has edit permission now).
+- build writes output to `.agent/task-N.md` ONLY when it needs reviewer to verify — then reviewer reads the file in its isolated context, build passes the path not the content.
+- Between independent tasks: user runs `/clear` in opencode GUI, then starts the next task. This drops build's context so the next task starts fresh (no stale history resending every turn).
+- Within a single task: do NOT clear context. build accumulates reads + edits in messages[], which is exactly what DeepSeek needs for cache hit (prefix grows at the end, start stays stable).
+
+Handoff files are append-only. reviewer reads the file, not the work that produced it. One file, one owner at a time.
 
 ---
 
 ## 3. Role contracts
 
 build (orchestrator + executor):
-- Accept task -> plan -> read -> edit -> verify -> optionally call reviewer.
-- Do not re-read files already in context.
-- Preserve comments that explain intent. Delete only what the task requires.
-- Prefer diffs and line refs over full-file rewrites in any output you return.
-- When calling reviewer: pass ONLY the path, never the content.
+- Accept user task → plan (in head) → read files → edit → run tests → optionally call reviewer.
+- Do NOT re-read files already in session context. The summary above is canonical.
+- /clear context between independent tasks (drops everything, starts fresh — big saving).
+- For a complex task (multi-file refactor, 3+ steps): write a plan to `.agent/plan-N.md` first, then execute step by step. This gives reviewer a reference.
+- For a simple task (single file fix): edit directly, no plan file needed.
+- On a bug you cannot reproduce in 3 attempts: stop, escalate to user with what you tried.
+- When calling reviewer: pass ONLY the path `.agent/task-N.md`, not the content.
 
 plan (read-only investigator):
-- Use only when the user explicitly asks for analysis or design without edits.
+- Use when user explicitly asks for analysis or design without edits.
 - Cannot edit, cannot run shell, cannot delegate.
-- Return: proposal with tradeoffs, file refs, no code changes.
+- Returns: proposal with tradeoffs, file refs, no code changes.
+- After plan is approved, user switches to build to implement.
 
 reviewer (verifier):
-- Read `.agent/task-N.md` in your isolated context. build passes the path.
-- Check: bugs, security, conventions, regressions, side effects.
+- Reads `.agent/task-N.md` in isolated context. build passes path only.
+- Checks: bugs, security, conventions, regressions, side effects.
 - Tools: read, shell (tests). No write.
-- Verdict: `PASS` or `FIX: [file:line] issue`. No prose, no code quotes.
+- Verdict format: `PASS` or `FIX: [file:line] issue`. No prose, no code quotes.
+- Mandatory before commit. Flash errs more; reviewer catches before cascade.
 
 ---
 
-## 4. Output economy
+## 4. Output economy (output costs 2-3x input on DeepSeek V4)
 
-Output costs 2-3x input on DeepSeek V4. Minimize output.
-
-- Return only the final result. No chain-of-thought in routine work.
-- Structured returns: `PASS|FIX`, severity tables, line refs. Never novels.
+- Subagent (reviewer) returns ONLY final verdict. opencode isolates its context; build sees just the final message.
+- Mandate structured returns: `PASS|FIX`, severity tables, line refs. Never novels.
+- No chain-of-thought in routine subagent work. CoT burns output tokens; reserve for genuinely hard pro calls.
 - Diffs and line-number refs over full-file rewrites.
-- Format instructions belong in the user message at the END, not the system prompt: "Respond with PASS or FIX only", "Return only the JSON object".
+- Lean tool descriptions. Verbose definitions tax every call — review opencode's tool list in GUI Settings → Tools, disable what you don't use (MCP servers, custom tools).
+- `steps` cap per agent: build 50, plan 25, reviewer 25. On limit hit opencode removes tools and forces a summary.
+- Format instructions live in the user message at the END, not the system prompt: "Respond with PASS or FIX only", "Return only the JSON object".
 
 ---
 
-## 5. Cache preservation
+## 5. Context and cache (THE most important section)
 
-DeepSeek caches the messages[] prefix on disk. Cache-hit costs ~1/30 of cache-miss. The prefix must match byte-for-byte from index 0.
+### How DeepSeek cache hit works (simple version)
 
-What breaks the cache — avoid:
-- Changing system prompt or rules files mid-task.
-- Switching agents mid-task (different system prompt).
-- Switching providers mid-session.
-- Inserting messages in the middle of the sequence.
-- Editing AGENTS.md or rules files during a task.
+DeepSeek remembers the BEGINNING of your messages[] array on disk. On the next request, if the new messages[] starts with the EXACT SAME beginning (byte-for-byte), DeepSeek reads that part from cache instead of recomputing it.
 
-What does NOT break the cache:
-- Adding new messages at the END.
-- Time passing (cache lives hours-days while in use).
+- Cache hit on 800K-token prefix: 800K × $0.003/M = $0.0024 (basically free).
+- Cache miss on 800K-token prefix: 800K × $0.14/M = $0.112 (50x more expensive).
 
-Workflow:
-- Within a task: do NOT clear context. The accumulated prefix IS the cache.
-- Between tasks: clear context to drop stale history.
-- Stay on one agent per task.
-- Do not call reviewer unless a commit is intended.
+### What breaks the cache (any of these → full cache miss on entire prefix)
 
----
+1. **System prompt change** — even one character. opencode injects timestamps, working directory, session IDs by default. Check Settings → Agent → System and remove dynamic fields.
+2. **Tool list change** — opencode shuffles tool order or adds/removes one between steps. Disable unused MCP tools in Settings.
+3. **Provider switch** — going from `deepseek` to `anthropic` and back creates a fresh cache. Stay on one provider per session.
+4. **Message insertion in middle** — happens when opencode inserts a `tool_result` between `assistant` and `next user`. opencode's `setCacheKey: true` mitigates this by sending a stable cache key.
+5. **AGENTS.md or rules file change** — these are loaded into system prompt. Edit them between tasks, not during.
+6. **Switching agents** — `build` and `plan` have different system prompts. Switching between them in one session invalidates cache. Stay on one agent per task.
 
-## 6. Shell and build commands
+### What does NOT break the cache
 
-Long-running build tools (gradle, maven, npm, cargo, dotnet, go build, decompilers, codegen) produce large output and hold file handles. Shell wrappers can deadlock on this. Follow these rules.
+1. Adding a new user message at the END of messages[].
+2. Adding a new assistant response at the END.
+3. Adding a new tool_result at the END (after the latest message).
+4. Time passing (cache lives hours-days while in use).
 
-### Running build commands
+### Cache-maximizing workflow
 
-- Run build commands directly through the native shell executable, not through an intermediate pipe that buffers.
-    - Windows: prefer `cmd /c <command>` over `powershell -Command "<command> | Select-Object ..."`. PowerShell's `Select-Object -Last N` buffers the entire stream in memory before emitting, which deadlocks when the underlying process holds a stdout handle after exit.
-    - Unix: avoid `cmd | tail -n 30` for processes that may leave a child holding the pipe. Stream directly and let opencode truncate.
-- If the wrapper must truncate output, prefer a wrapper that streams and truncates on the fly (e.g. `cmd /c <command> 2>&1`) over one that buffers and slices.
-- Set a per-command timeout expectation mentally. If a build step takes longer than reasonable for its type (gradle genSources > 60s with no output, npm install > 120s with no output), treat it as hung — see "On a hung command" below.
+- Start task → build reads files → edits → tests → done. All in ONE build session.
+- Do NOT `/clear` in the middle of a task — that destroys the accumulated prefix.
+- Do `/clear` BETWEEN tasks — starts fresh, no stale history.
+- Do NOT switch to plan or reviewer mid-task unless absolutely necessary. Each switch = cache miss.
+- If reviewer is needed: build calls it as subagent. reviewer runs in its own context (separate cache). build's cache stays intact.
 
-### Recognizing file-lock failures
+### Checking cache hit rate in opencode GUI
 
-The following patterns in command output mean a file is locked by another process. They are NOT transient. Retrying the same command will fail identically or hang.
+1. Open opencode GUI.
+2. Run a task (any multi-step task).
+3. After task completes, go to: top-right menu (≡) → Usage / Cost.
+4. Look for these fields per turn:
+    - `prompt_cache_hit_tokens` — should be HIGH (70-95% of input).
+    - `prompt_cache_miss_tokens` — should be LOW.
+5. If `prompt_cache_hit_tokens` is 0 or near-0 on turn 2+: cache is broken. See troubleshooting section below.
 
-- `AccessDeniedException` (Java/gradle)
-- `LockedException`, `OverlappingFileLockException`
-- `being used by another process` (Windows)
-- `Resource temporarily unavailable`, `EBUSY`, `EACCES` on write (Unix)
-- `Failed to query processes holding a lock`
-- `RmRegisterResources failed` (Windows resource manager, usually on `.gradle` caches)
-- `Cannot delete ... because it is being used`
+### Troubleshooting zero cache hit
 
-When you see any of these: STOP immediately. Do not retry. Report to the user with the locked path and the likely holder.
-
-### On a hung command
-
-A command is hung when: no new output for >30s on a build step, or the shell call has not returned after the expected duration.
-
-- Do NOT wait silently. Report to the user: "Command `<cmd>` appears hung. Last output: `<tail>`. Suspected cause: file lock / pipe buffer / child process holding a handle."
-- Do NOT auto-retry the same command. The hang is almost always caused by a lock or a pipe deadlock that retry does not fix — it only appears to "fix" because the lock releases during the wait.
-- If a previous run was killed (ChildProcess.kill in the log), assume the killed process may have left a lock or zombie. Diagnose before re-running.
-
-### Recovery sequence for a lock failure
-
-When a build command failed with a file-lock error on a cache/build-output directory, run this sequence before retrying the original command — and only if the user has agreed:
-
-1. Identify the locked path from the error message.
-2. Identify likely holders: IDE processes (IntelliJ, VSCode), gradle daemons, java child processes, antivirus scanners, file indexers.
-3. Kill the holders targeting the lock. On Windows: `taskkill /F /IM java.exe`, `taskkill /F /IM gradle.exe`. On Unix: `pkill -f gradle`, `pkill -f <build-tool>`. Be specific — do not kill unrelated processes.
-4. Remove the locked cache directory only (not the whole `.gradle` or build cache — just the subtree named in the error). Example: `rmdir /S /Q .gradle\loom-cache\minecraftMaven\<path-from-error>` on Windows, `rm -rf .gradle/loom-cache/minecraftMaven/<path-from-error>` on Unix.
-5. Retry the original command ONCE. If it fails again with the same lock error, stop and tell the user the environment is unstable (likely IDE or antivirus holds the cache).
-
-### General shell discipline
-
-- Do not run more than one build command in parallel against the same project. Gradle/maven/cargo daemons lock shared state.
-- Do not run a build command while the IDE is running the same build.
-- After a build command fails, capture the full tail of the output (last 30-50 lines) into your reasoning, then report a one-line diagnosis plus the tail. Do not paste 500 lines of build log.
-- If a build command succeeds but the shell call reports a kill or timeout, do not assume failure — re-read the captured output for a BUILD SUCCESSFUL / build finished / exit 0 marker before deciding.
+1. **Verify provider config** — `setCacheKey: true` MUST be in `provider.deepseek.options`. Without it opencode does not send a cache key.
+2. **Check baseURL** — must be `https://api.deepseek.com/v1` (not `/anthropic`). The Anthropic endpoint silently drops cache_control.
+3. **Disable unused tools** — opencode Settings → Tools. Every enabled tool adds ~500-2000 tokens to EVERY request. If you don't use MCP servers, disable them.
+4. **Check system prompt for dynamic content** — opencode Settings → Agent → System Prompt. Remove any `{{date}}`, `{{time}}`, `{{cwd}}`, `{{session_id}}` placeholders.
+5. **Stay on one agent** — don't switch between build and plan mid-task.
+6. **Don't edit AGENTS.md mid-session** — it's loaded into system. Edit between tasks.
+7. **First 2-3 turns after `/clear`** will be cache misses (cache needs to be built). After that, hit rate should climb.
 
 ---
 
-## 7. Escalation
+## 6. Escalation and kill criteria
 
-Escalate to plan only when build genuinely cannot decide an architectural question. Finish the current step first; do not switch mid-task.
+Escalate (rare — only when build genuinely cannot decide):
+- architectural judgment or ambiguity is required → switch to `plan` agent explicitly.
+- Do NOT switch back to build mid-task after plan — start a fresh build session with the plan output.
 
-Stop and report to the user when:
-- Stuck 3+ attempts on the same error.
-- Cannot reproduce a bug after 3 attempts.
-- A task requires edits beyond build's permissions.
-- A shell command fails with a file-lock error (do not retry — see section 6).
-- A shell command hangs with no output for >30s on a build step (do not retry silently — see section 6).
+Kill / reassign when:
+- build stuck 3+ iterations on same error → `/clear`, restart with sharper user prompt.
+- build hits its `steps` cap (50) → task too big, split it.
+- review queue exceeds your review bandwidth.
 
-Do NOT loop on the same error. If an approach fails twice, change the approach or stop.
+Reviewer ratio: call reviewer only before commits, not every edit. Reviewing every edit wastes tokens.
 
 ---
 
-## 8. Anti-patterns (forbidden)
+## 7. Anti-patterns (forbidden)
 
-- Delegating to a subagent for trivial edits.
-- Full codebase dump into a subagent.
-- Accepting build output for commit without reviewer.
-- Re-reading a file already in session.
-- Switching agents mid-task.
-- Switching providers mid-session.
-- Editing AGENTS.md or rules files mid-task.
-- Dynamic data in system prompt (timestamps, paths, session IDs).
-- Recursive subagent spawning (`subagent_depth` > 1).
-- /init-generated context committed without audit.
-- Duplicating stack rules across CLAUDE.md / .cursorrules / copilot-instructions.md. Symlink to prevent drift.
+- build delegates to a subagent for trivial edits. (Old coder pattern — kills cache.)
+- Full codebase dump into any subagent.
+- Accepting build output without reviewer (when commit is intended).
+- Re-reading a file build already read in this session.
+- /init-generated context committed without human audit.
+- Duplicating stack rules across CLAUDE.md / .cursorrules / copilot-instructions.md. Symlink (CLAUDE.md -> AGENTS.md) to prevent drift.
 - Stale structural references after refactors.
 - Emojis, decorative formatting, prose philosophy.
 - Speculative "just in case" rules.
-- Vague rules ("write clean code") — use specific contrarian rules ("use early returns, not nested if").
+- Recursive subagent spawning (`subagent_depth` > 1).
+- Vague rules ("write clean code") — ignored regardless of length; use specific contrarian rules ("use early returns, not nested if").
 - Conflicting rules — cause silent stalls.
-- Retrying a shell command that failed with a file-lock error.
-- Piping long-running build output through `Select-Object`, `head`, `tail`, `more`, or any buffer-stage command when wrapping a shell call.
-- Running a build command in parallel with the IDE running the same build against the same project.
-- Waiting silently on a hung shell command (>30s, no output) without reporting to the user.
-- Assuming a killed shell call failed — re-read the captured output for a success marker first.
+- Dynamic data in system prompt (timestamps, paths, session IDs).
+- Switching providers mid-session.
+- Editing AGENTS.md or rules files mid-task.
+
+---
+
+## 8. Checklist before adding a rule
+
+1. Traces to a real incident? No → do not add.
+2. Agent can infer it from code/docs? Yes → do not add.
+3. Universal (needed every conversation)? No → move to skill or references/.
+4. Conflicts with an existing rule? Yes → merge, do not patch.
+5. File still under ~100 lines? No → split into nested AGENTS.md per package.
+6. Critical rule placed in section 0 (NEVER)? No → move up.
+7. Written by a human, not an agent? No → reject.
+
+---
+
+## 9. Prompt templates for common tasks
+
+### Simple bug fix (1 file, 1-5 line change)
+
+```
+In src/auth/LoginService.java the method validateToken() throws NPE when
+token is null. Fix it to return false instead. Preserve the existing logging.
+```
+
+Why this works:
+- Concrete file + method + line of failure.
+- "Preserve logging" prevents the model from deleting comments.
+- 1 step, no plan needed, no reviewer needed.
+
+### Multi-file refactor
+
+```
+Refactor: extract the CSV parsing logic from GoogleSheetsService into a new
+class CsvParser in the same package. Update all callers. Run tests after.
+
+Plan first to .agent/plan-1.md (list files affected + step-by-step),
+then execute step by step, then call reviewer on .agent/task-1.md.
+```
+
+Why this works:
+- Forces a plan file first (build's reasoning is externalized, not lost).
+- Each step is discrete.
+- Reviewer reads only the final output file, isolated context.
+
+### Investigation (no edits)
+
+Switch to `plan` agent first, then:
+
+```
+Analyze why the DIContainer.resolve() method has 3 synchronized blocks.
+Is this necessary for correctness? Are there deadlock risks? Return
+a proposal with concrete alternatives, no edits.
+```
+
+Why this works:
+- plan has read-only permissions, cannot accidentally edit.
+- Output is a proposal, not code.
+- After approval, switch to build to implement.
+
+### Hard bug (cannot reproduce)
+
+```
+Bug: tests for LazyTest.lazyBreaksConstructorCycle pass locally but fail
+on CI. Hypothesis: JDK version difference (local 21, CI 17).
+
+Steps to try:
+1. Check the test assertions for JDK-17-specific assumptions.
+2. Look at Proxy.isProxyClass() behavior differences.
+3. If still stuck after 3 attempts, stop and report what you tried.
+
+Do NOT edit the test until you have a confirmed root cause.
+```
+
+Why this works:
+- Explicit "stop after 3 attempts" prevents loops.
+- "Do NOT edit until root cause" prevents flailing edits.
+- Reviewer not needed (investigation, not commit).
+
+### Pre-commit review
+
+```
+Review .agent/task-1.md before commit. Check:
+- No new NPE risks.
+- No public API breaking changes.
+- Tests still pass (run `./gradlew test`).
+Return PASS or FIX with file:line refs. No prose.
+```
+
+Why this works:
+- Reviewer runs as subagent, isolated context.
+- Strict output format (PASS/FIX).
+- Concrete checks, not "is this good".
+
+---
 
 # HolyModeration (Fabric)
 

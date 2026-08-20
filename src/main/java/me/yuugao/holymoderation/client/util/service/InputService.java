@@ -106,8 +106,10 @@ public class InputService {
         return wasPressed;
     }
 
-    public void updateScroll(double dx, double dy, double x, double y) {
+    public boolean updateScroll(double dx, double dy, double x, double y) {
         EventBus eventBus = eventBusService.getEventBus();
-        eventBus.invokeEvent(new MouseScrollEvent(dx, dy, (int) x, (int) y));
+        MouseScrollEvent event = new MouseScrollEvent(dx, dy, (int) x, (int) y);
+        eventBus.invokeEvent(event);
+        return event.isCancelled();
     }
 }

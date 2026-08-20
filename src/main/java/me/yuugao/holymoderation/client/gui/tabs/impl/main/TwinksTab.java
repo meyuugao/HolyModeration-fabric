@@ -93,7 +93,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
         files.clear();
         Path dir = TwinksCheckModule.getWorkDir();
-        if (dir == null || !Files.exists(dir)) return;
+        if (!Files.exists(dir)) return;
 
         try (Stream<Path> stream = Files.list(dir)) {
             stream.filter(p -> p.getFileName().toString().endsWith(".txt"))
@@ -170,7 +170,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
         float totalH = visible.size() * rowH;
         fileMax = Math.max(0f, totalH - listH);
-        fileScroll = Math.max(0f, Math.min(fileScroll, fileMax));
+        fileScroll = Math.clamp(fileScroll, 0f, fileMax);
 
         pushScissor(ctx, PAD, listTop, PAD + LEFT_W, listBottom);
 
@@ -212,7 +212,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
             return;
         }
 
-        pushScissor(ctx, x, top, x + w, bottom);
+        pushScissor(ctx, x, 104f, x + w, bottom);
 
         float y = top + 4f - contentScroll;
         for (TwinksCheckModule.PlayerEntry e : entries) {
@@ -221,7 +221,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         }
 
         contentMax = Math.max(0f, (y + contentScroll) - bottom);
-        contentScroll = Math.max(0f, Math.min(contentScroll, contentMax));
+        contentScroll = Math.clamp(contentScroll, 0f, contentMax);
 
         render2DService.popScissor();
     }
@@ -353,13 +353,12 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
     @Override
     public void onMouseScroll(double dx, double dy, float mouseX, float mouseY) {
-        float pW = parent.getWidth();
         if (mouseX > PAD + LEFT_W) {
             contentScroll -= (float) (dy * 22f);
-            contentScroll = Math.max(0f, Math.min(contentScroll, contentMax));
+            contentScroll = Math.clamp(contentScroll, 0f, contentMax);
         } else {
             fileScroll -= (float) (dy * 22f);
-            fileScroll = Math.max(0f, Math.min(fileScroll, fileMax));
+            fileScroll = Math.clamp(fileScroll, 0f, fileMax);
         }
     }
 
