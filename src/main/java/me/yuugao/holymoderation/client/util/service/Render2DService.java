@@ -258,10 +258,12 @@ public class Render2DService {
         if (scissor == null) return;
         float sf = (float) minecraftService.getClient().getWindow().getScaleFactor();
         int sx = Math.max(0, (int) Math.floor(scissor[0] * sf));
-        int sy = Math.max(0, (int) Math.floor(scissor[1] * sf));
+        int topPx = Math.max(0, (int) Math.floor(scissor[1] * sf));
         int ex = Math.max(sx, (int) Math.ceil(scissor[2] * sf));
-        int ey = Math.max(sy, (int) Math.ceil(scissor[3] * sf));
-        RenderSystem.enableScissor(sx, sy, ex - sx, ey - sy);
+        int bottomPx = Math.max(topPx, (int) Math.ceil(scissor[3] * sf));
+        int fbHeight = minecraftService.getClient().getFramebuffer().textureHeight;
+        int glY = Math.max(0, fbHeight - bottomPx);
+        RenderSystem.enableScissor(sx, glY, ex - sx, bottomPx - topPx);
     }
 
     private void clearScissor() {

@@ -157,7 +157,7 @@ public class SliderDrawableElement extends DrawableElement {
 
     public boolean handleScroll(float parentW, float parentH, double dy, double mouseX, double mouseY) {
         if (!isMouseOver(parentW, parentH, mouseX, mouseY)) return false;
-        float delta = step > 0f ? (float) (-dy * step) : (float) (-dy * (max - min) * 0.05f);
+        float delta = step > 0f ? (float) (dy * step) : (float) (dy * (max - min) * 0.05f);
         setValue(clamp(value + delta));
         return true;
     }

@@ -82,7 +82,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
     public SettingsTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
                        MinecraftService minecraftService, Render2DService render2DService, DrawableElementFactory factory) {
-        super(parent);
+        super(parent, render2DService);
         this.themeService = themeService;
         this.configManagerService = configManagerService;
         this.minecraftService = minecraftService;
@@ -229,10 +229,11 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         maxScroll = Math.max(0f, contentHeight() - bottom);
         scroll = Math.max(0f, Math.min(scroll, maxScroll));
 
-        render2DService.pushScissor(0f, contentStartY() - 8f, pW, bottom);
-
         List<Row> visible = visibleRows();
         List<Row> dropdownRows = new ArrayList<>();
+
+        pushScissor(ctx, PAD, contentStartY() - 1f, pW - PAD, bottom);
+
         for (int i = 0; i < visible.size(); i++) {
             Row row = visible.get(i);
             float rowTop = contentStartY() + i * ROW_HEIGHT - scroll;
@@ -274,8 +275,6 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             renderExtra(ctx, palette, pW, pH, z, scroll);
         }
 
-        render2DService.popScissor();
-
         for (int pass = 0; pass < 2; pass++) {
             for (int i = 0; i < dropdownRows.size(); i++) {
                 Row row = dropdownRows.get(i);
@@ -290,6 +289,8 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                         palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
             }
         }
+
+        render2DService.popScissor();
 
         if (searchQuery().isBlank()) {
             renderOverlay(ctx, palette, pW, pH, z);
@@ -343,23 +344,37 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             }
         }
 
-        boolean overField = false;
-        for (Row row : visible) {
+        SearchDrawableElement topField = null;
+        Row topRow = null;
+        for (int i = visible.size() - 1; i >= 0; i--) {
+            Row row = visible.get(i);
             for (SearchDrawableElement field : row.fields()) {
-                boolean was = field.isFocused();
-                boolean over = field.isMouseOver(pW, pH, mouseX, mouseY);
-                if (over && !was && row.valueField == field && row.valueText != null) {
+                if (field.isMouseOver(pW, pH, mouseX, mouseY)) {
+                    topField = field;
+                    topRow = row;
+                    break;
+                }
+            }
+            if (topField != null) break;
+        }
+
+        for (Row row : rows) {
+            for (SearchDrawableElement field : row.fields()) {
+                if (field.isFocused() && row.valueField == field && row.valueText != null) {
                     field.setQuerySilent(row.valueText.get());
                 }
-                if (over) {
-                    field.handleClick(pW, pH, mouseX, mouseY);
-                } else {
-                    field.setFocused(false);
-                }
-                if (over) overField = true;
+                field.setFocused(false);
             }
         }
-        return overField;
+
+        if (topField != null) {
+            if (topRow.valueField == topField && topRow.valueText != null) {
+                topField.setQuerySilent(topRow.valueText.get());
+            }
+            topField.handleClick(pW, pH, mouseX, mouseY);
+            return true;
+        }
+        return false;
     }
 
     @Override

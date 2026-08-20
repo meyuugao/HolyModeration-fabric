@@ -18,9 +18,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 
-import net.minecraft.client.util.math.MatrixStack;
-import org.joml.Matrix4f;
-
 import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,7 +67,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
 
     public TwinksTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
                      MinecraftService minecraftService, Render2DService render2DService, DrawableElementFactory factory) {
-        super(parent);
+        super(parent, render2DService);
 
         this.themeService = themeService;
         this.minecraftService = minecraftService;
@@ -313,21 +310,6 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         }
 
         return y + 6f;
-    }
-
-    private void pushScissor(DrawContext ctx, float x0, float y0, float x1, float y1) {
-        MatrixStack ms = ctx.getMatrices();
-        float[] a = transformPoint(ms, x0, y0);
-        float[] b = transformPoint(ms, x1, y1);
-        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
-    }
-
-    private static float[] transformPoint(MatrixStack ms, float x, float y) {
-        Matrix4f m = ms.peek().getPositionMatrix();
-        return new float[]{
-                m.m00() * x + m.m10() * y + m.m20(),
-                m.m01() * x + m.m11() * y + m.m21()
-        };
     }
 
     @Override

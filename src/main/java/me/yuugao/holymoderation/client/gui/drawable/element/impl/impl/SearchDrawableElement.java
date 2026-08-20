@@ -409,8 +409,8 @@ public class SearchDrawableElement extends DrawableElement {
     private static float[] transformPoint(MatrixStack ms, float x, float y) {
         Matrix4f m = ms.peek().getPositionMatrix();
         return new float[]{
-                m.m00() * x + m.m10() * y + m.m20(),
-                m.m01() * x + m.m11() * y + m.m21()
+                m.m00() * x + m.m10() * y + m.m30(),
+                m.m01() * x + m.m11() * y + m.m31()
         };
     }
 }

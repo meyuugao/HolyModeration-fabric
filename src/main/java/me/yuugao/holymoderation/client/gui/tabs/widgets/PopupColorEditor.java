@@ -12,19 +12,20 @@ import net.minecraft.text.Text;
 import java.awt.Color;
 import java.util.function.Consumer;
 
+import lombok.Getter;
+
 public class PopupColorEditor {
     private final DrawableElementFactory factory;
     private final MinecraftService minecraftService;
     private final Render2DService render2DService;
     private final Runnable save;
 
+    @Getter
     private boolean visible = false;
-    private String elementId = "";
-    private String title = "";
     private ColorFieldSet fieldSet;
-    private Consumer<Color> applyColor;
     private float cbX, cbY;
     private static final float CB_SIZE = 18f;
+    private float panelX, panelY, panelW, panelH;
 
     public PopupColorEditor(DrawableElementFactory factory, MinecraftService minecraftService,
                             Render2DService render2DService, Runnable save) {
@@ -34,18 +35,7 @@ public class PopupColorEditor {
         this.save = save;
     }
 
-    public boolean isVisible() {
-        return visible;
-    }
-
-    public String getElementId() {
-        return elementId;
-    }
-
-    public void open(String elementId, String title, Color initial, Consumer<Color> applyColor) {
-        this.elementId = elementId;
-        this.title = title;
-        this.applyColor = applyColor;
+    public void open(String title, Color initial, Consumer<Color> applyColor) {
         this.visible = true;
 
         final Color[] holder = {initial};
@@ -76,6 +66,11 @@ public class PopupColorEditor {
         float px = (pW - panelW) / 2f;
         float py = (pH - panelH) / 2f;
 
+        this.panelX = px;
+        this.panelY = py;
+        this.panelW = panelW;
+        this.panelH = panelH;
+
         render2DService.renderSoftRoundedRect(ctx.getMatrices(), px, py, panelW, panelH, z + 1, 12f, palette.surfaceElevated, 0);
         render2DService.renderSoftRoundedRectOutline(ctx.getMatrices(), px, py, panelW, panelH, z + 1, 12f,
                 palette.surfaceElevated, palette.outline, 1.5f, 2f);
@@ -97,7 +92,14 @@ public class PopupColorEditor {
             close();
             return true;
         }
-        return fieldSet != null && fieldSet.handleClick(pW, pH, mouseX, mouseY);
+
+        if (mouseX >= panelX && mouseX <= panelX + panelW
+                && mouseY >= panelY && mouseY <= panelY + panelH) {
+            return fieldSet != null && fieldSet.handleClick(pW, pH, mouseX, mouseY);
+        }
+
+        close();
+        return true;
     }
 
     public void handleDrag(float pW, float pH, double mouseX, double mouseY) {

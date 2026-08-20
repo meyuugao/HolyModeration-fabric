@@ -140,7 +140,11 @@ public class GuiManagerModule {
     public void onMouseClick(MouseClickEvent event) {
 
         MinecraftClient mc = minecraftService.getClient();
-        if (!(mc.currentScreen instanceof MainGuiScreen)) return;
+        if (!(mc.currentScreen instanceof MainGuiScreen mainGui)) return;
+
+        if (mainGui.isInsideWindow(event.getX(), event.getY())) {
+            return;
+        }
 
         if (event.getButton() == 1) {
             resetHoveredElementScale(event.getX(), event.getY());
@@ -180,7 +184,7 @@ public class GuiManagerModule {
         DrawableModule<?> hovered = findHoveredModule(windowW, windowH, mouseX, mouseY);
         if (hovered == null) return;
 
-        StatefulDrawableElement<?> element = (StatefulDrawableElement<?>) hovered.getDrawableElement();
+        StatefulDrawableElement<?> element = hovered.getDrawableElement();
         String id = element.getHudElementId();
         GuiConfig guiConfig = configManagerService.getGuiConfig();
 
@@ -256,7 +260,7 @@ public class GuiManagerModule {
 
         String id = elem.getHudElementId();
         float scale = configManagerService.getGuiConfig().getHudScale(id);
-        String text = "%.2f\u00d7".formatted(scale);
+        String text = "%.2f×".formatted(scale);
 
         TextRenderer tr = minecraftService.getClient().textRenderer;
         ThemePalette palette = themeService.getPalette();

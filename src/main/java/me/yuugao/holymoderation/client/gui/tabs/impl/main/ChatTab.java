@@ -121,11 +121,13 @@ public class ChatTab extends SettingsTab {
         float bodyW = pW - PAD * 2f - editW - delW - gap * 2f;
 
         listTop = y;
-        listBottom = pH - 6f;
+        listBottom = pH - 14f;
         float listH = listBottom - listTop;
         float totalH = texts.size() * 24f;
         textMax = Math.max(0f, totalH - listH);
         textScroll = Math.max(0f, Math.min(textScroll, textMax));
+
+        pushScissor(ctx, PAD, listTop, pW - PAD, listBottom);
 
         for (int i = 0; i < texts.size(); i++) {
             float rowY = listTop + i * 24f - textScroll;
@@ -152,6 +154,8 @@ public class ChatTab extends SettingsTab {
 
             rowHitboxes.add(new float[]{PAD, rowY, bodyW, rowH, i, editX, rowY, editW, rowH, delX, rowY, delW, rowH});
         }
+
+        render2DService.popScissor();
     }
 
     private void renderCenteredGlyph(DrawContext ctx, int z, String glyph, float x, float y, float w, float h,

@@ -22,6 +22,8 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 
+import org.joml.Matrix4f;
+
 import lombok.Getter;
 
 @Singleton
@@ -102,15 +104,29 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 scaledOutline, 3
         );
 
+        float[] outerA = transformPoint(ms, 0f, 0f);
+        float[] outerB = transformPoint(ms, width, height);
+        render2DService.pushScissor(outerA[0], outerA[1], outerB[0], outerB[1]);
+
         renderTabBar(ctx, ms, palette);
 
         int relMouseX = (int) toLocalX(mouseX);
         int relMouseY = (int) toLocalY(mouseY);
         renderTabs(ctx, relMouseX, relMouseY, tickDelta);
 
+        render2DService.popScissor();
+
         ms.pop();
 
         render2DService.endRender();
+    }
+
+    private static float[] transformPoint(MatrixStack matrices, float x, float y) {
+        Matrix4f m = matrices.peek().getPositionMatrix();
+        return new float[]{
+                m.m00() * x + m.m10() * y + m.m30(),
+                m.m01() * x + m.m11() * y + m.m31()
+        };
     }
 
     private void renderTabBar(DrawContext ctx, MatrixStack ms, ThemePalette palette) {
@@ -203,5 +219,13 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         if (tabs.containsKey(key)) {
             activeTabKey = key;
         }
+    }
+
+    public boolean isInsideWindow(double mouseX, double mouseY) {
+        float renderAnim = Math.max(getAnimValue(), 0.001f);
+        float scaledW = width * renderAnim * screenScale;
+        float scaledH = height * renderAnim * screenScale;
+        return mouseX >= x && mouseX <= x + scaledW
+                && mouseY >= y && mouseY <= y + scaledH;
     }
 }
