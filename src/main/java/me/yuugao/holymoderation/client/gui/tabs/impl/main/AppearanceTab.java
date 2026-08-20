@@ -112,10 +112,10 @@ public class AppearanceTab extends SettingsTab {
 
     @Override
     protected float extraHeight() {
-        float setsY = rowsEndY() + 8f;
-        float listY = setsY + setsHeight() + 24f;
+        float square = Math.min(parent.getWidth(), parent.getHeight()) * 0.17f;
+        float setsHeight = square + 96f;
         TextRenderer tr = minecraftService.getClient().textRenderer;
-        return (listY - rowsEndY()) + tr.fontHeight + 8f + elementRows.size() * 26f + 16f;
+        return 8f + setsHeight + tr.fontHeight + 10f + elementRows.size() * 26f + 10f;
     }
 
     @Override
@@ -189,12 +189,12 @@ public class AppearanceTab extends SettingsTab {
             GuiConfig g = configManagerService.getGuiConfig();
             if (mouseX >= row.swatchX && mouseX <= row.swatchX + SWATCH_SIZE
                     && mouseY >= row.swatchY && mouseY <= row.swatchY + SWATCH_SIZE) {
-                popup.open(row.id, "Цвет: " + row.id, g.getHudColor(row.id), c -> g.setHudColor(row.id, c));
+                popup.open("Цвет: " + row.id, g.getHudColor(row.id), c -> g.setHudColor(row.id, c));
                 return true;
             }
             if (mouseX >= row.swatch2X && mouseX <= row.swatch2X + SWATCH_SIZE
                     && mouseY >= row.swatch2Y && mouseY <= row.swatch2Y + SWATCH_SIZE) {
-                popup.open(row.id, "Акцент: " + row.id, g.getHudColor2(row.id), c -> g.setHudColor2(row.id, c));
+                popup.open("Акцент: " + row.id, g.getHudColor2(row.id), c -> g.setHudColor2(row.id, c));
                 return true;
             }
         }

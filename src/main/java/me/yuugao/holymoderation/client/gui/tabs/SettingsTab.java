@@ -216,6 +216,14 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
         List<Row> visible = visibleRows();
         List<Row> dropdownRows = new ArrayList<>();
+
+        // Push a content scissor: rows + extra must be clipped to the area BELOW the
+        // search field. Without this, rows scroll above contentStartY (overlapping the
+        // search field) when the user scrolls down — reported in ChatTab / JournalTab.
+        // The outer MainGuiScreen scissor (already active) clips to the window; this
+        // scissor additionally clips to (contentStartY .. bottom) horizontally inset by PAD.
+        pushScissor(ctx, PAD, contentStartY() - 1f, pW - PAD, bottom);
+
         for (int i = 0; i < visible.size(); i++) {
             Row row = visible.get(i);
             float rowTop = contentStartY() + i * ROW_HEIGHT - scroll;
@@ -271,6 +279,8 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             }
         }
 
+        render2DService.popScissor();
+
         if (searchQuery().isBlank()) {
             renderOverlay(ctx, palette, pW, pH, z);
         }
@@ -296,6 +306,9 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
         List<Row> visible = visibleRows();
 
+        // Pass 1: topmost-z non-text-field elements (toggle, slider, button, dropdown).
+        // Iterate in REVERSE so the last-rendered (topmost) row is checked first; return
+        // on the first hit so only the topmost element consumes the click.
         for (int i = visible.size() - 1; i >= 0; i--) {
             DrawableElement element = visible.get(i).element;
             if (element instanceof ToggleDrawableElement toggle && toggle.handleClick(pW, pH, mouseX, mouseY)) {
@@ -323,23 +336,41 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             }
         }
 
-        boolean overField = false;
-        for (Row row : visible) {
+        // Pass 2: text fields. Find the TOPMOST hovered field (reverse iteration, first
+        // hit wins), unfocus everything else, then focus+click only that one. This
+        // guarantees only one field is focused per click — matching "topmost z".
+        SearchDrawableElement topField = null;
+        Row topRow = null;
+        for (int i = visible.size() - 1; i >= 0; i--) {
+            Row row = visible.get(i);
             for (SearchDrawableElement field : row.fields()) {
-                boolean was = field.isFocused();
-                boolean over = field.isMouseOver(pW, pH, mouseX, mouseY);
-                if (over && !was && row.valueField == field && row.valueText != null) {
+                if (field.isMouseOver(pW, pH, mouseX, mouseY)) {
+                    topField = field;
+                    topRow = row;
+                    break;
+                }
+            }
+            if (topField != null) break;
+        }
+
+        // Unfocus every field first (so non-hovered fields lose focus).
+        for (Row row : rows) {
+            for (SearchDrawableElement field : row.fields()) {
+                if (field.isFocused() && row.valueField == field && row.valueText != null) {
                     field.setQuerySilent(row.valueText.get());
                 }
-                if (over) {
-                    field.handleClick(pW, pH, mouseX, mouseY);
-                } else {
-                    field.setFocused(false);
-                }
-                if (over) overField = true;
+                field.setFocused(false);
             }
         }
-        return overField;
+
+        if (topField != null) {
+            if (topRow.valueField == topField && topRow.valueText != null) {
+                topField.setQuerySilent(topRow.valueText.get());
+            }
+            topField.handleClick(pW, pH, mouseX, mouseY);
+            return true;
+        }
+        return false;
     }
 
     @Override

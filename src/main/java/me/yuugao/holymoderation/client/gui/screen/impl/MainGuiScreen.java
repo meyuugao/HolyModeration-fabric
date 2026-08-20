@@ -217,4 +217,12 @@ public class MainGuiScreen extends AnimatedGuiScreen {
             activeTabKey = key;
         }
     }
+
+    public boolean isInsideWindow(double mouseX, double mouseY) {
+        float renderAnim = Math.max(getAnimValue(), 0.001f);
+        float scaledW = width * renderAnim * screenScale;
+        float scaledH = height * renderAnim * screenScale;
+        return mouseX >= x && mouseX <= x + scaledW
+                && mouseY >= y && mouseY <= y + scaledH;
+    }
 }

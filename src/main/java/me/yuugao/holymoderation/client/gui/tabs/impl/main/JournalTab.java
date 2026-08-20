@@ -122,7 +122,7 @@ public class JournalTab extends SettingsTab {
     }
 
     private void netModuleNotify(String text) {
-        me.yuugao.holymoderation.client.di.DIAccessor.getDI()
+        DIAccessor.getDI()
                 .get(me.yuugao.holymoderation.client.util.service.NotificationsService.class).error(text);
     }
 
@@ -134,11 +134,17 @@ public class JournalTab extends SettingsTab {
             return tr.fontHeight + 8f;
         }
         float fh = tr.fontHeight;
-        float profileH = 7 * (fh + 3f) + 20f + fh + (fh + 6f);
-        float statsH = apiConfig.getJournalStats().isEmpty()
-                ? 0f
-                : 8 * (fh + 3f) + 20f + fh + (fh + 6f);
-        return profileH + statsH + 40f;
+
+        float profileCardH = 8f * fh + 47f;
+
+        float profileSection = 8f + (fh + 6f) + profileCardH + 12f;
+
+        float statsSection = 0f;
+        if (!apiConfig.getJournalStats().isEmpty()) {
+            float statsCardH = 9f * fh + 50f;
+            statsSection = (fh + 6f) + statsCardH + 12f;
+        }
+        return profileSection + statsSection;
     }
 
     @Override
@@ -169,7 +175,7 @@ public class JournalTab extends SettingsTab {
         renderText(ctx, z, "Профиль обновлён: " + profDate, cardX, y, tr, palette.textMuted);
         y += tr.fontHeight + 6f;
 
-        float profileH = 7 * (tr.fontHeight + 2f) + pad * 2f + tr.fontHeight;
+        float profileH = 8f * tr.fontHeight + 47f;
         renderCard(ctx, z, palette, cardX, y, cardW, profileH);
         float ty = y + pad;
 
@@ -191,7 +197,7 @@ public class JournalTab extends SettingsTab {
             renderText(ctx, z, "Статистика обновлена: " + statDate, cardX, y, tr, palette.textMuted);
             y += tr.fontHeight + 6f;
 
-            float statsH = 8 * (tr.fontHeight + 2f) + pad * 2f + tr.fontHeight;
+            float statsH = 9f * tr.fontHeight + 50f;
             renderCard(ctx, z, palette, cardX, y, cardW, statsH);
             float sy = y + pad;
 
@@ -209,8 +215,7 @@ public class JournalTab extends SettingsTab {
 
     private float renderKv(DrawContext ctx, int z, TextRenderer tr, float x, float y, ThemePalette palette,
                            String key, String value) {
-        int kw = tr.getWidth(key);
-        float valueX = x + Math.max(110f, kw + 24f);
+        float valueX = x + 130f;
         renderText(ctx, z, key, x, y, tr, palette.textSecondary);
         renderText(ctx, z, value, valueX, y, tr, palette.textPrimary);
         return y + tr.fontHeight + 3f;

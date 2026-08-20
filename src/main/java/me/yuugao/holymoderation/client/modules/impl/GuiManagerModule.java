@@ -143,7 +143,11 @@ public class GuiManagerModule {
     public void onMouseClick(MouseClickEvent event) {
 
         MinecraftClient mc = minecraftService.getClient();
-        if (!(mc.currentScreen instanceof MainGuiScreen)) return;
+        if (!(mc.currentScreen instanceof MainGuiScreen mainGui)) return;
+
+        if (mainGui.isInsideWindow(event.getX(), event.getY())) {
+            return;
+        }
 
         if (event.getButton() == 1) {
             resetHoveredElementScale(event.getX(), event.getY());

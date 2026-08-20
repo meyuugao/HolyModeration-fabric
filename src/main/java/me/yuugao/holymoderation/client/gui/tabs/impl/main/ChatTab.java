@@ -90,11 +90,6 @@ public class ChatTab extends SettingsTab {
     }
 
     @Override
-    protected float extraHeight() {
-        return 0f;
-    }
-
-    @Override
     protected void renderExtra(DrawContext ctx, ThemePalette palette, float pW, float pH, int z, float scroll) {
         rowHitboxes.clear();
         TextRenderer tr = minecraftService.getClient().textRenderer;
@@ -121,11 +116,13 @@ public class ChatTab extends SettingsTab {
         float bodyW = pW - PAD * 2f - editW - delW - gap * 2f;
 
         listTop = y;
-        listBottom = pH - 6f;
+        listBottom = pH - 14f;
         float listH = listBottom - listTop;
         float totalH = texts.size() * 24f;
         textMax = Math.max(0f, totalH - listH);
-        textScroll = Math.max(0f, Math.min(textScroll, textMax));
+        textScroll = Math.clamp(textScroll, 0f, textMax);
+
+        pushScissor(ctx, PAD, listTop, pW - PAD, listBottom);
 
         for (int i = 0; i < texts.size(); i++) {
             float rowY = listTop + i * 24f - textScroll;
@@ -152,6 +149,8 @@ public class ChatTab extends SettingsTab {
 
             rowHitboxes.add(new float[]{PAD, rowY, bodyW, rowH, i, editX, rowY, editW, rowH, delX, rowY, delW, rowH});
         }
+
+        render2DService.popScissor();
     }
 
     private void renderCenteredGlyph(DrawContext ctx, int z, String glyph, float x, float y, float w, float h,
@@ -218,7 +217,7 @@ public class ChatTab extends SettingsTab {
         super.onMouseScroll(dx, dy, mouseX, mouseY);
         if (mouseY >= listTop && mouseY <= listBottom && textMax > 0f) {
             textScroll -= (float) (dy * 22f);
-            textScroll = Math.max(0f, Math.min(textScroll, textMax));
+            textScroll = Math.clamp(textScroll, 0f, textMax);
         }
     }
 
