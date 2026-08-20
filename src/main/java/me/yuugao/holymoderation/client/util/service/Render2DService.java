@@ -143,13 +143,12 @@ public class Render2DService {
 
     public void renderSoftRoundedRect(DrawContext ctx, float x, float y, float w, float h, int z, float radius, Color color, int blurWidth) {
         ensureShaders();
-        float blur = blurWidth;
         renderQuad(ctx, softRoundedRectPipeline, encoder -> {
             writeFloat(encoder, "Radius", radius);
             writeVec2(encoder, "Size", w, h);
             writeVec4(encoder, "Color", color);
-            writeFloat(encoder, "BlurWidth", blur);
-        }, x - blur, y - blur, w + 2f * blur, h + 2f * blur);
+            writeFloat(encoder, "BlurWidth", (float) blurWidth);
+        }, x - (float) blurWidth, y - (float) blurWidth, w + 2f * (float) blurWidth, h + 2f * (float) blurWidth);
     }
 
     public void renderRoundedRectOutline(DrawContext ctx, float x, float y, float w, float h, int z, float radius, Color color, Color outlineColor, float outlineWidth) {
@@ -165,15 +164,14 @@ public class Render2DService {
 
     public void renderSoftRoundedRectOutline(DrawContext ctx, float x, float y, float w, float h, int z, float radius, Color color, Color outlineColor, float outlineWidth, float blurWidth) {
         ensureShaders();
-        float blur = blurWidth;
         renderQuad(ctx, softRoundedRectOutlinePipeline, encoder -> {
             writeFloat(encoder, "Radius", radius);
             writeVec2(encoder, "Size", w, h);
             writeVec4(encoder, "Color", color);
             writeVec4(encoder, "OutlineColor", outlineColor);
             writeFloat(encoder, "OutlineWidth", outlineWidth);
-            writeFloat(encoder, "BlurWidth", blur);
-        }, x - blur, y - blur, w + 2f * blur, h + 2f * blur);
+            writeFloat(encoder, "BlurWidth", blurWidth);
+        }, x - blurWidth, y - blurWidth, w + 2f * blurWidth, h + 2f * blurWidth);
     }
 
     public void renderRGBPalette(DrawContext ctx, float x, float y, int z, float radius, Color outlineColor, float outlineWidth) {
@@ -360,7 +358,7 @@ public class Render2DService {
             BuiltBuffer built = bb.end();
 
             submitPass(ctx, pipeline.pipeline(), built,
-                    encoder -> uniforms.write(encoder),
+                    uniforms::write,
                     pass -> {
                         for (String uniform : pipeline.uniforms()) {
                             pass.setUniform(uniform, uniformBuffer(uniform).slice());
@@ -375,14 +373,13 @@ public class Render2DService {
                             Consumer<CommandEncoder> beforePass, Consumer<RenderPass> bindExtras) {
         GpuDevice device = RenderSystem.getDevice();
         CommandEncoder encoder = device.createCommandEncoder();
-        try {
+        try (built) {
             if (beforePass != null) {
                 beforePass.accept(encoder);
             }
 
-            GpuBuffer vbo = device.createBuffer(() -> "hm_quad_vbo",
-                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, built.getBuffer());
-            try {
+            try (GpuBuffer vbo = device.createBuffer(() -> "hm_quad_vbo",
+                    GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, built.getBuffer())) {
                 GpuBufferSlice projection = guiProjection()
                         .set(ctx.getScaledWindowWidth(), ctx.getScaledWindowHeight());
                 GpuBufferSlice transforms = RenderSystem.getDynamicUniforms().write(
@@ -404,23 +401,28 @@ public class Render2DService {
                     pass.setVertexBuffer(0, vbo);
                     pass.setIndexBuffer(shapeIndexBuffer.getIndexBuffer(indexCount), shapeIndexBuffer.getIndexType());
                     if (scissor != null) {
+                        // Scissor is stored in GUI-scaled coords with TOP-LEFT origin (Y grows
+                        // downwards, same convention as DrawContext / Matrix3x2fStack and the
+                        // transformPoint helpers used across the GUI package).
+                        // RenderPass.enableScissor(x, y, w, h) is a thin wrapper over glScissor
+                        // and therefore expects BOTTOM-LEFT origin (Y grows upwards, OpenGL/GL
+                        // convention). We must convert: glY = framebufferHeight - bottom.
+                        // This mirrors exactly what vanilla DrawContext.enableScissor does.
                         float sf = (float) minecraftService.getClient().getWindow().getScaleFactor();
                         int sx = Math.max(0, (int) Math.floor(scissor[0] * sf));
-                        int sy = Math.max(0, (int) Math.floor(scissor[1] * sf));
+                        int topPx = Math.max(0, (int) Math.floor(scissor[1] * sf));
                         int ex = Math.max(sx, (int) Math.ceil(scissor[2] * sf));
-                        int ey = Math.max(sy, (int) Math.ceil(scissor[3] * sf));
-                        pass.enableScissor(sx, sy, ex - sx, ey - sy);
+                        int bottomPx = Math.max(topPx, (int) Math.ceil(scissor[3] * sf));
+                        int fbHeight = minecraftService.getClient().getFramebuffer().textureHeight;
+                        int glY = Math.max(0, fbHeight - bottomPx);
+                        pass.enableScissor(sx, glY, ex - sx, bottomPx - topPx);
                     }
                     pass.drawIndexed(0, 0, indexCount, 1);
                     if (scissor != null) {
                         pass.disableScissor();
                     }
                 }
-            } finally {
-                vbo.close();
             }
-        } finally {
-            built.close();
         }
     }
 

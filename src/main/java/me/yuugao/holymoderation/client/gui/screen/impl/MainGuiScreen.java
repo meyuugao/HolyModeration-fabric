@@ -39,7 +39,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
     private final int renderPriority = 2000;
 
     private final Render2DService render2DService;
-    private final ConfigManagerService configManagerService;
     private final ThemeService themeService;
     private final MinecraftService minecraftService;
 
@@ -52,7 +51,6 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         super(Text.of("HolyModeration Main Gui Screen"), animationService);
 
         this.render2DService = render2DService;
-        this.configManagerService = configManagerService;
         this.themeService = themeService;
         this.minecraftService = minecraftService;
 
@@ -60,7 +58,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         addTab("Оформление", new AppearanceTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
         addTab("Звуки", new SoundsTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
         addTab("Чат", new ChatTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
-        addTab("Твинки", new TwinksTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
+        addTab("Твинки", new TwinksTab(this, themeService, minecraftService, render2DService, drawableElementFactory));
         addTab("Журнал", new JournalTab(this, themeService, configManagerService, minecraftService, render2DService, drawableElementFactory));
     }
 
@@ -77,7 +75,7 @@ public class MainGuiScreen extends AnimatedGuiScreen {
         this.renderAnim = Math.max(getAnimValue(), 0.001f);
 
         float baseOutline = 1f;
-        float scaledOutline = baseOutline * (Math.min(width, height) / 100f);
+        float scaledOutline = baseOutline * (height / 100f);
 
         this.screenScale = Math.min(ctx.getScaledWindowWidth() / 1280f, ctx.getScaledWindowHeight() / 720f);
 
@@ -104,18 +102,31 @@ public class MainGuiScreen extends AnimatedGuiScreen {
                 scaledOutline, 3
         );
 
-        renderTabBar(ctx, ms, palette);
+        float[] outerA = transformPoint(ms, 0f, 0f);
+        float[] outerB = transformPoint(ms, width, height);
+        render2DService.pushScissor(outerA[0], outerA[1], outerB[0], outerB[1]);
+
+        renderTabBar(ctx, palette);
 
         int relMouseX = (int) toLocalX(mouseX);
         int relMouseY = (int) toLocalY(mouseY);
         renderTabs(ctx, relMouseX, relMouseY, tickDelta);
+
+        render2DService.popScissor();
 
         ms.popMatrix();
 
         render2DService.endRender();
     }
 
-    private void renderTabBar(DrawContext ctx, Matrix3x2fStack ms, ThemePalette palette) {
+    private static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {
+        return new float[]{
+                ms.m00 * x + ms.m10 * y + ms.m20,
+                ms.m01 * x + ms.m11 * y + ms.m21
+        };
+    }
+
+    private void renderTabBar(DrawContext ctx, ThemePalette palette) {
         TextRenderer tr = minecraftService.getClient().textRenderer;
 
         float total = 0f;

@@ -17,6 +17,9 @@ import org.lwjgl.glfw.GLFW;
 import java.awt.Color;
 import java.util.function.Consumer;
 
+import lombok.Getter;
+import lombok.Setter;
+
 public class SearchDrawableElement extends DrawableElement {
     private static final float H_PADDING = 8f;
     private static final float CARET_WIDTH = 1.5f;
@@ -28,14 +31,18 @@ public class SearchDrawableElement extends DrawableElement {
 
     private TextRenderer tr;
 
+    @Getter
     private String query = "";
     private String placeholder = "Поиск...";
     private int caretIndex = 0;
+    @Getter
     private boolean focused = false;
+    @Setter
     private boolean centered = false;
     private int selStart = -1;
     private int selEnd = -1;
     private int selAnchor = -1;
+    @Setter
     private int maxLength = -1;
 
     private float radius;
@@ -57,10 +64,6 @@ public class SearchDrawableElement extends DrawableElement {
         this.onChange = onChange;
     }
 
-    public String getQuery() {
-        return query;
-    }
-
     public void setQuery(String query) {
         this.query = query == null ? "" : query;
         this.caretIndex = this.query.length();
@@ -78,20 +81,8 @@ public class SearchDrawableElement extends DrawableElement {
         this.placeholder = placeholder == null ? "" : placeholder;
     }
 
-    public void setCentered(boolean centered) {
-        this.centered = centered;
-    }
-
-    public void setMaxLength(int maxLength) {
-        this.maxLength = maxLength;
-    }
-
     public void clear() {
         setQuery("");
-    }
-
-    public boolean isFocused() {
-        return focused;
     }
 
     public void setFocused(boolean focused) {
@@ -385,8 +376,8 @@ public class SearchDrawableElement extends DrawableElement {
         return over;
     }
 
-    public boolean handleDrag(float parentW, float parentH, double mouseX, double mouseY) {
-        if (!focused) return false;
+    public void handleDrag(float parentW, float parentH, double mouseX, double mouseY) {
+        if (!focused) return;
         float[] local = screenToLocal(parentW, parentH, (float) mouseX, (float) mouseY);
         caretIndex = caretFromX(local[0]);
         if (selAnchor >= 0) {
@@ -399,7 +390,6 @@ public class SearchDrawableElement extends DrawableElement {
                 selEnd = b;
             }
         }
-        return true;
     }
 
     public void handleRelease() {

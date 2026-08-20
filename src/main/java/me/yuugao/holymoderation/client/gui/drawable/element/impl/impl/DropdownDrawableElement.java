@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import lombok.Getter;
+
 public class DropdownDrawableElement extends DrawableElement {
     private static final float GAP = 4f;
     private static final float OPTION_HEIGHT = 18f;
@@ -33,6 +35,7 @@ public class DropdownDrawableElement extends DrawableElement {
 
     private final List<String> options = new ArrayList<>();
     private int selectedIndex = -1;
+    @Getter
     private boolean expanded = false;
     private float scrollOffset = 0f;
     private float maxScroll = 0f;
@@ -47,8 +50,6 @@ public class DropdownDrawableElement extends DrawableElement {
     private Color optionColor;
     private Color optionHoverColor;
     private Color optionSelectedColor;
-    private Color textColor;
-    private Color arrowColor;
 
     public DropdownDrawableElement(AnimationService animationService, Render2DService render2DService,
                                    MinecraftService minecraftService, Consumer<String> onChange) {
@@ -75,10 +76,6 @@ public class DropdownDrawableElement extends DrawableElement {
         if (index < 0 || index >= options.size()) return;
         selectedIndex = index;
         if (onChange != null) onChange.accept(options.get(index));
-    }
-
-    public boolean isExpanded() {
-        return expanded;
     }
 
     public void setExpanded(boolean expanded) {
@@ -178,7 +175,7 @@ public class DropdownDrawableElement extends DrawableElement {
                                       float parW, float parH, int z, float radius,
                                       Color fieldColor, Color outlineColor, Color optionColor,
                                       Color optionHoverColor, Color optionSelectedColor,
-                                      Color textColor, Color arrowColor, float outlineWidth, float blurWidth) {
+                                      float outlineWidth, float blurWidth) {
         this.tr = minecraftService.getClient().textRenderer;
         setRelativePos(relX, relY);
         setWidth(width);
@@ -190,8 +187,6 @@ public class DropdownDrawableElement extends DrawableElement {
         this.optionColor = optionColor;
         this.optionHoverColor = optionHoverColor;
         this.optionSelectedColor = optionSelectedColor;
-        this.textColor = textColor;
-        this.arrowColor = arrowColor;
         this.outlineWidth = outlineWidth;
         this.blurWidth = blurWidth;
 
@@ -262,7 +257,7 @@ public class DropdownDrawableElement extends DrawableElement {
         }
 
         scrollOffset -= (float) (dy * SCROLL_SPEED);
-        scrollOffset = Math.max(0f, Math.min(scrollOffset, maxScroll));
+        scrollOffset = Math.clamp(scrollOffset, 0f, maxScroll);
         return true;
     }
 

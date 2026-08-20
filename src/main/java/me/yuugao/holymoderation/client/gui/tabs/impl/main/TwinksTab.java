@@ -11,14 +11,11 @@ import me.yuugao.holymoderation.client.util.service.MinecraftService;
 import me.yuugao.holymoderation.client.util.service.Render2DService;
 import me.yuugao.holymoderation.client.util.service.ThemePalette;
 import me.yuugao.holymoderation.client.util.service.ThemeService;
-import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
 
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
-
-import org.joml.Matrix3x2fStack;
 
 import java.awt.Color;
 import java.io.IOException;
@@ -67,9 +64,9 @@ public class TwinksTab extends Tab<MainGuiScreen> {
     private record FileEntry(String name, String shortName, Path path, long modified, String dateLabel) {
     }
 
-    public TwinksTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
+    public TwinksTab(MainGuiScreen parent, ThemeService themeService,
                      MinecraftService minecraftService, Render2DService render2DService, DrawableElementFactory factory) {
-        super(parent);
+        super(parent, render2DService);
 
         this.themeService = themeService;
         this.minecraftService = minecraftService;
@@ -172,7 +169,7 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         fileMax = Math.max(0f, totalH - listH);
         fileScroll = Math.clamp(fileScroll, 0f, fileMax);
 
-        pushScissor(ctx, PAD, listTop, PAD + LEFT_W, listBottom);
+        pushScissor(ctx, PAD, listTop - 1, PAD + LEFT_W, listBottom);
 
         for (int i = 0; i < visible.size(); i++) {
             FileEntry f = visible.get(i);
@@ -205,23 +202,22 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         float top = 38f;
         float bottom = pH - 10f;
 
+        pushScissor(ctx, x, top, x + w, bottom);
+
         if (entries.isEmpty()) {
             render2DService.renderText(tr, Text.literal(selectedName.isBlank() ? "Выберите файл слева." : "Нет данных.").asOrderedText(),
                     (int) x, (int) (top + 6f), z, palette.textMuted.getRGB(), false, ctx);
             contentMax = 0f;
-            return;
+        } else {
+            float y = top + 4f - contentScroll;
+            for (TwinksCheckModule.PlayerEntry e : entries) {
+                y = renderPlayerCard(ctx, z, palette, tr, x, w, y, e);
+                y += 10f;
+            }
+
+            contentMax = Math.max(0f, (y + contentScroll) - pH);
+            contentScroll = Math.clamp(contentScroll, 0f, contentMax);
         }
-
-        pushScissor(ctx, x, 104f, x + w, bottom);
-
-        float y = top + 4f - contentScroll;
-        for (TwinksCheckModule.PlayerEntry e : entries) {
-            y = renderPlayerCard(ctx, z, palette, tr, x, w, y, e);
-            y += 10f;
-        }
-
-        contentMax = Math.max(0f, (y + contentScroll) - bottom);
-        contentScroll = Math.clamp(contentScroll, 0f, contentMax);
 
         render2DService.popScissor();
     }
@@ -312,20 +308,6 @@ public class TwinksTab extends Tab<MainGuiScreen> {
         }
 
         return y + 6f;
-    }
-
-    private void pushScissor(DrawContext ctx, float x0, float y0, float x1, float y1) {
-        Matrix3x2fStack ms = ctx.getMatrices();
-        float[] a = transformPoint(ms, x0, y0);
-        float[] b = transformPoint(ms, x1, y1);
-        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
-    }
-
-    private static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {
-        return new float[]{
-                ms.m00 * x + ms.m10 * y + ms.m20,
-                ms.m01 * x + ms.m11 * y + ms.m21
-        };
     }
 
     @Override

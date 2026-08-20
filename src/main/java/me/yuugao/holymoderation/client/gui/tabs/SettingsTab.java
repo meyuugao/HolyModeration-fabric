@@ -19,8 +19,6 @@ import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
 
-import org.joml.Matrix3x2fStack;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -69,7 +67,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
 
     public SettingsTab(MainGuiScreen parent, ThemeService themeService, ConfigManagerService configManagerService,
                        MinecraftService minecraftService, Render2DService render2DService, DrawableElementFactory factory) {
-        super(parent);
+        super(parent, render2DService);
         this.themeService = themeService;
         this.configManagerService = configManagerService;
         this.minecraftService = minecraftService;
@@ -216,8 +214,6 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         maxScroll = Math.max(0f, contentHeight() - bottom);
         scroll = Math.clamp(scroll, 0f, maxScroll);
 
-        //pushScissor(ctx, 0f, contentStartY() - 8f, pW, bottom); //TIP: ОБРЕЗАЕТ НИЗ
-
         List<Row> visible = visibleRows();
         List<Row> dropdownRows = new ArrayList<>();
         for (int i = 0; i < visible.size(); i++) {
@@ -261,11 +257,8 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
             renderExtra(ctx, palette, pW, pH, z, scroll);
         }
 
-        //render2DService.popScissor();
-
         for (int pass = 0; pass < 2; pass++) {
-            for (int i = 0; i < dropdownRows.size(); i++) {
-                Row row = dropdownRows.get(i);
+            for (Row row : dropdownRows) {
                 DropdownDrawableElement dropdown = (DropdownDrawableElement) row.element;
                 if ((pass == 0) == dropdown.isExpanded()) continue;
 
@@ -274,27 +267,13 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
                 dropdown.updateRenderForParent(ctx, fieldX / pW, (rowTop + (ROW_HEIGHT - FIELD_H) / 2f) / pH,
                         fieldW, FIELD_H, pW, pH, z,
                         8f, palette.surface, palette.outline, palette.surfaceElevated,
-                        palette.primaryDark, palette.primary, palette.textPrimary, palette.textSecondary, 1.5f, 2f);
+                        palette.primaryDark, palette.textSecondary, 1.5f, 2f);
             }
         }
 
         if (searchQuery().isBlank()) {
             renderOverlay(ctx, palette, pW, pH, z);
         }
-    }
-
-    private void pushScissor(DrawContext ctx, float x0, float y0, float x1, float y1) {
-        Matrix3x2fStack ms = ctx.getMatrices();
-        float[] a = transformPoint(ms, x0, y0);
-        float[] b = transformPoint(ms, x1, y1);
-        render2DService.pushScissor(a[0], a[1], b[0], b[1]);
-    }
-
-    private static float[] transformPoint(Matrix3x2fStack ms, float x, float y) {
-        return new float[]{
-                ms.m00 * x + ms.m10 * y + ms.m20,
-                ms.m01 * x + ms.m11 * y + ms.m21
-        };
     }
 
     protected void renderLabel(DrawContext ctx, int z, String text, float x, float y, ThemePalette palette) {
@@ -382,7 +361,7 @@ public abstract class SettingsTab extends Tab<MainGuiScreen> {
         }
         if (!handled && maxScroll > 0f) {
             scroll -= (float) (dy * 22f);
-            scroll = Math.max(0f, Math.min(scroll, maxScroll));
+            scroll = Math.clamp(scroll, 0f, maxScroll);
         }
     }
 
