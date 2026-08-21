@@ -6,6 +6,7 @@ import static me.yuugao.holymoderation.client.util.Colors.*;
 import me.yuugao.holymoderation.client.di.annotations.Inject;
 import me.yuugao.holymoderation.client.di.annotations.Singleton;
 import me.yuugao.holymoderation.client.util.service.config.ConfigManagerService;
+import me.yuugao.holymoderation.client.util.service.state.ModStateService;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.network.ClientPlayerEntity;
@@ -32,13 +33,16 @@ public class ChatService {
     private final MinecraftService minecraftService;
     private final ConfigManagerService configManagerService;
     private final NotificationsService notificationsService;
+    private final ModStateService modStateService;
 
     public void chatMessage(String message) {
         ClientPlayNetworkHandler networkHandler = minecraftService.getClient().getNetworkHandler();
 
         if (networkHandler != null) {
             if (message.startsWith("/")) {
+                modStateService.setCommandPending(true);
                 networkHandler.sendChatCommand(message.substring(1));
+                modStateService.setCommandPending(false);
             } else {
                 networkHandler.sendChatMessage(message);
             }

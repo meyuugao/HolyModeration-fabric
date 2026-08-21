@@ -7,6 +7,7 @@ import me.yuugao.holymoderation.client.util.service.eventbus.EventBusService;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.CommandSendEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.chat.MessageSendEvent;
 import me.yuugao.holymoderation.client.util.service.eventbus.event.impl.connection.ServerConnectEvent;
+import me.yuugao.holymoderation.client.util.service.state.ModStateService;
 import me.yuugao.holymoderation.client.util.service.state.UserStateService;
 
 import net.minecraft.client.network.ClientPlayNetworkHandler;
@@ -49,6 +50,10 @@ public class ClientPlayNetworkHandlerMixin {
 
     @Inject(method = "sendChatCommand", at = @At("HEAD"), cancellable = true)
     public void sendCommand(String command, CallbackInfo ci) {
+        if (DIAccessor.getDI().get(ModStateService.class).isCommandPending()) {
+            return;
+        }
+
         EventBus eventBus = DIAccessor.getDI().get(EventBusService.class).getEventBus();
 
         CommandSendEvent event = new CommandSendEvent(command);

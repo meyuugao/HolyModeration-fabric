@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.List;
 
 @Singleton
-
 public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> implements CommandProvider {
     private final String[] ServerFreezeCommands = {"/freezing", "/frz"};
     private final ConfigManagerService configManagerService;
@@ -33,7 +32,6 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
     private final CheckoutsService checkoutsService;
     private final PunishmentsService punishmentsService;
     private final NetService netService;
-    private final AsyncExecutor asyncExecutor;
     private boolean startingCheckout = false;
     private boolean banChecking = false;
     private boolean destroyStash;
@@ -49,8 +47,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
                            ChatService chatService,
                            CheckoutsService checkoutsService,
                            PunishmentsService punishmentsService,
-                           NetService netService,
-                           AsyncExecutor asyncExecutor) {
+                           NetService netService) {
         super(drawableElement);
         this.configManagerService = configManagerService;
         this.playerStateService = playerStateService;
@@ -60,7 +57,6 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         this.checkoutsService = checkoutsService;
         this.punishmentsService = punishmentsService;
         this.netService = netService;
-        this.asyncExecutor = asyncExecutor;
     }
 
     @Override
@@ -80,7 +76,7 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
         String checkoutPlayer = playerStateService.getCheckoutPlayer();
         String eventCommand = event.getCommand();
         String[] commandSplit = eventCommand.split(" ");
-        if (eventCommand.startsWith("hm")) return; // hm-subcommands handled by CommandRegistry
+        if (eventCommand.startsWith("hm")) return;
         String command = "/%s".formatted(commandSplit[0]);
 
         if (chatService.isArrayContains(ServerFreezeCommands, command)) {
@@ -99,7 +95,6 @@ public class CheckoutsModule extends DrawableModule<CheckoutsDrawableElement> im
     }
 
     private void cmdFreezing(CommandContext ctx) {
-        String checkoutPlayer = playerStateService.getCheckoutPlayer();
         if (userStateService.isInHub()) {
             notificationsService.warning("В хабе этого делать нельзя.");
             return;

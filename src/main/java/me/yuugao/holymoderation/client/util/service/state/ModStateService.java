@@ -35,6 +35,7 @@ public class ModStateService {
     private boolean forceBlocked = false;
     private boolean onlineMode = false;
     private boolean updateRequired = false;
+    private boolean commandPending = false;
 
     public void enableDebug() {
         this.debugEnabled = true;
